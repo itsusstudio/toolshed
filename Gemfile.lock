@@ -1,15 +1,3 @@
-GIT
-  remote: https://github.com/itsusstudio/standard-studio.git
-  revision: 4515cabb93ae0290d5343412ead0170eba5845a4
-  specs:
-    standard-studio (0.2.0)
-      lint_roller (~> 1.0)
-      rubocop (>= 1.72)
-      rubocop-factory_bot (>= 2.27)
-      rubocop-rake (>= 0.7)
-      standard (>= 1.50)
-      standard-rails (>= 1.3)
-
 PATH
   remote: gems/studio-app-bintools
   specs:
@@ -42,6 +30,17 @@ PATH
   remote: gems/studio-site-bintools
   specs:
     studio-site-bintools (0.1.0)
+
+PATH
+  remote: gems/studio-standardrb
+  specs:
+    studio-standardrb (0.1.0)
+      lint_roller (~> 1.0)
+      rubocop (>= 1.72)
+      rubocop-factory_bot (>= 2.27)
+      rubocop-rake (>= 0.7)
+      standard (>= 1.50)
+      standard-rails (>= 1.3)
 
 GEM
   remote: https://rubygems.org/
@@ -408,10 +407,10 @@ DEPENDENCIES
   mocha
   rake
   sqlite3
-  standard-studio!
   studio-app-bintools!
   studio-monitoring!
   studio-site-bintools!
+  studio-standardrb!
 
 CHECKSUMS
   actionpack (8.1.4.1) sha256=8c6f2e7cbd2653ef0539bde1ff20eb3e2e264e366affe56f0ba7f06d3670cb4b
@@ -531,10 +530,10 @@ CHECKSUMS
   standard-custom (1.0.2) sha256=424adc84179a074f1a2a309bb9cf7cd6bfdb2b6541f20c6bf9436c0ba22a652b
   standard-performance (1.9.0) sha256=49483d31be448292951d80e5e67cdcb576c2502103c7b40aec6f1b6e9c88e3f2
   standard-rails (1.6.0) sha256=8f1d19a402491901ee8148adb431682012838a73bb7d3b0e95aa339ea872497a
-  standard-studio (0.2.0)
   studio-app-bintools (0.1.0)
   studio-monitoring (0.1.0)
   studio-site-bintools (0.1.0)
+  studio-standardrb (0.1.0)
   thor (1.5.0) sha256=e3a9e55fe857e44859ce104a84675ab6e8cd59c650a49106a05f55f136425e73
   timeout (0.6.1) sha256=78f57368a7e7bbadec56971f78a3f5ecbcfb59b7fcbb0a3ed6ddc08a5094accb
   tsort (0.2.0) sha256=9650a793f6859a43b6641671278f79cfead60ac714148aabe4e3f0060480089f
