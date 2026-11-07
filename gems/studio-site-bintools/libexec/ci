@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# Summary: Lint, audit, check images, then build the site for production
+set -euo pipefail
+
+export BRIDGETOWN_ENV=production
+
+step() {
+  current_step_name="$1"
+  echo "🔍 $1"
+}
+
+red="\033[1;31m"
+green="\033[1;32m"
+reset_colour="\033[0m"
+
+report_failed_step() {
+  printf "\n${red}❌ %s failed${reset_colour}\n" "$current_step_name" >&2
+}
+trap report_failed_step ERR
+
+step "Style: lint"
+bin/studio lint
+
+step "Security: npm audit"
+npm audit
+
+step "Fingerprinted images: check-fingerprinted-images"
+bin/studio check-fingerprinted-images
+
+step "Clean: bin/bridgetown clean"
+bin/bridgetown clean
+
+step "Frontend: npm run esbuild"
+touch frontend/styles/jit-refresh.css
+npm run esbuild
+
+step "Build: bin/bridgetown build"
+bin/bridgetown build
+
+printf "\n%b✅ CI passed%b\n" "$green" "$reset_colour"

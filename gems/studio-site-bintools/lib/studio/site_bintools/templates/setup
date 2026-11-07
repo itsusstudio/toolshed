@@ -1,0 +1,25 @@
+#!/usr/bin/env ruby
+# Summary: Install the site's Ruby and Node dependencies (copied; the site owns it)
+require "fileutils"
+
+APP_ROOT = File.expand_path("..", __dir__)
+
+def system!(*args)
+  system(*args, exception: true)
+end
+
+FileUtils.chdir APP_ROOT do
+  # Idempotent dev setup for the marketing site. Safe to re-run anytime.
+
+  puts "== Installing Ruby dependencies =="
+  system! "gem install bundler --conservative"
+  system("bundle check") || system!("bundle install")
+
+  puts "\n== Installing Node dependencies =="
+  system! "npm install"
+
+  puts "\n== Setup complete! =="
+  puts ""
+  puts "🚀 Next steps:"
+  puts "   1. Start the site: bin/bridgetown start  (dev at http://localhost:4000)"
+end
