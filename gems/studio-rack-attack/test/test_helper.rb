@@ -2,7 +2,7 @@ ENV["RAILS_ENV"] = "test"
 
 require "rails"
 require "action_controller/railtie"
-require "studio/rack_attack"
+require "studio-rack-attack"  # the path Bundler requires
 require "studio/monitoring/test_helper"
 require "minitest/autorun"
 
