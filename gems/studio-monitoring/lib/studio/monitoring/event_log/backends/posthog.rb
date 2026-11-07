@@ -1,6 +1,6 @@
 module Studio
   module Monitoring
-    module Logging
+    module EventLog
       module Backends
         class Posthog
           SEVERITY_NUMBERS = {debug: 5, info: 9, warn: 13, error: 17, fatal: 21}.freeze

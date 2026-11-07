@@ -1,6 +1,6 @@
 module Studio
   module Monitoring
-    module Logging
+    module EventLog
       module Backends
         class Rails
           def log(level, line, **)

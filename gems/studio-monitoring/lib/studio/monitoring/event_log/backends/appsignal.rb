@@ -1,6 +1,6 @@
 module Studio
   module Monitoring
-    module Logging
+    module EventLog
       module Backends
         class Appsignal
           # AppSignal's lograge docs group request logs as "rails"; changing

@@ -1,6 +1,9 @@
+require "logger"
+
 module Studio
   module Monitoring
-    module Lograge
+    # One http_request event per request, built by lograge.
+    module RequestLog
       class << self
         def setup(app, config)
           lograge = app.config.lograge
@@ -11,7 +14,7 @@ module Studio
 
           lograge.keep_original_rails_log = true
           lograge.formatter = ::Lograge::Formatters::Raw.new
-          lograge.logger = LogrageLogger.new
+          lograge.logger = Logger.new
         end
 
         private
@@ -19,14 +22,30 @@ module Studio
         def custom_options(param_filter)
           lambda do |event|
             params = event.payload[:params]&.except("controller", "action")
+            request = event.payload[:request]
             {
+              path: request && Redaction.masked_path(request),
               params: params && param_filter.filter(params).to_json,
               host: event.payload[:host],
-              cf_ray: event.payload[:request]&.get_header("HTTP_CF_RAY"),
+              cf_ray: request&.get_header("HTTP_CF_RAY"),
               exception: event.payload[:exception]&.first,
               exception_message: event.payload[:exception_object]&.message
             }.compact
           end
+        end
+      end
+
+      class Logger < ::Logger
+        def initialize
+          super(nil)
+        end
+
+        # Logger#info(hash) arrives here as add(INFO, nil, hash).
+        def add(severity, message = nil, progname = nil)
+          request = message || progname || (yield if block_given?)
+          level = (request[:status].to_i >= 500) ? :error : :info
+          Events.public_send(level, "http_request", **request, source: "#{request[:controller]}##{request[:action]}")
+          true
         end
       end
     end

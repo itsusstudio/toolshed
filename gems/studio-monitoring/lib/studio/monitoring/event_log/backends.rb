@@ -4,7 +4,7 @@ require_relative "backends/posthog"
 
 module Studio
   module Monitoring
-    module Logging
+    module EventLog
       module Backends
         ALL = {rails: Rails.new, appsignal: Appsignal.new, posthog: Posthog.new}.freeze
       end

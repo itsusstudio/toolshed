@@ -20,8 +20,8 @@ module Studio
         "Hotwire::WellKnownController#assetlinks"
       ].freeze
 
-      # Spans keep the raw path, so Active Storage signed blob ids would leak
-      # into traces. Entries are path prefixes or Regexps.
+      # Active Storage signed blob ids sit in unnamed path segments that
+      # Redaction cannot see. Entries are path prefixes or Regexps.
       DEFAULT_UNTRACED_PATHS = ["/assets/", "/rails/active_storage/"].freeze
 
       attr_accessor :service_name, :actor_id, :tenant_id, :default_properties, :untraced_paths,
@@ -48,7 +48,7 @@ module Studio
         if service_name.blank?
           raise ArgumentError, "Studio::Monitoring needs c.service_name, set in config/initializers/monitoring.rb"
         end
-        validate_backends!("log_backends", log_backends, Logging::Backends::ALL)
+        validate_backends!("log_backends", log_backends, EventLog::Backends::ALL)
         validate_backends!("analytics_backends", analytics_backends, Analytics::Backends::ALL)
       end
 

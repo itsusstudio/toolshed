@@ -23,8 +23,7 @@ module Studio
           prefixes, patterns = paths.partition { |path| path.is_a?(String) }
           ->(env) {
             path = env["PATH_INFO"]
-            path.start_with?(*prefixes) || patterns.any? { |pattern| pattern.match?(path) } ||
-              env["QUERY_STRING"].to_s.include?("token=")
+            path.start_with?(*prefixes) || patterns.any? { |pattern| pattern.match?(path) }
           }
         end
 
@@ -39,8 +38,6 @@ module Studio
             sdk.resource = OpenTelemetry::SDK::Resources::Resource.create("deployment.environment" => env.to_s)
 
             sdk.use_all(
-              # Spans keep the raw query string, so any URL carrying a token
-              # (sign-in links, resets, invites) is not traced at all.
               "OpenTelemetry::Instrumentation::Rack" => {
                 untraced_endpoints: ["/up", "/cable"],
                 untraced_requests: untraced_requests(config.untraced_paths)
@@ -52,6 +49,7 @@ module Studio
           end
 
           OpenTelemetry.tracer_provider.sampler = RequestAndJobSampler.new(OpenTelemetry.tracer_provider.sampler)
+          OpenTelemetry.tracer_provider.add_span_processor(Redaction::QuerySpanProcessor.new)
 
           # Default buckets stop at 1 s, too short for p95 of slow work. The SDK
           # ignores bucket hints on instrument creation, so it takes a view.

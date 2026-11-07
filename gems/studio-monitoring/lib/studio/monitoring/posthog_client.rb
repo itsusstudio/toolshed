@@ -1,6 +1,7 @@
 module Studio
   module Monitoring
-    module Posthog
+    # The one PostHog client for the process, plus posthog-rails exception capture.
+    module PosthogClient
       EXCLUDED_EXCEPTIONS = [
         "ActionController::RoutingError",
         "ActionController::UnknownFormat",
@@ -30,8 +31,8 @@ module Studio
             posthog.api_key = config.posthog.token
             posthog.host = config.posthog.host
             posthog.on_error = proc { |status, error|
-              Logging.log_warn(::PostHog, "posthog_send",
-                properties: {success: false, message: error.to_s, status: status})
+              Events.warn("posthog_send", source: "PostHog", success: false,
+                message: error.to_s, status: status)
             }
             # Server events come from the host's IP, so GeoIP would stamp them,
             # and the person, with the data centre's city.
