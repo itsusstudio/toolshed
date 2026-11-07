@@ -7,6 +7,7 @@ Studio Ruby gems, one per directory in `gems/`.
 - [studio-enum](gems/studio-enum)
 - [studio-flags](gems/studio-flags)
 - [studio-monitoring](gems/studio-monitoring)
+- [studio-rack-attack](gems/studio-rack-attack)
 - [studio-site-bintools](gems/studio-site-bintools)
 - [studio-standardrb](gems/studio-standardrb)
 
