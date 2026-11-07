@@ -1,60 +1,61 @@
 # studio-monitoring
 
-One `Studio::Monitoring` API for studio Rails apps, set up the studio way:
-
-- `Studio::Monitoring::Logging` sends logfmt event lines to Rails, AppSignal and PostHog Logs
-- `Studio::Monitoring::Errors` reports handled errors through `Rails.error`
-- `Studio::Monitoring::Metrics` records counters and durations through OpenTelemetry
-- `Studio::Monitoring::Analytics` tracks product events and identifies people in PostHog
-
-The gem's Railtie also does the setup each app used to copy:
-
-- OpenTelemetry: traces, logs and metrics go to PostHog with 25% of traces sampled, or traces go to a local Jaeger in development; it's off otherwise
-- lograge turns each request into one `http_request` line
-- each app job logs one `job_performed` line
-- PostHog client and posthog-rails exception capture
-- request id, job id and the posthog-js session id, set for every request and job
-- one `monitoring_configured` line at boot that lists what is on
+Logging, errors, metrics and analytics for studio Rails apps.
 
 ## Setup
 
 ```ruby
 # config/initializers/monitoring.rb
 Studio::Monitoring.configure do |c|
+  # Required. Names the OpenTelemetry service, meter and logger.
   c.service_name = "belly"
 
+  # Optional. Turns on PostHog: analytics, logs, errors, traces and metrics.
+  # Omit to keep PostHog off.
   if (posthog = AppSettings.posthog)
     c.posthog_project token: posthog.public_project_token, host: posthog.server_host
   end
 
+  # Optional. Who is acting. Sent as actor_id; the PostHog distinct id.
   c.actor_id = -> { Current.user&.id }
+
+  # Optional. Which tenant the work is for. Sent as tenant_id; the PostHog
+  # tenant group.
   c.tenant_id = -> { Current.space&.id }
+
+  # Optional. Extra properties on every log line, error and analytics event.
   c.default_properties = -> { {platform: Current.platform} }
 
+  # Optional. Path prefixes or Regexps never traced. Defaults to assets and
+  # Active Storage; URLs with token= are never traced.
   c.untraced_paths += ["/login-link", %r{\A/[^/]+/magic_link/}]
-  c.analytics_backends += [:database]
+
+  # Optional. Controller#actions with no request log line. Defaults to health
+  # checks, Active Storage redirects, cable and Hotwire Native config.
+  c.unlogged_actions += ["Portal::HealthController#show"]
+
+  # Optional. Any of :rails, :appsignal, :posthog. Default: all three.
+  c.log_backends = [:rails, :appsignal, :posthog]
+
+  # Optional. Any of :posthog, :database. Default: [:posthog].
+  c.analytics_backends = [:posthog, :database]
 end
 ```
 
-| Setting | Meaning |
-| --- | --- |
-| `service_name` | Required. Names the OpenTelemetry service, meter and logger |
-| `posthog_project` | PostHog token and host. Not called means PostHog is off |
-| `actor_id` | Who is acting. Sent as `actor_id` everywhere; the PostHog distinct id |
-| `tenant_id` | Which tenant (shop, space) the work is for. Sent as `tenant_id` everywhere; the PostHog `tenant` group |
-| `default_properties` | App-specific extras added to every log line, error and analytics event |
-| `untraced_paths` | Path prefixes or Regexps never traced; defaults to assets and Active Storage. URLs with `token=` are never traced |
-| `unlogged_actions` | `Controller#action`s with no request line |
-| `log_backends` | Names from `:rails`, `:appsignal`, `:posthog`. Defaults to all three |
-| `analytics_backends` | Names from `:posthog`, `:database`. Defaults to `[:posthog]` |
+## Use
 
-## Backends
+```ruby
+Studio::Monitoring::Logging.log_info(self, "checkout_return", properties: {success: true})
+Studio::Monitoring::Errors.report(error, context: {url: url})
+Studio::Monitoring::Metrics.increment_counter("checkout_return", tags: {ok: true})
+Studio::Monitoring::Metrics.record_duration("checkout_return.duration", ms, tags: {ok: true})
+Studio::Monitoring::Analytics.track("recipe_saved", properties: {recipe_id: 1})
+Studio::Monitoring::Analytics.identify(properties: {timezone: "UTC"})
+```
 
-Every backend ships with the gem, and apps pick backends by name. An unknown name raises at boot. To add a new backend, add it to toolshed so every app gets the same one.
+Name events in snake_case, object first. Dashboards filter on these names, so renaming one breaks them.
 
-If an analytics backend raises, the error is logged and the other backends still run.
-
-`:database` writes each event to an `analytics_events` table (`actor_id`, `tenant_id`, `event_name`, `properties`, `created_at`) through `Studio::Monitoring::AnalyticsEvent`. It keeps events for 60 days:
+## :database backend
 
 ```sh
 bin/rails g studio:monitoring:analytics_events && bin/rails db:migrate
@@ -67,15 +68,4 @@ purge_analytics_events:
   schedule: every day at 4am
 ```
 
-## Use
-
-```ruby
-Studio::Monitoring::Logging.log_warn(self, "billing_checkout_return", properties: {success: false, message: "session_not_complete"})
-Studio::Monitoring::Errors.report(error, context: {url: url})
-Studio::Monitoring::Metrics.increment_counter("recipe_url_import", tags: {ok: true})
-Studio::Monitoring::Metrics.record_duration("recipe_url_import.duration", duration_ms, tags: {ok: true})
-Studio::Monitoring::Analytics.track("recipe_saved", properties: {recipe_id: recipe.id})
-Studio::Monitoring::Analytics.identify(properties: {timezone: user.timezone})
-```
-
-Event and metric names describe the flow in snake_case, object first. Never use prose for them: dashboards filter on these names.
+Events are kept for 60 days.
