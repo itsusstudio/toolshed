@@ -66,4 +66,17 @@ class Studio::Monitoring::RailtieTest < ActionDispatch::IntegrationTest
     assert_not lograge.enabled
     assert_includes lograge.ignore_actions, "Rails::HealthController#show"
   end
+
+  test "lograge skips health checks by path, whichever controller answers them" do
+    ignore = DummyApp.config.lograge.ignore_custom
+    health = ActionDispatch::Request.new(Rack::MockRequest.env_for("/up"))
+    page = ActionDispatch::Request.new(Rack::MockRequest.env_for("/upload"))
+
+    assert ignore.call(ActiveSupport::Notifications::Event.new("process_action.action_controller", 0, 1, "id", {request: health}))
+    assert_not ignore.call(ActiveSupport::Notifications::Event.new("process_action.action_controller", 0, 1, "id", {request: page}))
+  end
+
+  test "Rails' own request log lines are silenced for health checks" do
+    assert_equal "/up", DummyApp.config.silence_healthcheck_path
+  end
 end

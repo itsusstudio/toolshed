@@ -3,6 +3,12 @@ require "test_helper"
 class Studio::Monitoring::RequestSamplingTest < ActiveSupport::TestCase
   setup { Studio::Monitoring.config.stubs(:appsignal_ignored_paths).returns(["/admin"]) }
 
+  test "#call drops health checks even when the app sets its own ignored paths" do
+    Appsignal.expects(:set_namespace).with("sampled_out")
+
+    call_middleware(path: "/up", roll: 0.1)
+  end
+
   test "#call keeps a request that falls inside the sample" do
     Appsignal.expects(:set_namespace).never
 

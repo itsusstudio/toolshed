@@ -10,6 +10,8 @@ module Studio
 
       # Channel actions are named by event (subscribe), not by callback
       # (subscribed) as AppSignal names them.
+      HEALTH_CHECK_PATH = "/up"
+
       DEFAULT_UNLOGGED_ACTIONS = [
         "Rails::HealthController#show",
         "ActiveStorage::Blobs::RedirectController#show",

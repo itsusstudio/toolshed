@@ -39,7 +39,7 @@ module Studio
 
             sdk.use_all(
               "OpenTelemetry::Instrumentation::Rack" => {
-                untraced_endpoints: ["/up", "/cable"],
+                untraced_endpoints: [Configuration::HEALTH_CHECK_PATH, "/cable"],
                 untraced_requests: untraced_requests(config.untraced_paths)
               },
               # posthog-ruby sends from a background thread, so each batch would

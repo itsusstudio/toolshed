@@ -52,6 +52,8 @@ module Studio
       end
 
       def ignored?(path)
+        return true if path == Configuration::HEALTH_CHECK_PATH
+
         Monitoring.config.appsignal_ignored_paths.any? { |prefix| path == prefix || path.start_with?("#{prefix}/") }
       end
 

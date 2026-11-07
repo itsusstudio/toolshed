@@ -25,6 +25,10 @@ module Studio
       # Before AppSignal's railtie inserts RailsInstrumentation after
       # DebugExceptions too, which then sits between DebugExceptions and this
       # middleware, outside it as RequestSampling needs.
+      initializer "studio_monitoring.silence_health_check" do |app|
+        app.config.silence_healthcheck_path ||= Configuration::HEALTH_CHECK_PATH
+      end
+
       initializer "studio_monitoring.request_sampling", before: "appsignal.configure_rails_initialization" do |app|
         app.middleware.insert_after ActionDispatch::DebugExceptions, RequestSampling
       end
