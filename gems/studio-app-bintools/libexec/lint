@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Summary: Check style: standardrb, herb, i18n-tasks, biome
+# Verify style. style is the auto-fixing counterpart; keep the two in sync.
+set -e
+
+mise exec -- bundle exec standardrb
+
+mise exec -- herb-lint --simple .
+
+mise exec -- herb-format --check .
+
+mise exec -- bundle exec i18n-tasks health
+
+mise exec -- biome check

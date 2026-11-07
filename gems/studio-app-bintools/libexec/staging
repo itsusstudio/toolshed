@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Summary: Rebase the current branch on main and force-push it to staging
+
+set -euo pipefail
+
+force=false
+if [ "${1:-}" = "--force" ]; then
+  force=true
+fi
+
+branch="$(git rev-parse --abbrev-ref HEAD)"
+if [ "$branch" = "staging" ]; then
+  echo "Run this from the branch you want to deploy, not 'staging' itself."
+  exit 1
+fi
+
+git fetch origin
+if [ "$force" = false ]; then
+  git rebase origin/main
+fi
+git push --force origin "HEAD:staging"
+
+echo "✅ '$branch' is pushed to staging"
