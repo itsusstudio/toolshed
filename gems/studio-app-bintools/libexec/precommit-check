@@ -36,7 +36,7 @@ fi
 
 if [ -n "$web" ]; then
   echo "→ biome"
-  echo "$web" | xargs mise exec -- biome check --no-errors-on-unmatched || status=1
+  echo "$web" | xargs mise exec -- biome check --no-errors-on-unmatched --error-on-warnings || status=1
 fi
 
 if [ -n "$locales" ]; then

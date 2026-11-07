@@ -11,4 +11,4 @@ mise exec -- herb-format --check .
 
 mise exec -- bundle exec i18n-tasks health
 
-mise exec -- biome check
+mise exec -- biome check --error-on-warnings
