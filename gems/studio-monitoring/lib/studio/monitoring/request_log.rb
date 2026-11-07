@@ -29,6 +29,9 @@ module Studio
               params: params && param_filter.filter(params).to_json,
               host: event.payload[:host],
               cf_ray: request&.get_header("HTTP_CF_RAY"),
+              # Personal data kept on purpose, to trace abuse back to its
+              # source. FILTER_PARAMETERS filters :remote_ip, not client_ip.
+              client_ip: request&.remote_ip,
               exception: event.payload[:exception]&.first,
               exception_message: event.payload[:exception_object]&.message
             }.compact
