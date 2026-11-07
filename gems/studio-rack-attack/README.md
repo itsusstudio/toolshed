@@ -6,7 +6,7 @@ The Rack::Attack rules every studio app shares. Add `gem "studio-rack-attack"` t
 | --- | --- |
 | `studio/health_check` | `/up` is never blocked or throttled |
 | `studio/scanner_paths` | 404s dotfile, secret-file, path traversal, PHP/WordPress and CVE probes |
-| `studio/req/ip` | 300 requests a minute per client IP, assets excluded |
+| `studio/req/ip` | 300 requests a minute per client IP, assets and Active Storage files excluded |
 
 - On only when `ENABLE_RACK_ATTACK=true`.
 - `req.client_ip` is the real client: `CF-Connecting-IP` when the request came through a Cloudflare edge, otherwise `req.ip`. Key every per-IP rule on it, never on `req.ip`. Tests that send `CF-Connecting-IP` need a Cloudflare `REMOTE_ADDR`, such as `162.158.1.1`.

@@ -68,7 +68,8 @@ module Studio
       | /latest/meta-data/
     }ix
 
-    UNTHROTTLED_PATH_PREFIXES = ["/assets/", "/packs/"].freeze
+    # One page can load dozens of images through Active Storage redirects.
+    UNTHROTTLED_PATH_PREFIXES = ["/assets/", "/packs/", "/rails/active_storage/"].freeze
 
     # https://www.cloudflare.com/ips/
     CLOUDFLARE_RANGES = [

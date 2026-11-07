@@ -95,11 +95,14 @@ class Studio::RackAttackTest < ActionDispatch::IntegrationTest
     assert_response :too_many_requests
   end
 
-  test "health checks and assets are never throttled" do
+  test "health checks, assets and Active Storage files are never throttled" do
     301.times { get "/up" }
     assert_response :ok
 
     301.times { get "/assets/app.css" }
+    assert_response :ok
+
+    301.times { get "/rails/active_storage/blobs/redirect/abc/photo.webp" }
     assert_response :ok
   end
 
