@@ -17,6 +17,13 @@ module Studio
         end
       end
 
+      # Before AppSignal's railtie inserts RailsInstrumentation after
+      # DebugExceptions too, which then sits between DebugExceptions and this
+      # middleware, outside it as RequestSampling needs.
+      initializer "studio_monitoring.request_sampling", before: "appsignal.configure_rails_initialization" do |app|
+        app.middleware.insert_after ActionDispatch::DebugExceptions, RequestSampling
+      end
+
       # Runs after config/initializers so the app's configure block is in, and
       # before after_initialize, where lograge and posthog-rails read their
       # settings.
@@ -25,6 +32,7 @@ module Studio
         config.validate!
 
         ::Rails.event.subscribe(EventLog::Subscriber.new)
+        ::Rails.error.subscribe(RequestSampling)
         ::Rails.error.add_middleware(->(_error, context:, **) { Monitoring.default_properties.merge(context) })
 
         Telemetry.setup(config)

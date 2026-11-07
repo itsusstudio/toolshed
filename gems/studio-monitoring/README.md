@@ -114,6 +114,10 @@ Studio::Monitoring.configure do |c|
   # checks, Active Storage redirects, cable and Hotwire Native config.
   c.unlogged_actions += ["Portal::HealthController#show"]
 
+  # Optional. Path prefixes whose requests never reach AppSignal, such as
+  # internal admin tools. Default: none.
+  c.appsignal_ignored_paths = ["/admin"]
+
   # Optional. Any of :rails, :appsignal, :posthog. Default: all three.
   c.log_backends = [:rails, :appsignal, :posthog]
 
@@ -130,6 +134,15 @@ Rails.application.config.filter_parameters += Studio::Monitoring::FILTER_PARAMET
 The studio filter list covers request params, event payloads, error context and trace URLs. Add app-specific names after it.
 
 Without any code, the gem also logs one `http_request` event per request and one `job_performed` event per app job, traces requests and jobs, and logs `monitoring_configured` at boot listing what is on.
+
+## AppSignal request sampling
+
+AppSignal bills per request, so the gem keeps a quarter of ordinary requests and moves the rest into a namespace the agent drops. It always keeps server errors, requests that reported a handled error, and requests slower than 0.5s. It always drops 404s and `appsignal_ignored_paths`. Tell AppSignal to drop that namespace:
+
+```ruby
+# config/appsignal.rb
+config.ignore_namespaces = [Studio::Monitoring::RequestSampling::DROPPED_NAMESPACE]
+```
 
 ## Testing
 
