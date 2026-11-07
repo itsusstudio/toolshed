@@ -24,13 +24,11 @@ module Studio
       # Redaction cannot see. Entries are path prefixes or Regexps.
       DEFAULT_UNTRACED_PATHS = ["/assets/", "/rails/active_storage/"].freeze
 
-      attr_accessor :service_name, :actor_id, :tenant_id, :default_properties, :untraced_paths,
+      attr_accessor :service_name, :default_properties, :untraced_paths,
         :unlogged_actions, :appsignal_ignored_paths, :log_backends, :analytics_backends
       attr_reader :posthog
 
       def initialize
-        @actor_id = -> {}
-        @tenant_id = -> {}
         @default_properties = -> { {} }
         @untraced_paths = DEFAULT_UNTRACED_PATHS.dup
         @unlogged_actions = DEFAULT_UNLOGGED_ACTIONS.dup

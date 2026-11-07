@@ -1,7 +1,11 @@
 module Studio
   module Monitoring
+    # actor_id and tenant_id are plain ids the app sets once per request or
+    # job, where it authenticates. Every event, error and analytics call reads
+    # them, so looking them up there would query the database each time, and
+    # in development each query's own debug event would look them up again.
     class Current < ActiveSupport::CurrentAttributes
-      attribute :request_id, :job_id, :analytics_session_id
+      attribute :request_id, :job_id, :analytics_session_id, :actor_id, :tenant_id
 
       class << self
         def from_request(request)

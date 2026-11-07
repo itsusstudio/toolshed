@@ -4,7 +4,7 @@ class Studio::Monitoring::Analytics::Backends::DatabaseTest < ActiveSupport::Tes
   teardown { Studio::Monitoring::AnalyticsEvent.delete_all }
 
   test "#track stores the event with its actor and tenant in their own columns" do
-    TestContext.shop_id = 7
+    Studio::Monitoring::Current.tenant_id = 7
 
     Studio::Monitoring::Analytics::Backends::Database.new.track("recipe_saved", actor_id: 42,
       properties: {actor_id: 42, tenant_id: 7, recipe_id: 3})

@@ -21,8 +21,8 @@ class Studio::Monitoring::ErrorContextTest < ActiveSupport::TestCase
   teardown { Rails.error.unsubscribe(@recorder) }
 
   test "every Rails.error report carries the actor, tenant and request id" do
-    TestContext.user_id = 42
-    TestContext.shop_id = 7
+    Studio::Monitoring::Current.actor_id = 42
+    Studio::Monitoring::Current.tenant_id = 7
     Studio::Monitoring::Current.request_id = "req-1"
 
     Rails.error.report(StandardError.new("boom"))
@@ -31,7 +31,7 @@ class Studio::Monitoring::ErrorContextTest < ActiveSupport::TestCase
   end
 
   test "the caller's context wins over the defaults" do
-    TestContext.user_id = 42
+    Studio::Monitoring::Current.actor_id = 42
 
     Rails.error.report(StandardError.new("boom"), context: {actor_id: 1, url: "https://example.com"})
 
@@ -39,7 +39,7 @@ class Studio::Monitoring::ErrorContextTest < ActiveSupport::TestCase
   end
 
   test "errors Rails reports itself get the context too" do
-    TestContext.user_id = 42
+    Studio::Monitoring::Current.actor_id = 42
 
     Rails.error.handle { raise "boom" }
 

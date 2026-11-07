@@ -62,11 +62,11 @@ module Studio
       end
 
       def actor_id
-        Monitoring.config.actor_id.call
+        Current.actor_id
       end
 
       def tenant_id
-        Monitoring.config.tenant_id.call
+        Current.tenant_id
       end
 
       def summary

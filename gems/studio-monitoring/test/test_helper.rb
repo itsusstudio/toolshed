@@ -10,7 +10,7 @@ require "minitest/autorun"
 require "mocha/minitest"
 
 module TestContext
-  mattr_accessor :user_id, :shop_id, :platform
+  mattr_accessor :platform
 end
 
 FileUtils.mkdir_p(File.expand_path("dummy/log", __dir__))
@@ -27,8 +27,6 @@ end
 
 Studio::Monitoring.configure do |c|
   c.service_name = "dummy"
-  c.actor_id = -> { TestContext.user_id }
-  c.tenant_id = -> { TestContext.shop_id }
   c.default_properties = -> { {platform: TestContext.platform} }
 end
 
@@ -75,8 +73,6 @@ end
 
 class ActiveSupport::TestCase
   teardown do
-    TestContext.user_id = nil
-    TestContext.shop_id = nil
     TestContext.platform = nil
     Studio::Monitoring::Current.reset
   end

@@ -95,14 +95,8 @@ Studio::Monitoring.configure do |c|
     c.posthog_project token: posthog.public_project_token, host: posthog.server_host
   end
 
-  # Optional. Who is acting. Sent as actor_id; the PostHog distinct id.
-  c.actor_id = -> { Current.user&.id }
-
-  # Optional. Which tenant the work is for. Sent as tenant_id; the PostHog
-  # tenant group.
-  c.tenant_id = -> { Current.space&.id }
-
   # Optional. Extra properties on every event, error and analytics event.
+  # Runs for each one, so read values already in memory; never query.
   c.default_properties = -> { {platform: Current.platform} }
 
   # Optional. Path prefixes or Regexps never traced, for noise. Defaults to
@@ -124,6 +118,14 @@ Studio::Monitoring.configure do |c|
   # Optional. Any of :posthog, :database. Default: [:posthog].
   c.analytics_backends = [:posthog, :database]
 end
+```
+
+Set who is acting and for which tenant once, where the app authenticates, and in any job that acts for someone. `actor_id` is the PostHog distinct id and `tenant_id` the PostHog tenant group. Both are plain ids, so events never query the database to find them.
+
+```ruby
+# app/controllers/concerns/authentication.rb, once the session is resumed
+Studio::Monitoring::Current.actor_id = user.id
+Studio::Monitoring::Current.tenant_id = user.space_id
 ```
 
 ```ruby

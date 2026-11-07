@@ -2,8 +2,8 @@ require "test_helper"
 
 class Studio::Monitoring::EventLogTest < ActiveSupport::TestCase
   test "Rails.event lines carry the source, actor, tenant and app properties" do
-    TestContext.user_id = 42
-    TestContext.shop_id = 7
+    Studio::Monitoring::Current.actor_id = 42
+    Studio::Monitoring::Current.tenant_id = 7
     TestContext.platform = "ios"
 
     Rails.logger.expects(:info).with { |line|

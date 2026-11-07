@@ -17,7 +17,7 @@ class Studio::Monitoring::Analytics::Backends::PosthogTest < ActiveSupport::Test
   end
 
   test "#track puts the event in the tenant's group" do
-    TestContext.shop_id = 7
+    Studio::Monitoring::Current.tenant_id = 7
     @client.expects(:capture).with { |attrs| attrs[:groups] == {tenant: "7"} }
 
     @backend.track("recipe_saved", actor_id: 42, properties: {})

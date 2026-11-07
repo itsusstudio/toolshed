@@ -2,7 +2,7 @@ require "test_helper"
 
 class Studio::Monitoring::EventLog::Backends::PosthogTest < ActiveSupport::TestCase
   test "#log emits an OpenTelemetry record linked to the person and session replay" do
-    TestContext.user_id = 42
+    Studio::Monitoring::Current.actor_id = 42
     Studio::Monitoring::Current.analytics_session_id = "sess-1"
     logger = mock("otel logger")
     logger.expects(:on_emit).with(

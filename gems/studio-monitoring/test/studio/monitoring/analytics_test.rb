@@ -22,8 +22,8 @@ class Studio::Monitoring::AnalyticsTest < ActiveSupport::TestCase
   end
 
   test ".track adds actor, tenant, app properties and locale, letting explicit properties override them" do
-    TestContext.user_id = 42
-    TestContext.shop_id = 3
+    Studio::Monitoring::Current.actor_id = 42
+    Studio::Monitoring::Current.tenant_id = 3
     TestContext.platform = "ios"
     backend = mock("backend")
     backend.expects(:track).with("recipe_saved",
@@ -33,8 +33,8 @@ class Studio::Monitoring::AnalyticsTest < ActiveSupport::TestCase
     Studio::Monitoring::Analytics.track("recipe_saved", properties: {locale: "fr", recipe_id: 7})
   end
 
-  test ".track defaults actor_id to the configured actor" do
-    TestContext.user_id = 42
+  test ".track defaults actor_id to the current actor" do
+    Studio::Monitoring::Current.actor_id = 42
     backend = mock("backend")
     backend.expects(:track).with("session_started", has_entries(actor_id: 42))
     Studio::Monitoring::Analytics.stubs(:backends).returns([backend])
@@ -56,8 +56,8 @@ class Studio::Monitoring::AnalyticsTest < ActiveSupport::TestCase
     assert_nothing_raised { Studio::Monitoring::Analytics.track_llm_generation(kind: "photo") }
   end
 
-  test ".identify defaults actor_id to the configured actor" do
-    TestContext.user_id = 42
+  test ".identify defaults actor_id to the current actor" do
+    Studio::Monitoring::Current.actor_id = 42
     backend = mock("backend")
     backend.expects(:identify).with(actor_id: 42, properties: {})
     Studio::Monitoring::Analytics.stubs(:backends).returns([backend])
