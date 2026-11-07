@@ -2,13 +2,10 @@ require "studio/monitoring"
 
 module Studio
   module Monitoring
-    # Include in ActiveSupport::TestCase. Every test records events, analytics
-    # and metrics in memory, and sends no analytics to PostHog or the
-    # database unless it opts in with use_analytics_backends. Errors use
-    # Rails' assert_error_reported.
-    module TestHelper
-      extend ActiveSupport::Concern
-
+    # What TestHelper records into. Kept out of TestHelper because every
+    # constant in an included module resolves inside the including test
+    # class: TestHelper::Event shadowed apps' own Event model.
+    module TestRecording
       Event = Data.define(:name, :level, :payload)
       Analytic = Data.define(:event_name, :actor_id, :properties)
       Metric = Data.define(:kind, :name, :value, :tags)
@@ -39,7 +36,7 @@ module Studio
 
       module AnalyticsRecording
         def backends
-          recorder = TestHelper.recorder
+          recorder = TestRecording.recorder
           return super if recorder.nil?
 
           recorder.live_backends.map { |name| Analytics::Backends::ALL.fetch(name) } + [recorder]
@@ -48,12 +45,12 @@ module Studio
 
       module MetricsRecording
         def increment_counter(name, count = 1, tags: {})
-          TestHelper.recorder&.metrics&.<<(Metric.new(kind: :counter, name: name, value: count, tags: tags.compact))
+          TestRecording.recorder&.metrics&.<<(Metric.new(kind: :counter, name: name, value: count, tags: tags.compact))
           super
         end
 
         def record_duration(name, duration_ms, tags: {})
-          TestHelper.recorder&.metrics&.<<(Metric.new(kind: :duration, name: name, value: duration_ms, tags: tags.compact))
+          TestRecording.recorder&.metrics&.<<(Metric.new(kind: :duration, name: name, value: duration_ms, tags: tags.compact))
           super
         end
       end
@@ -65,7 +62,7 @@ module Studio
           def emit(event)
             payload = event[:payload].to_h.dup
             level = payload.delete(:level)&.to_sym || :info
-            TestHelper.recorder&.events&.<<(Event.new(name: event[:name].to_s, level: level, payload: payload))
+            TestRecording.recorder&.events&.<<(Event.new(name: event[:name].to_s, level: level, payload: payload))
           end
         end
       end
@@ -76,11 +73,19 @@ module Studio
 
       # Process-wide, not per thread: system tests run the app in a server
       # thread that must see the same recorder as the test.
-      mattr_accessor :recorder
+      mattr_accessor :recorder, instance_accessor: false
+    end
+
+    # Include in ActiveSupport::TestCase. Every test records events, analytics
+    # and metrics in memory, and sends no analytics to PostHog or the
+    # database unless it opts in with use_analytics_backends. Errors use
+    # Rails' assert_error_reported.
+    module TestHelper
+      extend ActiveSupport::Concern
 
       included do
-        setup { Studio::Monitoring::TestHelper.recorder = Recorder.new }
-        teardown { Studio::Monitoring::TestHelper.recorder = nil }
+        setup { Studio::Monitoring::TestRecording.recorder = Studio::Monitoring::TestRecording::Recorder.new }
+        teardown { Studio::Monitoring::TestRecording.recorder = nil }
       end
 
       # Sends analytics to real backends (:database, :posthog) for the rest of
@@ -160,7 +165,7 @@ module Studio
       private
 
       def monitoring_recorder
-        TestHelper.recorder || raise("Studio::Monitoring::TestHelper is not set up for this test")
+        TestRecording.recorder || raise("Studio::Monitoring::TestHelper is not set up for this test")
       end
 
       def recording(kind)

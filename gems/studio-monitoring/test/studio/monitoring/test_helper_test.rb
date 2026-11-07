@@ -114,7 +114,15 @@ end
 
 class Studio::Monitoring::TestHelperOffTest < ActiveSupport::TestCase
   test "without the helper, analytics use the configured backends" do
-    assert_nil Studio::Monitoring::TestHelper.recorder
+    assert_nil Studio::Monitoring::TestRecording.recorder
     assert_equal [Studio::Monitoring::Analytics::Backends::ALL.fetch(:posthog)], Studio::Monitoring::Analytics.backends
+  end
+end
+
+class Studio::Monitoring::TestHelperNamespaceTest < ActiveSupport::TestCase
+  # A constant in an included module resolves inside every including test
+  # class, so one named Event would shadow the app's Event model.
+  test "including the helper adds no constants to the test class" do
+    assert_empty Studio::Monitoring::TestHelper.constants
   end
 end
