@@ -5,7 +5,22 @@ module Studio
     # them, so looking them up there would query the database each time, and
     # in development each query's own debug event would look them up again.
     class Current < ActiveSupport::CurrentAttributes
-      attribute :request_id, :job_id, :analytics_session_id, :actor_id, :tenant_id
+      attribute :request_id, :job_id, :analytics_session_id, :actor_id, :tenant_id, :locale
+
+      def actor_id=(value)
+        super
+        Tags.apply(actor_id: value)
+      end
+
+      def tenant_id=(value)
+        super
+        Tags.apply(tenant_id: value)
+      end
+
+      def locale=(value)
+        super
+        Tags.apply(locale: value)
+      end
 
       class << self
         def from_request(request)

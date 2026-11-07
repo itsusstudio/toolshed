@@ -18,6 +18,7 @@ require "opentelemetry/instrumentation/net/http"
 require_relative "monitoring/configuration"
 require_relative "monitoring/filter_parameters"
 require_relative "monitoring/current"
+require_relative "monitoring/tags"
 require_relative "monitoring/redaction"
 require_relative "monitoring/telemetry"
 require_relative "monitoring/posthog_client"
@@ -58,7 +59,7 @@ module Studio
           actor_id: actor_id,
           tenant_id: tenant_id,
           **Monitoring.config.default_properties.call,
-          locale: I18n.locale
+          locale: Current.locale || I18n.locale
         }.compact
       end
 
