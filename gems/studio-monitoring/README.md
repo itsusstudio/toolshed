@@ -131,6 +131,43 @@ The studio filter list covers request params, event payloads, error context and 
 
 Without any code, the gem also logs one `http_request` event per request and one `job_performed` event per app job, traces requests and jobs, and logs `monitoring_configured` at boot listing what is on.
 
+## Testing
+
+```ruby
+# test/test_helper.rb
+require "studio/monitoring/test_helper"
+
+class ActiveSupport::TestCase
+  include Studio::Monitoring::TestHelper
+end
+```
+
+Each test records analytics and metrics in memory and sends nothing to PostHog or the database. Events and errors use Rails' own assertions.
+
+```ruby
+# Events: payload is a subset match, Regexp values allowed, level included
+assert_event_reported("checkout_return", payload: {level: :warn, success: false}) { post checkout_return_path }
+
+# Errors
+assert_error_reported(Stripe::Error) { charge! }
+
+# Analytics
+post recipes_path, params: params
+assert_analytics_tracked "recipe_saved", actor_id: user.id, properties: {recipe_id: Recipe.last.id}
+assert_analytics_identified actor_id: user.id
+assert_no_analytics_tracked "recipe_viewed"
+
+# Metrics
+assert_counter_incremented "recipe_url_import", tags: {ok: true}
+assert_duration_recorded "recipe_url_import.duration"
+```
+
+Each assertion takes an optional block, and then only counts what the block did. `tracked_analytics` and `recorded_metrics` return everything so far.
+
+For tests that need real rows, such as admin reports or system tests, `use_analytics_backends(:database)` sends analytics there for the rest of the test, or only inside a block.
+
+Event payloads are filtered by `filter_parameters`, so property names matching the filter list are hidden: anything containing `_key`, `email` or `address`, or ending in `token`. Pick another name, such as `orphaned_groups` instead of `group_keys`.
+
 ## :database analytics backend
 
 ```sh
