@@ -2,6 +2,7 @@
 
 Studio Ruby gems, one per directory in `gems/`.
 
+- [studio-app-bintools](gems/studio-app-bintools)
 - [studio-monitoring](gems/studio-monitoring)
 
 ## Install

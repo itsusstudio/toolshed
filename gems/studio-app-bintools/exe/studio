@@ -1,0 +1,5 @@
+#!/usr/bin/env ruby
+require "bundler"
+require "studio/app_bintools"
+
+exit Studio::AppBintools.cli(ARGV, root: Bundler.root.to_s)

@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# Summary: Install the pinned Chrome for Testing for system tests
+# Installs a pinned Chrome for Testing used ONLY by the system-test suite, so
+# automation never depends on or interferes with the developer's daily browser.
+# Idempotent: re-running is a no-op once installed.
+# The pinned version lives in .chrome-for-testing-version; set it to an exact
+# version (e.g. 131.0.6778.204) to lock the whole team + CI to one build.
+set -euo pipefail
+
+version_file=".chrome-for-testing-version"
+cache_dir=".chrome-for-testing"
+path_file="$cache_dir/executable-path"
+lock_file="$cache_dir/installed-version"
+
+version="$(tr -d '[:space:]' < "$version_file")"
+
+if [[ -f "$path_file" && -f "$lock_file" ]] \
+  && [[ "$(cat "$lock_file")" == "$version" ]] \
+  && [[ -x "$(cat "$path_file")" ]]; then
+  echo "Chrome for Testing ($version) already installed."
+  exit 0
+fi
+
+mkdir -p "$cache_dir"
+echo "Installing Chrome for Testing ($version)…"
+output="$(npx -y @puppeteer/browsers install "chrome@$version" --path "$cache_dir")"
+
+# Output's last line is: "chrome@<resolved-version> <absolute-executable-path>".
+# The path can contain spaces ("Google Chrome for Testing"), so keep everything
+# after the first space.
+binary="$(echo "$output" | tail -n1 | cut -d' ' -f2-)"
+
+if [[ ! -x "$binary" ]]; then
+  echo "Install failed: no executable at '$binary'" >&2
+  exit 1
+fi
+
+echo "$binary" > "$path_file"
+echo "$version" > "$lock_file"
+echo "Chrome for Testing installed: $binary"

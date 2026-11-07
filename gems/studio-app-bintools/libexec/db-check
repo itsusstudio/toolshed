@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Summary: Wait for the docker Postgres to accept connections
+set -u
+
+TIMEOUT="${1:-10}"
+
+for _ in $(seq "$TIMEOUT"); do
+  docker compose exec -T db pg_isready -U "${POSTGRES_USER:-postgres}" &>/dev/null && exit 0
+  sleep 1
+done
+
+echo "❌ PostgreSQL did not become ready within ${TIMEOUT}s"
+exit 1

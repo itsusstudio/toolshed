@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Summary: Update gems and importmap pins
+set -e
+
+SECONDS=0
+
+GREEN=32; BLUE=34
+announce() { echo -e "\033[0;$2m$1\033[0m"; }
+run() {
+  local split=$SECONDS
+  announce "\nRun $*" $BLUE
+  "$@"
+  announce "Completed $* in $((SECONDS - split)) seconds" $GREEN
+}
+
+run bundle update
+run bin/importmap update

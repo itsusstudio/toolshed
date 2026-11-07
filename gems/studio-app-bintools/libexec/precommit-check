@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# Summary: Lint only the staged (or given) files
+# Lints only the staged files (or the files given), as a fast pre-commit
+# counterpart to lint. herb-lint's parser-no-errors rule covers ERB syntax.
+set -uo pipefail
+
+if [ "$#" -gt 0 ]; then
+  files=$(printf '%s\n' "$@")
+else
+  files=$(git diff --cached --name-only --diff-filter=ACMR)
+fi
+
+pick() { printf '%s\n' "$files" | grep -E "$1" || true; }
+
+ruby=$(pick '\.(rb|rake|gemspec)$|^(Gemfile|Rakefile)$')
+erb=$(pick '\.erb$')
+web=$(pick '\.(js|jsx|ts|tsx|css|scss|json)$')
+locales=$(pick '^config/locales/.*\.yml$')
+gemfile_lock=$(pick '^Gemfile\.lock$')
+importmap=$(pick '^config/importmap\.rb$')
+
+status=0
+
+if [ -n "$ruby" ]; then
+  echo "→ standardrb"
+  echo "$ruby" | xargs mise exec -- bundle exec standardrb || status=1
+fi
+
+if [ -n "$erb" ]; then
+  echo "→ herb lint"
+  echo "$erb" | xargs mise exec -- herb-lint --simple || status=1
+  echo "→ herb format (check)"
+  echo "$erb" | xargs mise exec -- herb-format --check || status=1
+fi
+
+if [ -n "$web" ]; then
+  echo "→ biome"
+  echo "$web" | xargs mise exec -- biome check --no-errors-on-unmatched || status=1
+fi
+
+if [ -n "$locales" ]; then
+  echo "→ i18n-tasks"
+  mise exec -- bundle exec i18n-tasks health || status=1
+fi
+
+if [ -n "$gemfile_lock" ]; then
+  echo "→ bundler-audit"
+  bin/bundler-audit check --quiet || status=1
+fi
+
+if [ -n "$importmap" ]; then
+  echo "→ importmap audit"
+  bin/importmap audit || status=1
+fi
+
+exit $status

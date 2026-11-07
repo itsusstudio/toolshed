@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Summary: Prepare the database and dump the schema cache before boot
+set -euo pipefail
+
+bin/rails db:prepare
+bin/rails db:schema:cache:dump
+
+if [ -n "${STUDIO_FLIPPER:-}" ]; then
+  bin/rails flipper:sync
+fi

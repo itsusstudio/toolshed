@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+# Summary: Check this machine has what the app needs to run (copied; the app owns it)
+set -u
+
+EXIT_STATUS=0
+
+fail() { echo "❌ $1"; EXIT_STATUS=1; }
+hint() { echo "   ↳ $1"; }
+have() { command -v "$1" &>/dev/null; }
+
+if have docker; then
+  if ! docker info &>/dev/null; then
+    fail "docker installed but the daemon is not running"
+    hint "Start Docker Desktop / the docker service and re-run this check"
+  fi
+else
+  fail "docker not found"
+  hint "Install Docker: https://docs.docker.com/get-docker/"
+fi
+
+if ! docker compose version &>/dev/null; then
+  fail "docker compose plugin not found"
+  hint "Install Docker Compose: https://docs.docker.com/compose/install/"
+fi
+
+if have mise; then
+  mise trust &>/dev/null || true
+  if ! mise_out="$(mise install 2>&1)"; then
+    fail "mise could not provision ruby/node from mise.toml"
+    echo "$mise_out"
+    hint "Resolve the errors above, then re-run bin/dev-check"
+  fi
+else
+  fail "mise not found (manages Ruby + Node for this project)"
+  hint "Install mise: https://mise.jdx.dev   then reload your shell"
+fi
+
+if have mise && ! mise exec -- lefthook version &>/dev/null; then
+  fail "lefthook not available (manages git hooks)"
+  hint "https://github.com/evilmartians/lefthook"
+fi
+
+if ! have op; then
+  fail "1Password CLI (op) not found"
+  hint "Install the 1Password CLI: https://developer.1password.com/docs/cli/get-started/"
+fi
+
+have_libvips() {
+  have pkg-config && pkg-config --exists vips && return 0
+  have ldconfig && ldconfig -p 2>/dev/null | grep -q "libvips\.so\.42" && return 0
+  local dir
+  for dir in /opt/homebrew/lib /usr/local/lib /usr/lib /usr/lib64 \
+    /usr/lib/x86_64-linux-gnu /usr/lib/aarch64-linux-gnu; do
+    compgen -G "$dir/libvips.so.42*" >/dev/null && return 0
+    compgen -G "$dir/libvips.42.dylib" >/dev/null && return 0
+  done
+  return 1
+}
+
+if ! have_libvips; then
+  fail "libvips not found (Active Storage image analysis needs it, and the test suite processes variants directly)"
+  if [ "$(uname)" = "Darwin" ]; then
+    hint "brew install vips"
+  else
+    hint "Debian/Ubuntu: sudo apt install libvips42 — Fedora: sudo dnf install vips"
+  fi
+fi
+
+# System tests drive any Chromium-engine browser when bin/install-test-browser
+# has not pinned one.
+have_chrome() {
+  local bin app
+  for bin in chromium chromium-browser google-chrome google-chrome-stable \
+    brave-browser microsoft-edge microsoft-edge-stable; do
+    have "$bin" && return 0
+  done
+  [ "$(uname)" = "Darwin" ] || return 1
+  for app in "Google Chrome" "Chromium" "Google Chrome for Testing" \
+    "Brave Browser" "Microsoft Edge"; do
+    open -Ra "$app" &>/dev/null && return 0
+  done
+  return 1
+}
+
+if ! have_chrome; then
+  fail "no Chromium-engine browser found (required by Selenium for system tests)"
+  hint "Install Chrome, Chromium, Brave, or Edge"
+fi
+
+exit "$EXIT_STATUS"
