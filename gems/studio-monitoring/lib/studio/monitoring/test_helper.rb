@@ -2,23 +2,23 @@ require "studio/monitoring"
 
 module Studio
   module Monitoring
-    # Include in ActiveSupport::TestCase. Every test records analytics and
-    # metrics in memory and sends nothing to PostHog or the database, unless
-    # the test opts in with use_analytics_backends.
-    #
-    # Events and errors need nothing extra: Rails' assert_event_reported and
-    # assert_error_reported already cover them.
+    # Include in ActiveSupport::TestCase. Every test records events, analytics
+    # and metrics in memory, and sends no analytics to PostHog or the
+    # database unless it opts in with use_analytics_backends. Errors use
+    # Rails' assert_error_reported.
     module TestHelper
       extend ActiveSupport::Concern
 
+      Event = Data.define(:name, :level, :payload)
       Analytic = Data.define(:event_name, :actor_id, :properties)
       Metric = Data.define(:kind, :name, :value, :tags)
 
       class Recorder
-        attr_reader :analytics, :metrics
+        attr_reader :events, :analytics, :metrics
         attr_accessor :live_backends
 
         def initialize
+          @events = []
           @analytics = []
           @metrics = []
           @live_backends = []
@@ -58,6 +58,19 @@ module Studio
         end
       end
 
+      # Rails.event has already filtered the payload, so tests see what the
+      # log backends get.
+      module EventRecording
+        class << self
+          def emit(event)
+            payload = event[:payload].to_h.dup
+            level = payload.delete(:level)&.to_sym || :info
+            TestHelper.recorder&.events&.<<(Event.new(name: event[:name].to_s, level: level, payload: payload))
+          end
+        end
+      end
+
+      ::Rails.event.subscribe(EventRecording)
       Analytics.singleton_class.prepend(AnalyticsRecording)
       Metrics.singleton_class.prepend(MetricsRecording)
 
@@ -83,6 +96,25 @@ module Studio
         ensure
           monitoring_recorder.live_backends = previous
         end
+      end
+
+      def logged_events
+        monitoring_recorder.events
+      end
+
+      # Matches a subset of the payload; Regexp values match as text. With a
+      # block, only what the block logged counts.
+      def assert_event_logged(name, level: nil, payload: {}, &block)
+        events = recording(:events, &block)
+        match = events.find { |e| e.name == name.to_s && (level.nil? || e.level == level) && monitoring_subset?(e.payload, payload) }
+        assert match, monitoring_failure("event #{name.inspect}", {level: level, payload: payload}.compact, events)
+        match
+      end
+
+      def assert_no_event_logged(name = nil, level: nil, &block)
+        events = recording(:events, &block)
+        found = events.select { |e| (name.nil? || e.name == name.to_s) && (level.nil? || e.level == level) }
+        assert_empty found, "Expected no event#{" #{name.inspect}" if name}, got:\n  #{found.map(&:inspect).join("\n  ")}"
       end
 
       def tracked_analytics

@@ -142,11 +142,13 @@ class ActiveSupport::TestCase
 end
 ```
 
-Each test records analytics and metrics in memory and sends nothing to PostHog or the database. Events and errors use Rails' own assertions.
+Each test records events, analytics and metrics in memory, and sends no analytics to PostHog or the database. Errors use Rails' own assertion.
 
 ```ruby
-# Events: payload is a subset match, Regexp values allowed, level included
-assert_event_reported("checkout_return", payload: {level: :warn, success: false}) { post checkout_return_path }
+# Events: payload is a subset match after filtering, Regexp values allowed
+post checkout_return_path
+assert_event_logged "checkout_return", level: :warn, payload: {success: false, message: "session_not_complete"}
+assert_no_event_logged level: :error
 
 # Errors
 assert_error_reported(Stripe::Error) { charge! }
@@ -162,7 +164,7 @@ assert_counter_incremented "recipe_url_import", tags: {ok: true}
 assert_duration_recorded "recipe_url_import.duration"
 ```
 
-Each assertion takes an optional block, and then only counts what the block did. `tracked_analytics` and `recorded_metrics` return everything so far.
+Each assertion takes an optional block, and then only counts what the block did. `logged_events`, `tracked_analytics` and `recorded_metrics` return everything so far.
 
 For tests that need real rows, such as admin reports or system tests, `use_analytics_backends(:database)` sends analytics there for the rest of the test, or only inside a block.
 
