@@ -1,0 +1,17 @@
+class CreateAnalyticsEvents < ActiveRecord::Migration[<%= ActiveRecord::Migration.current_version %>]
+  def change
+    create_table :analytics_events do |t|
+      t.bigint :actor_id
+      t.bigint :tenant_id
+      t.string :event_name, null: false
+      t.jsonb :properties, null: false, default: {}
+      t.datetime :created_at, null: false, default: -> { "CURRENT_TIMESTAMP" }
+
+      t.index :actor_id
+      t.index :tenant_id
+      t.index :event_name
+      t.index :created_at
+      t.index :properties, using: :gin
+    end
+  end
+end

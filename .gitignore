@@ -1,0 +1,9 @@
+/.bundle/
+/vendor/bundle/
+/pkg/
+/tmp/
+gems/*/pkg/
+gems/*/tmp/
+gems/*/log/
+*.gem
+gems/*/test/dummy/
