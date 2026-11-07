@@ -7,16 +7,17 @@ Studio Ruby gems, one per directory in `gems/`.
 ## Install
 
 ```ruby
-git "https://github.com/itsusstudio/toolshed", tag: "v0.1.0", glob: "gems/*/*.gemspec" do
+git "https://github.com/itsusstudio/toolshed", branch: "main", glob: "gems/*/*.gemspec" do
   gem "studio-monitoring"
 end
 ```
+
+`Gemfile.lock` pins the commit. Take new toolshed code with `bundle update studio-monitoring`.
 
 Local checkout:
 
 ```sh
 bundle config local.studio-monitoring ~/projects/itsusstudio/toolshed
-bundle config disable_local_branch_check true
 ```
 
 ## Develop
@@ -24,7 +25,6 @@ bundle config disable_local_branch_check true
 ```sh
 mise install && bundle install && lefthook install
 bin/ci [gem ...]
-bin/release 0.2.0
 ```
 
-Pushing to main runs `bin/ci` for the gems that changed.
+Apps track `main`, so keep it green: pushing to main runs `bin/ci` for the gems that changed.

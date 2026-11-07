@@ -1,5 +1,5 @@
 ---
-name: new-gem
+name: add-toolshed-gem
 description: Cut a new studio-* gem in toolshed, following the studio-monitoring layout and conventions
 ---
 
@@ -55,4 +55,4 @@ gems/studio-<name>/
 
 ### Releasing
 
-All gems share `VERSION` and one tag. Bump `VERSION`, commit, then `bin/release <version>`. Apps add the gem to their existing toolshed `git` block.
+Apps track `main` (`branch: "main"`) and pin a commit in `Gemfile.lock`, so a release is a push to main. Apps add the gem to their existing toolshed `git` block and run `bundle update <gem>`.
