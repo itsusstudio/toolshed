@@ -56,6 +56,12 @@ PATH
       studio-monitoring
 
 PATH
+  remote: gems/studio-settings
+  specs:
+    studio-settings (0.1.0)
+      railties (>= 8.0)
+
+PATH
   remote: gems/studio-site-bintools
   specs:
     studio-site-bintools (0.1.0)
@@ -460,6 +466,7 @@ DEPENDENCIES
   studio-flags!
   studio-monitoring!
   studio-rack-attack!
+  studio-settings!
   studio-site-bintools!
   studio-standardrb!
 
@@ -592,6 +599,7 @@ CHECKSUMS
   studio-flags (0.1.0)
   studio-monitoring (0.1.0)
   studio-rack-attack (0.1.0)
+  studio-settings (0.1.0)
   studio-site-bintools (0.1.0)
   studio-standardrb (0.1.0)
   thor (1.5.0) sha256=e3a9e55fe857e44859ce104a84675ab6e8cd59c650a49106a05f55f136425e73
