@@ -152,7 +152,7 @@ config.ignore_namespaces = [Studio::Monitoring::RequestSampling::DROPPED_NAMESPA
 
 ## Browser analytics
 
-With `posthog_browser_hosts` set, `studio_analytics_tag` renders posthog-js: autocapture, dead clicks, session replay with every input masked unless it sits inside `[data-replay-unmask]` (passwords, one-time codes, card, email and phone fields, and anything inside `[data-replay-mask]` stay masked even there), and tracing headers so browser requests join the server's traces. It identifies the browser as `Current.actor_id`, the same distinct id as server events. Without the setting it renders nothing.
+With `posthog_browser_hosts` set, `studio_analytics_tag` renders posthog-js: autocapture, dead clicks, session replay with every input masked unless it sits inside `[data-replay-unmask]` (passwords, one-time codes, card, email and phone fields, and anything inside `[data-replay-mask]` stay masked even there), and tracing headers so browser requests join the server's traces. It identifies the browser as `Current.actor_id`, the same distinct id as server events, and puts it in the `Current.tenant_id` group. Without the setting it renders nothing.
 
 ```erb
 <%# app/views/layouts/application.html.erb, in <head> %>
@@ -169,6 +169,8 @@ def terminate_session
   reset_analytics_identity
 end
 ```
+
+The loader stub only queues calls until PostHog's `array.js` loads, and that file is always the latest SDK, so SDK releases need no gem change. Refresh the stub in `browser_analytics.js` from Project settings > Web snippet when PostHog changes the snippet. `posthog_browser_hosts` takes `defaults:`, PostHog's dated behaviour defaults; the gem pins one and moves it after reading PostHog's changelog, and an app can pin its own.
 
 Content Security Policy: the tag carries the request's nonce, and the browser needs `script-src` and `connect-src` for the browser host.
 

@@ -2,7 +2,11 @@ module Studio
   module Monitoring
     class Configuration
       PosthogProject = Data.define(:token, :host)
-      PosthogBrowser = Data.define(:host, :ui_host)
+      PosthogBrowser = Data.define(:host, :ui_host, :defaults)
+
+      # posthog-js behaviour defaults by release date. Move it forward on
+      # purpose, after reading PostHog's changelog for what changed.
+      POSTHOG_JS_DEFAULTS = "2026-05-30"
 
       # Channel actions are named by event (subscribe), not by callback
       # (subscribed) as AppSignal names them.
@@ -46,10 +50,10 @@ module Studio
 
       # host is where posthog-js sends events, usually a reverse proxy on the
       # app's own domain so ad blockers let them through.
-      def posthog_browser_hosts(host:, ui_host:)
+      def posthog_browser_hosts(host:, ui_host:, defaults: POSTHOG_JS_DEFAULTS)
         raise ArgumentError, "posthog_browser_hosts needs both host: and ui_host:" if host.blank? || ui_host.blank?
 
-        @posthog_browser = PosthogBrowser.new(host: host, ui_host: ui_host)
+        @posthog_browser = PosthogBrowser.new(host: host, ui_host: ui_host, defaults: defaults)
       end
 
       def validate!
