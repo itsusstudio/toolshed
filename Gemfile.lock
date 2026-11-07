@@ -5,6 +5,12 @@ PATH
       railties (>= 8.0)
 
 PATH
+  remote: gems/studio-enum
+  specs:
+    studio-enum (0.1.0)
+      activesupport (>= 8.0)
+
+PATH
   remote: gems/studio-monitoring
   specs:
     studio-monitoring (0.1.0)
@@ -408,6 +414,7 @@ DEPENDENCIES
   rake
   sqlite3
   studio-app-bintools!
+  studio-enum!
   studio-monitoring!
   studio-site-bintools!
   studio-standardrb!
@@ -531,6 +538,7 @@ CHECKSUMS
   standard-performance (1.9.0) sha256=49483d31be448292951d80e5e67cdcb576c2502103c7b40aec6f1b6e9c88e3f2
   standard-rails (1.6.0) sha256=8f1d19a402491901ee8148adb431682012838a73bb7d3b0e95aa339ea872497a
   studio-app-bintools (0.1.0)
+  studio-enum (0.1.0)
   studio-monitoring (0.1.0)
   studio-site-bintools (0.1.0)
   studio-standardrb (0.1.0)
