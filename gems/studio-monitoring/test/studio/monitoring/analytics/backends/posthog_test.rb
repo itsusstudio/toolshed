@@ -31,6 +31,12 @@ class Studio::Monitoring::Analytics::Backends::PosthogTest < ActiveSupport::Test
     @backend.track("share_viewed", actor_id: nil, properties: {})
   end
 
+  test "#identify_tenant sets group properties on the tenant group" do
+    @client.expects(:group_identify).with(group_type: "tenant", group_key: "7", properties: {plan: "pro"})
+
+    @backend.identify_tenant(tenant_id: 7, properties: {plan: "pro"})
+  end
+
   test "#track does nothing when PostHog is not initialized" do
     backend = Studio::Monitoring::Analytics::Backends::Posthog.new
 

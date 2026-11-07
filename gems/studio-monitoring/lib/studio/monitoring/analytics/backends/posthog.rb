@@ -3,6 +3,8 @@ module Studio
     module Analytics
       module Backends
         class Posthog
+          TENANT_GROUP = "tenant"
+
           # Without a distinct_id PostHog records the event as personless, which
           # is what logged-out visitors should be.
           def track(event_name, actor_id:, properties:)
@@ -16,6 +18,12 @@ module Studio
             return if client.nil?
 
             client.identify(distinct_id: actor_id.to_s, properties: properties)
+          end
+
+          def identify_tenant(tenant_id:, properties:)
+            return if client.nil?
+
+            client.group_identify(group_type: TENANT_GROUP, group_key: tenant_id.to_s, properties: properties)
           end
 
           def track_llm_generation(actor_id:, kind:, model:, ok:, error_code:, duration_ms:,
@@ -44,7 +52,7 @@ module Studio
 
           def groups
             tenant_id = Monitoring.tenant_id
-            {tenant: tenant_id.to_s} if tenant_id
+            {TENANT_GROUP.to_sym => tenant_id.to_s} if tenant_id
           end
 
           def session_id

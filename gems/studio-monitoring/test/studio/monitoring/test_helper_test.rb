@@ -58,6 +58,13 @@ class Studio::Monitoring::TestHelperTest < ActiveSupport::TestCase
     assert_analytics_tracked "$ai_generation", actor_id: 3, properties: {kind: "recipe_extraction"}
   end
 
+  test "records tenant identities" do
+    Studio::Monitoring::Analytics.identify_tenant(tenant_id: 7, properties: {plan: "pro"})
+
+    assert_tenant_identified tenant_id: 7, properties: {plan: "pro"}
+    assert_raises(Minitest::Assertion) { assert_tenant_identified tenant_id: 8 }
+  end
+
   test "use_analytics_backends sends to real backends and keeps recording" do
     use_analytics_backends(:database)
 

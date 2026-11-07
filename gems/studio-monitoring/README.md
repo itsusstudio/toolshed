@@ -76,6 +76,7 @@ When: a user did something you want in funnels, retention or per-tenant usage.
 ```ruby
 Studio::Monitoring::Analytics.track("recipe_saved", properties: {recipe_id: recipe.id})
 Studio::Monitoring::Analytics.identify(properties: {timezone: user.timezone})  # no email or name
+Studio::Monitoring::Analytics.identify_tenant(properties: {plan: "pro", seats: 4})  # the tenant group's properties
 Studio::Monitoring::Analytics.track_llm_generation(kind: "recipe_extraction", model: model, ok: true,
   error_code: nil, duration_ms: 900, input_tokens: 1200, output_tokens: 300,
   cache_read_tokens: 0, cache_write_tokens: 0)
@@ -197,6 +198,7 @@ assert_error_reported(Stripe::Error) { charge! }
 post recipes_path, params: params
 assert_analytics_tracked "recipe_saved", actor_id: user.id, properties: {recipe_id: Recipe.last.id}
 assert_analytics_identified actor_id: user.id
+assert_tenant_identified tenant_id: space.id, properties: {plan: "pro"}
 assert_no_analytics_tracked "recipe_viewed"
 
 # Metrics

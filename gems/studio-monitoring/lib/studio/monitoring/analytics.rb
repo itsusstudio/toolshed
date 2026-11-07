@@ -19,6 +19,17 @@ module Studio
           each_backend("identify") { |backend| backend.identify(actor_id: actor_id, properties: properties.compact) }
         end
 
+        # Group properties for the tenant, such as plan or team size, so
+        # analytics can be broken down per tenant. Same rule: nothing
+        # identifying.
+        def identify_tenant(tenant_id: Monitoring.tenant_id, properties: {})
+          return if tenant_id.nil?
+
+          each_backend("identify_tenant") do |backend|
+            backend.identify_tenant(tenant_id: tenant_id, properties: properties.compact)
+          end
+        end
+
         def track_llm_generation(actor_id: Monitoring.actor_id, **generation)
           each_backend("llm_generation") do |backend|
             next if !backend.respond_to?(:track_llm_generation)

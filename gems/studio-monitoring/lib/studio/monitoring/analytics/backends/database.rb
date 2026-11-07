@@ -14,6 +14,9 @@ module Studio
 
           def identify(actor_id:, properties:)
           end
+
+          def identify_tenant(tenant_id:, properties:)
+          end
         end
       end
     end

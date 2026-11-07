@@ -56,6 +56,23 @@ class Studio::Monitoring::AnalyticsTest < ActiveSupport::TestCase
     assert_nothing_raised { Studio::Monitoring::Analytics.track_llm_generation(kind: "photo") }
   end
 
+  test ".identify_tenant defaults to the current tenant and drops nil properties" do
+    Studio::Monitoring::Current.tenant_id = 7
+    backend = mock("backend")
+    backend.expects(:identify_tenant).with(tenant_id: 7, properties: {plan: "pro"})
+    Studio::Monitoring::Analytics.stubs(:backends).returns([backend])
+
+    Studio::Monitoring::Analytics.identify_tenant(properties: {plan: "pro", seats: nil})
+  end
+
+  test ".identify_tenant without a tenant does nothing" do
+    backend = mock("backend")
+    backend.expects(:identify_tenant).never
+    Studio::Monitoring::Analytics.stubs(:backends).returns([backend])
+
+    Studio::Monitoring::Analytics.identify_tenant(properties: {plan: "pro"})
+  end
+
   test ".identify defaults actor_id to the current actor" do
     Studio::Monitoring::Current.actor_id = 42
     backend = mock("backend")

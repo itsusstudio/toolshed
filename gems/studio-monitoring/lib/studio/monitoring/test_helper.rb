@@ -8,16 +8,18 @@ module Studio
     module TestRecording
       Event = Data.define(:name, :level, :payload)
       Analytic = Data.define(:event_name, :actor_id, :properties)
+      TenantIdentity = Data.define(:tenant_id, :properties)
       Metric = Data.define(:kind, :name, :value, :tags)
 
       class Recorder
-        attr_reader :events, :analytics, :metrics
+        attr_reader :events, :analytics, :metrics, :tenant_identities
         attr_accessor :live_backends
 
         def initialize
           @events = []
           @analytics = []
           @metrics = []
+          @tenant_identities = []
           @live_backends = []
         end
 
@@ -27,6 +29,10 @@ module Studio
 
         def identify(actor_id:, properties:)
           analytics << Analytic.new(event_name: "$identify", actor_id: actor_id, properties: properties)
+        end
+
+        def identify_tenant(tenant_id:, properties:)
+          tenant_identities << TenantIdentity.new(tenant_id: tenant_id, properties: properties)
         end
 
         def track_llm_generation(actor_id:, **generation)
@@ -147,6 +153,13 @@ module Studio
 
       def assert_analytics_identified(actor_id: :any, properties: {}, &block)
         assert_analytics_tracked("$identify", actor_id: actor_id, properties: properties, &block)
+      end
+
+      def assert_tenant_identified(tenant_id: :any, properties: {}, &block)
+        identities = recording(:tenant_identities, &block)
+        match = identities.find { |i| (tenant_id == :any || i.tenant_id == tenant_id) && monitoring_subset?(i.properties, properties) }
+        assert match, monitoring_failure("tenant identify", {tenant_id: tenant_id, properties: properties}, identities)
+        match
       end
 
       def assert_counter_incremented(name, by: nil, tags: {}, &block)
