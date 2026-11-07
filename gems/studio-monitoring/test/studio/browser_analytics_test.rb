@@ -33,6 +33,7 @@ class Studio::Monitoring::BrowserAnalyticsTest < ActionDispatch::IntegrationTest
     assert_equal "https://e.example.com", script["data-posthog-host"]
     assert_equal "https://us.posthog.com", script["data-posthog-ui-host"]
     assert_equal "2026-05-30", script["data-posthog-defaults"]
+    assert_equal [], JSON.parse(script["data-posthog-masked-paths"])
     assert_equal({"platform" => "web"}, JSON.parse(script["data-posthog-properties"]))
     assert_includes script.text, "posthog.init"
     assert_nil script["data-posthog-user-id"]
@@ -54,6 +55,14 @@ class Studio::Monitoring::BrowserAnalyticsTest < ActionDispatch::IntegrationTest
 
     get "/analytics_tag"
     assert_nil script_tag["data-posthog-reset"]
+  end
+
+  test "passes the app's masked paths so the browser cuts token URLs to their prefix" do
+    Studio::Monitoring.config.stubs(:posthog_masked_paths).returns(["/t/", "/passwords/"])
+
+    get "/analytics_tag"
+
+    assert_equal ["/t/", "/passwords/"], JSON.parse(script_tag["data-posthog-masked-paths"])
   end
 
   test "renders nothing without a browser setup" do

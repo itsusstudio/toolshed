@@ -30,7 +30,8 @@ module Studio
       DEFAULT_UNTRACED_PATHS = ["/assets/", "/rails/active_storage/"].freeze
 
       attr_accessor :service_name, :default_properties, :untraced_paths,
-        :unlogged_actions, :appsignal_ignored_paths, :log_backends, :analytics_backends
+        :unlogged_actions, :appsignal_ignored_paths, :log_backends, :analytics_backends,
+        :posthog_masked_paths
       attr_reader :posthog, :posthog_browser
 
       def initialize
@@ -38,6 +39,7 @@ module Studio
         @untraced_paths = DEFAULT_UNTRACED_PATHS.dup
         @unlogged_actions = DEFAULT_UNLOGGED_ACTIONS.dup
         @appsignal_ignored_paths = []
+        @posthog_masked_paths = []
         @log_backends = [:rails, :appsignal, :posthog]
         @analytics_backends = [:posthog]
       end

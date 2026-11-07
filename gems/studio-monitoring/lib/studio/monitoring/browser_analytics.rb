@@ -19,6 +19,7 @@ module Studio
             posthog_host: browser.host,
             posthog_ui_host: browser.ui_host,
             posthog_defaults: browser.defaults,
+            posthog_masked_paths: Monitoring.config.posthog_masked_paths.to_json,
             posthog_user_id: Current.actor_id,
             posthog_tenant_id: Current.tenant_id,
             posthog_properties: properties.compact.to_json,

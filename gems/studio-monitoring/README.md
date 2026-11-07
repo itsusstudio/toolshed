@@ -112,6 +112,10 @@ Studio::Monitoring.configure do |c|
   # checks, Active Storage redirects, cable and Hotwire Native config.
   c.unlogged_actions += ["Portal::HealthController#show"]
 
+  # Optional. Path prefixes whose URLs work as keys (share links, password
+  # resets). The browser sends them to PostHog cut to the prefix. Default: none.
+  c.posthog_masked_paths = ["/t/", "/passwords/"]
+
   # Optional. Path prefixes whose requests never reach AppSignal, such as
   # internal admin tools. Default: none.
   c.appsignal_ignored_paths = ["/admin"]
@@ -158,6 +162,8 @@ With `posthog_browser_hosts` set, `studio_analytics_tag` renders posthog-js: aut
 <%# app/views/layouts/application.html.erb, in <head> %>
 <%= studio_analytics_tag(properties: {platform: "web"}) unless controller_path.start_with?("admin/") %>
 ```
+
+Every URL the browser sends loses its query string and hash, and paths under `posthog_masked_paths` are cut to the prefix, so a share or reset link in PostHog never works. Autocapture records what was clicked but not its text or attributes, and replay masks page text as well as inputs outside `[data-replay-unmask]`, and blanks `mailto:` and `tel:` links.
 
 `properties` are registered on every browser event; keep them low cardinality and free of personal data. Turbo re-runs the tag when its attributes change, such as on sign-in.
 

@@ -1,7 +1,21 @@
 // Turbo re-runs this script when its data attributes change (sign in, sign
 // out), so keep everything block-scoped.
 {
-  const { posthogToken, posthogHost, posthogUiHost, posthogDefaults, posthogUserId, posthogTenantId, posthogProperties, posthogReset } = document.currentScript.dataset;
+  const { posthogToken, posthogHost, posthogUiHost, posthogDefaults, posthogMaskedPaths, posthogUserId, posthogTenantId, posthogProperties, posthogReset } = document.currentScript.dataset;
+  // Some URLs work as keys (share links, password resets), so every URL sent
+  // loses its query and hash, and masked paths are cut to their prefix.
+  const maskedPaths = JSON.parse(posthogMaskedPaths)
+  const maskUrl = (value) => {
+    if (typeof value !== "string" || !/^(https?:|\/)/i.test(value)) return value
+    let url
+    try { url = new URL(value, location.origin) } catch { return value }
+    const prefix = maskedPaths.find((path) => url.pathname.startsWith(path))
+    const path = prefix || url.pathname
+    return value.startsWith("/") ? path : url.origin + path
+  }
+  const maskUrls = (props) => {
+    for (const key in props || {}) if (/(url|pathname|referrer|href)$/i.test(key)) props[key] = maskUrl(props[key])
+  }
   // PostHog's loader stub, from Project settings > Web snippet (2026-11-07).
   // It only queues calls until array.js, always the latest SDK, loads, so
   // refresh it when PostHog's snippet changes rather than for SDK updates.
@@ -13,6 +27,11 @@
       ui_host: posthogUiHost,
       tracing_headers: [location.hostname],
       session_recording: {
+        // Page text is masked like inputs: shown only inside [data-replay-unmask].
+        maskTextSelector: "*",
+        maskTextFn: (text, element) => element?.closest("[data-replay-unmask]") ? text : text.replace(/\S/g, "*"),
+        blockSelector: 'a[href^="mailto:"], a[href^="tel:"]',
+        maskCapturedNetworkRequestFn: (request) => ({...request, name: maskUrl(request.name)}),
         maskAllInputs: true,
         // Every input is masked unless a field opts in. Secrets, contact details
         // and data-replay-mask stay masked even inside an opted-in form.
@@ -27,6 +46,14 @@
         }
       },
       defaults: posthogDefaults,
+      before_send: (event) => {
+        if (event) [event.properties, event.$set, event.$set_once].forEach(maskUrls)
+        return event
+      },
+      // Autocapture keeps what was clicked, never its text or attributes, so
+      // a customer's name or mailto: link never leaves the page.
+      mask_all_text: true,
+      mask_all_element_attributes: true,
       autocapture: true,
       capture_dead_clicks: true,
       person_profiles: "identified_only"
