@@ -2,19 +2,25 @@
 // out), so keep everything block-scoped.
 {
   const { posthogToken, posthogHost, posthogUiHost, posthogDefaults, posthogMaskedPaths, posthogUserId, posthogTenantId, posthogProperties, posthogReset } = document.currentScript.dataset;
-  // Some URLs work as keys (share links, password resets), so every URL sent
-  // loses its query and hash, and masked paths are cut to their prefix.
+  // Some URLs work as keys (share links, password resets), so URLs lose
+  // their query, and masked paths are cut to their prefix. Walks the whole
+  // event, as PostHog's before_send redaction guide does, so nested URLs in
+  // replay and web vitals are covered too.
   const maskedPaths = JSON.parse(posthogMaskedPaths)
-  const maskUrl = (value) => {
-    if (typeof value !== "string" || !/^(https?:|\/)/i.test(value)) return value
+  const redactUrl = (value) => {
+    if (!/^(https?:|\/)/i.test(value)) return value
     let url
     try { url = new URL(value, location.origin) } catch { return value }
-    const prefix = maskedPaths.find((path) => url.pathname.startsWith(path))
-    const path = prefix || url.pathname
+    const path = maskedPaths.find((prefix) => url.pathname.startsWith(prefix)) || url.pathname
     return value.startsWith("/") ? path : url.origin + path
   }
-  const maskUrls = (props) => {
-    for (const key in props || {}) if (/(url|pathname|referrer|href)$/i.test(key)) props[key] = maskUrl(props[key])
+  const redact = (value, key = "") => {
+    if (typeof value === "string") return /(url|pathname|referrer|href)$/i.test(key) ? redactUrl(value) : value
+    if (Array.isArray(value)) return value.map((item) => redact(item, key))
+    if (value && typeof value === "object") {
+      for (const name in value) value[name] = redact(value[name], name)
+    }
+    return value
   }
   // PostHog's loader stub, from Project settings > Web snippet (2026-11-07).
   // It only queues calls until array.js, always the latest SDK, loads, so
@@ -31,7 +37,7 @@
         maskTextSelector: "*",
         maskTextFn: (text, element) => element?.closest("[data-replay-unmask]") ? text : text.replace(/\S/g, "*"),
         blockSelector: 'a[href^="mailto:"], a[href^="tel:"]',
-        maskCapturedNetworkRequestFn: (request) => ({...request, name: maskUrl(request.name)}),
+        maskCapturedNetworkRequestFn: (request) => ({...request, name: redactUrl(request.name)}),
         maskAllInputs: true,
         // Every input is masked unless a field opts in. Secrets, contact details
         // and data-replay-mask stay masked even inside an opted-in form.
@@ -46,8 +52,9 @@
         }
       },
       defaults: posthogDefaults,
+      disable_capture_url_hashes: true,
       before_send: (event) => {
-        if (event) [event.properties, event.$set, event.$set_once].forEach(maskUrls)
+        if (event) ["properties", "$set", "$set_once"].forEach((part) => redact(event[part]))
         return event
       },
       // Autocapture keeps what was clicked, never its text or attributes, so
