@@ -8,7 +8,7 @@ Gem::Specification.new do |spec|
   spec.description = "The CI, lint, outdated and image scripts every studio marketing site runs, shared instead of copied. Sites run them through bin/studio, a Bundler binstub."
   spec.homepage = "https://github.com/itsusstudio/toolshed/tree/main/gems/studio-site-bintools"
   spec.license = "MIT"
-  spec.required_ruby_version = ">= 3.3"
+  spec.required_ruby_version = ">= 3.4"
 
   spec.metadata["source_code_uri"] = spec.homepage
 
