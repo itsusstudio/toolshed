@@ -4,6 +4,7 @@ CI, lint and image scripts for studio Bridgetown marketing sites, run as `bin/st
 
 ```sh
 bin/studio                         # list scripts
+bin/studio help optimize-images   # usage, also <script> --help
 bin/studio ci
 bin/studio optimize-images --check
 ```
@@ -55,4 +56,4 @@ fingerprinting:                                        # all optional
 
 ## Adding a script
 
-Put it in `libexec/`, executable, with a `# Summary:` line under the shebang. It runs from the site root.
+Put it in `libexec/`, executable, with a `# Summary:` line under the shebang, and a `# Usage:` line under that if it takes arguments. bin/studio answers `--help` itself, so the script never sees it, unless the script is listed in `OWN_HELP`. It runs from the site root.

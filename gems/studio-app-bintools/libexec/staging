@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Summary: Rebase the current branch on main and force-push it to staging
+# Usage: staging [--force]   (--force skips the rebase onto main)
 
 set -euo pipefail
 

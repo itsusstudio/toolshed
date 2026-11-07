@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Summary: Wait for the docker Postgres to accept connections
+# Usage: db-check [timeout-seconds]
 set -u
 
 TIMEOUT="${1:-10}"

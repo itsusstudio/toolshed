@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Summary: Lint only the staged (or given) files
+# Usage: precommit-check [file ...]
 # Lints only the staged files (or the files given), as a fast pre-commit
 # counterpart to lint. herb-lint's parser-no-errors rule covers ERB syntax.
 set -uo pipefail
