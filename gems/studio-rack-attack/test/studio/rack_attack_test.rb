@@ -61,6 +61,26 @@ class Studio::RackAttackTest < ActionDispatch::IntegrationTest
     assert_response :too_many_requests
   end
 
+  test "a spoofed Forwarded header behind our load balancer can't pose as a Cloudflare edge" do
+    headers = {"REMOTE_ADDR" => "10.0.0.5", "HTTP_X_FORWARDED_FOR" => "198.51.100.8", "HTTP_FORWARDED" => "for=#{EDGE}"}
+
+    300.times { |i| get "/recipes", headers: headers.merge("CF-Connecting-IP" => "203.0.113.#{i % 250}") }
+    get "/recipes", headers: headers.merge("CF-Connecting-IP" => "203.0.113.251", "HTTP_FORWARDED" => "for=198.51.100.99")
+
+    assert_response :too_many_requests
+  end
+
+  test "through our load balancer, a Cloudflare edge in X-Forwarded-For is trusted" do
+    headers = {"REMOTE_ADDR" => "10.0.0.5", "HTTP_X_FORWARDED_FOR" => "203.0.113.50, #{EDGE}"}
+
+    300.times { get "/recipes", headers: headers.merge("CF-Connecting-IP" => "203.0.113.1") }
+    get "/recipes", headers: headers.merge("CF-Connecting-IP" => "203.0.113.2")
+    assert_response :ok
+
+    get "/recipes", headers: headers.merge("CF-Connecting-IP" => "203.0.113.1")
+    assert_response :too_many_requests
+  end
+
   test ".cloudflare? matches IPv4 and IPv6 edges and rejects anything else" do
     assert Studio::RackAttack.cloudflare?(EDGE)
     assert Studio::RackAttack.cloudflare?("2606:4700::1")

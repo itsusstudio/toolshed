@@ -80,14 +80,23 @@ module Studio
       "2405:8100::/32", "2a06:98c0::/29", "2c0f:f248::/32"
     ].map { IPAddr.new(it) }.freeze
 
-    # Behind Cloudflare, req.ip is an edge IP shared by thousands of unrelated
-    # clients, and CF-Connecting-IP holds the real one. The header is only
-    # trusted from a Cloudflare edge: the origin is reachable directly too, and
-    # there anyone could send a new value per request to dodge every throttle.
+    # Behind Cloudflare, the peer is an edge IP shared by thousands of
+    # unrelated clients, and CF-Connecting-IP holds the real one. The header is
+    # only trusted from a Cloudflare edge: the origin is reachable directly
+    # too, and there anyone could send a new value per request to dodge every
+    # throttle.
     module ClientIp
       def client_ip
         forwarded = env["HTTP_CF_CONNECTING_IP"].presence
-        (forwarded && RackAttack.cloudflare?(ip)) ? forwarded : ip
+        (forwarded && RackAttack.cloudflare?(peer_ip)) ? forwarded : peer_ip
+      end
+
+      # The nearest untrusted hop: REMOTE_ADDR, or the last X-Forwarded-For
+      # entry our own load balancer appended. Unlike req.ip, it ignores the
+      # client-supplied Forwarded header, which Rack reads first.
+      def peer_ip
+        hops = [*env["HTTP_X_FORWARDED_FOR"].to_s.split(","), env["REMOTE_ADDR"]].map { it.to_s.strip }.compact_blank
+        hops.rfind { !trusted_proxy?(it) } || hops.first
       end
     end
 
