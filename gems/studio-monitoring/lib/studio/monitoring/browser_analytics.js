@@ -12,10 +12,12 @@
       // Every input is masked unless a field opts in. Secrets, contact details
       // and data-replay-mask stay masked even inside an opted-in form.
       maskInputFn: (text, element) => {
-        const autocomplete = element?.autocomplete || ""
+        // autocomplete can carry several tokens, like "section-pay cc-number".
+        const tokens = (element?.getAttribute?.("autocomplete") || "").toLowerCase().split(/\s+/)
+        const secretToken = (token) => ["current-password", "new-password", "one-time-code", "email"].includes(token) ||
+          token.startsWith("cc-") || token.startsWith("tel")
         const secret = ["password", "email", "tel"].includes(element?.type) ||
-          ["current-password", "new-password", "one-time-code"].includes(autocomplete) ||
-          autocomplete.startsWith("cc-") || element?.closest("[data-replay-mask]")
+          tokens.some(secretToken) || element?.closest("[data-replay-mask]")
         return element?.closest("[data-replay-unmask]") && !secret ? text : "*".repeat(text.length)
       }
     },
