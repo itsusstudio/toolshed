@@ -90,9 +90,12 @@ Studio::Monitoring.configure do |c|
   c.service_name = "belly"
 
   # Optional. Turns on PostHog: analytics, logs, errors, traces and metrics.
-  # Omit to keep PostHog off.
+  # Omit to keep PostHog off. posthog_browser_hosts also turns on posthog-js
+  # through studio_analytics_tag; its host is where the browser sends events,
+  # ideally a reverse proxy on the app's domain.
   if (posthog = AppSettings.posthog)
     c.posthog_project token: posthog.public_project_token, host: posthog.server_host
+    c.posthog_browser_hosts host: posthog.proxy_host, ui_host: posthog.ui_host
   end
 
   # Optional. Extra properties on every event, error and analytics event.
@@ -145,6 +148,28 @@ AppSignal bills per request, so the gem keeps a quarter of ordinary requests and
 # config/appsignal.rb
 config.ignore_namespaces = [Studio::Monitoring::RequestSampling::DROPPED_NAMESPACE]
 ```
+
+## Browser analytics
+
+With `posthog_browser_hosts` set, `studio_analytics_tag` renders posthog-js: autocapture, dead clicks, session replay with passwords, emails, phone numbers, one-time codes and anything inside `[data-replay-mask]` masked, and tracing headers so browser requests join the server's traces. It identifies the browser as `Current.actor_id`, the same distinct id as server events. Without the setting it renders nothing.
+
+```erb
+<%# app/views/layouts/application.html.erb, in <head> %>
+<%= studio_analytics_tag(properties: {platform: "web"}) unless controller_path.start_with?("admin/") %>
+```
+
+`properties` are registered on every browser event; keep them low cardinality and free of personal data. Turbo re-runs the tag when its attributes change, such as on sign-in.
+
+On sign-out, call `reset_analytics_identity` in the controller so the next page drops the browser's identity and the next person on the device starts fresh:
+
+```ruby
+def terminate_session
+  reset_session
+  reset_analytics_identity
+end
+```
+
+Content Security Policy: the tag carries the request's nonce, and the browser needs `script-src` and `connect-src` for the browser host.
 
 ## Testing
 

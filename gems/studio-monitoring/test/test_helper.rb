@@ -47,6 +47,8 @@ DummyApp.routes.draw do
   get "/ping", to: "ping#show"
   get "/t/:token", to: "ping#show"
   get "/recipes/:id", to: "ping#show"
+  get "/analytics_tag", to: "analytics_tag#show"
+  post "/sign_out", to: "analytics_tag#sign_out"
 end
 
 class ApplicationController < ActionController::Base

@@ -26,6 +26,25 @@ class Studio::Monitoring::ConfigurationTest < ActiveSupport::TestCase
     assert_raises(ArgumentError) { @config.posthog_project(token: nil, host: "https://us.i.posthog.com") }
   end
 
+  test "#posthog_browser_hosts stores the host and UI host" do
+    @config.posthog_browser_hosts(host: "https://e.example.com", ui_host: "https://us.posthog.com")
+
+    assert_equal "https://e.example.com", @config.posthog_browser.host
+    assert_equal "https://us.posthog.com", @config.posthog_browser.ui_host
+  end
+
+  test "#posthog_browser_hosts raises when one of host or UI host is blank" do
+    assert_raises(ArgumentError) { @config.posthog_browser_hosts(host: "https://e.example.com", ui_host: nil) }
+  end
+
+  test "#validate! raises on a browser setup without a project" do
+    @config.service_name = "dummy"
+    @config.posthog_browser_hosts(host: "https://e.example.com", ui_host: "https://us.posthog.com")
+
+    error = assert_raises(ArgumentError) { @config.validate! }
+    assert_match "c.posthog_project", error.message
+  end
+
   test "backend and ignore lists start as defaults apps can add to" do
     @config.unlogged_actions += ["AppController#ping"]
 

@@ -32,6 +32,7 @@ require_relative "monitoring/logs"
 require_relative "monitoring/metrics"
 require_relative "monitoring/analytics"
 require_relative "monitoring/analytics/backends"
+require_relative "monitoring/browser_analytics"
 
 module Studio
   module Monitoring
@@ -73,6 +74,7 @@ module Studio
         {
           service: config.service_name,
           posthog: config.posthog ? "on" : "off",
+          posthog_browser: config.posthog_browser ? "on" : "off",
           log_backends: config.log_backends.join(","),
           analytics_backends: config.analytics_backends.join(","),
           otel: Telemetry.enabled? ? Telemetry.endpoint : "off",

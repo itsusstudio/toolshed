@@ -2,6 +2,7 @@ module Studio
   module Monitoring
     class Configuration
       PosthogProject = Data.define(:token, :host)
+      PosthogBrowser = Data.define(:host, :ui_host)
 
       # Channel actions are named by event (subscribe), not by callback
       # (subscribed) as AppSignal names them.
@@ -26,7 +27,7 @@ module Studio
 
       attr_accessor :service_name, :default_properties, :untraced_paths,
         :unlogged_actions, :appsignal_ignored_paths, :log_backends, :analytics_backends
-      attr_reader :posthog
+      attr_reader :posthog, :posthog_browser
 
       def initialize
         @default_properties = -> { {} }
@@ -43,9 +44,20 @@ module Studio
         @posthog = PosthogProject.new(token: token, host: host)
       end
 
+      # host is where posthog-js sends events, usually a reverse proxy on the
+      # app's own domain so ad blockers let them through.
+      def posthog_browser_hosts(host:, ui_host:)
+        raise ArgumentError, "posthog_browser_hosts needs both host: and ui_host:" if host.blank? || ui_host.blank?
+
+        @posthog_browser = PosthogBrowser.new(host: host, ui_host: ui_host)
+      end
+
       def validate!
         if service_name.blank?
           raise ArgumentError, "Studio::Monitoring needs c.service_name, set in config/initializers/monitoring.rb"
+        end
+        if posthog_browser && posthog.nil?
+          raise ArgumentError, "Studio::Monitoring c.posthog_browser_hosts needs c.posthog_project for the token"
         end
         validate_backends!("log_backends", log_backends, EventLog::Backends::ALL)
         validate_backends!("analytics_backends", analytics_backends, Analytics::Backends::ALL)

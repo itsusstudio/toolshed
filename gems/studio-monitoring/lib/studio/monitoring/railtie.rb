@@ -17,6 +17,11 @@ module Studio
         end
       end
 
+      initializer "studio_monitoring.browser_analytics" do
+        ActiveSupport.on_load(:action_view) { include BrowserAnalytics::Helper }
+        ActiveSupport.on_load(:action_controller_base) { include BrowserAnalytics::Controller }
+      end
+
       # Before AppSignal's railtie inserts RailsInstrumentation after
       # DebugExceptions too, which then sits between DebugExceptions and this
       # middleware, outside it as RequestSampling needs.

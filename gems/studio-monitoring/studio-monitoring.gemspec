@@ -12,7 +12,7 @@ Gem::Specification.new do |spec|
 
   spec.metadata["source_code_uri"] = spec.homepage
 
-  spec.files = Dir["lib/**/*.rb", "lib/**/*.tt", "README.md"]
+  spec.files = Dir["lib/**/*.rb", "lib/**/*.js", "lib/**/*.tt", "README.md"]
   spec.require_paths = ["lib"]
 
   spec.add_dependency "railties", ">= 8.0"
