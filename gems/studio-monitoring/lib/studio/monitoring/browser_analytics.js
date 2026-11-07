@@ -9,10 +9,11 @@
     tracing_headers: [location.hostname],
     session_recording: {
       maskAllInputs: true,
+      // Every input is masked unless a field opts in; secrets stay masked
+      // even inside an opted-in form.
       maskInputFn: (text, element) => {
-        const sensitive = ["password", "email", "tel"].includes(element?.type) ||
-          element?.autocomplete === "one-time-code" || element?.closest("[data-replay-mask]")
-        return sensitive ? "*".repeat(text.length) : text
+        const secret = element?.type === "password" || element?.autocomplete === "one-time-code"
+        return element?.closest("[data-replay-unmask]") && !secret ? text : "*".repeat(text.length)
       }
     },
     defaults: "2026-05-30",
