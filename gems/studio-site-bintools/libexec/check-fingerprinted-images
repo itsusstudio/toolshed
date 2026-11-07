@@ -1,0 +1,77 @@
+#!/usr/bin/env ruby
+# Summary: Fail when an image path bypasses esbuild fingerprinting
+# frozen_string_literal: true
+
+# Fails when an image path bypasses esbuild fingerprinting: a raw path in
+# src/_data, an <img src="<%= ... %>"> without asset_path, or a hardcoded
+# <img src="/assets/images/...">. Sites list exceptions under `fingerprinting`
+# in config/images.yml.
+
+require "yaml"
+
+ROOT = Dir.pwd
+CONFIG_PATH = File.join(ROOT, "config", "images.yml")
+
+config = (File.exist?(CONFIG_PATH) && YAML.load_file(CONFIG_PATH)) || {}
+settings = config.fetch("fingerprinting", nil) || {}
+
+raw_prefixes = settings.fetch("raw_path_prefixes", ["/assets/images/"])
+# Crawlers and browsers fetch these by fixed URL, so they can never be fingerprinted.
+ALWAYS_ALLOWED_RAW_PATHS = ["/assets/images/og-image*", "/assets/images/favicon/*"].freeze
+allowed_raw_paths = ALWAYS_ALLOWED_RAW_PATHS + settings.fetch("allowed_raw_paths", [])
+allowed_expressions = settings.fetch("allowed_unwrapped_expressions", []).map { |pattern| Regexp.new(pattern) }
+
+IMG_SRC_PATTERN = /<img\b[^>]*\bsrc="<%=\s*(.+?)\s*%>"/m
+RAW_IMG_SRC_PATTERN = /<img\b[^>]*\bsrc="(\/[^"]*)"/
+
+raw = ->(value) { raw_prefixes.any? { |prefix| value.start_with?(prefix) } }
+allowed = ->(value) { allowed_raw_paths.any? { |glob| File.fnmatch?(glob, value) } }
+
+failures = []
+
+Dir.glob(File.join(ROOT, "src", "_data", "**", "*.yml")).sort.each do |path|
+  relative = path.delete_prefix("#{ROOT}/")
+
+  scan = lambda do |value, trail|
+    case value
+    when String
+      next if !raw.call(value) || allowed.call(value)
+
+      failures << "#{relative}: #{trail} uses raw path `#{value}` instead of a frontend-relative path"
+    when Hash
+      value.each { |key, nested| scan.call(nested, "#{trail}.#{key}") }
+    when Array
+      value.each_with_index { |nested, index| scan.call(nested, "#{trail}[#{index}]") }
+    end
+  end
+
+  scan.call(YAML.load_file(path), relative)
+end
+
+Dir.glob(File.join(ROOT, "src", "**", "*.erb")).sort.each do |path|
+  relative = path.delete_prefix("#{ROOT}/")
+  content = File.read(path)
+
+  content.scan(IMG_SRC_PATTERN).each do |(expression)|
+    next if expression.include?("asset_path")
+    next if allowed_expressions.any? { |pattern| expression.match?(pattern) }
+
+    failures << "#{relative}: <img src=\"<%= #{expression} %>\"> does not go through asset_path"
+  end
+
+  content.scan(RAW_IMG_SRC_PATTERN).each do |(raw_path)|
+    next if !raw.call(raw_path) || allowed.call(raw_path)
+
+    failures << "#{relative}: <img src=\"#{raw_path}\"> is a hardcoded raw path instead of asset_path"
+  end
+end
+
+if failures.any?
+  red, reset = ENV["NO_COLOR"] ? ["", ""] : ["\e[31m", "\e[0m"]
+  warn "#{red}✗ FAILED: raw asset paths found (bypasses esbuild fingerprinting):"
+  failures.each { |failure| warn "  - #{failure}" }
+  warn "Wrap the path in asset_path, or allow it under fingerprinting in config/images.yml.#{reset}"
+  exit 1
+end
+
+puts "✓ no raw asset paths, all images go through asset_path"

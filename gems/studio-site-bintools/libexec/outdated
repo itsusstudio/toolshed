@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Summary: Report outdated gems and npm packages
+set -e
+
+# These report commands exit 1 when they find something outdated. That's a
+# finding, not a failure — swallow it so one report can't truncate the next,
+# but let any other exit code (missing binary, network error) still abort.
+report() {
+  local status=0
+  "$@" || status=$?
+  [ "$status" -le 1 ] || exit "$status"
+}
+
+report bundle outdated --only-explicit
+report npm outdated

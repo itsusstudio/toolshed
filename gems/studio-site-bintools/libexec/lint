@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Summary: Check ERB style with herb
+# Verify style. style is the auto-fixing counterpart; keep the two in sync.
+set -e
+
+mise exec -- herb-lint --simple .
+
+mise exec -- herb-format --check .

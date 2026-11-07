@@ -1,0 +1,246 @@
+#!/usr/bin/env ruby
+# Summary: Encode source images to .webp within config/images.yml bounds
+# frozen_string_literal: true
+
+require "fileutils"
+require "open3"
+require "optparse"
+require "tmpdir"
+require "yaml"
+
+ROOT = Dir.pwd
+CONFIG_PATH = File.join(ROOT, "config", "images.yml")
+SOURCE_EXTENSIONS = [".png", ".jpg", ".jpeg"].freeze
+
+class Config
+  DEFAULTS = {
+    "quality" => 82,
+    "default_max_width" => 1600,
+    "sources" => [],
+    "rules" => []
+  }.freeze
+
+  Bounds = Struct.new(:max_width, :max_height) do
+    def geometry
+      max_height ? "#{max_width}x#{max_height}>" : "#{max_width}>"
+    end
+  end
+
+  class << self
+    def load(path)
+      abort "no image config at #{relative(path)}" if !File.exist?(path)
+
+      new(DEFAULTS.merge(YAML.load_file(path) || {}))
+    end
+
+    def relative(path)
+      path.delete_prefix("#{ROOT}/")
+    end
+  end
+
+  attr_reader :quality, :sources
+
+  def initialize(data)
+    @quality = data.fetch("quality")
+    @default_max_width = data.fetch("default_max_width")
+    @sources = data.fetch("sources")
+    @rules = data.fetch("rules")
+  end
+
+  def bounds_for(relative_path)
+    rule = rule_for(relative_path)
+    return nil if rule && rule["skip"]
+
+    Bounds.new(rule&.dig("max_width") || @default_max_width, rule&.dig("max_height"))
+  end
+
+  private
+
+  def rule_for(relative_path)
+    @rules.find do |rule|
+      pattern = rule.fetch("match")
+      subject = pattern.include?("/") ? relative_path : File.basename(relative_path)
+      File.fnmatch?(pattern, subject)
+    end
+  end
+end
+
+class Encoder
+  class << self
+    def versions
+      ["magick -version", "cwebp -version"].map do |command|
+        output, = Open3.capture2e(*command.split)
+        "#{command}: #{output.lines.first.to_s.strip}"
+      end
+    end
+  end
+
+  def initialize(quality)
+    @quality = quality
+  end
+
+  def encode(source, destination, bounds)
+    FileUtils.mkdir_p(File.dirname(destination))
+
+    Dir.mktmpdir do |dir|
+      staged = File.join(dir, "staged.webp")
+      run(source, staged, bounds)
+      FileUtils.mv(staged, destination)
+    end
+  end
+
+  def encode_to_string(source, bounds)
+    Dir.mktmpdir do |dir|
+      staged = File.join(dir, "staged.webp")
+      run(source, staged, bounds)
+      File.binread(staged)
+    end
+  end
+
+  private
+
+  def run(source, destination, bounds)
+    resize = [
+      "magick", source,
+      "-strip",
+      "-colorspace", "sRGB",
+      "-filter", "Lanczos",
+      "-resize", bounds.geometry,
+      "-define", "png:exclude-chunk=all",
+      "png:-"
+    ]
+
+    compress = [
+      "cwebp",
+      "-quiet",
+      "-q", @quality.to_s,
+      "-m", "6",
+      "-sharp_yuv",
+      "-metadata", "none",
+      "-o", destination,
+      "--", "-"
+    ]
+
+    statuses = Open3.pipeline(resize, compress)
+    abort "encode failed: #{Config.relative(source)}" if !statuses.all?(&:success?)
+  end
+end
+
+def collect(config, arguments)
+  paths =
+    if arguments.empty?
+      config.sources.flat_map do |source|
+        Dir.glob(File.join(ROOT, source, "**", "*")).select { |path| File.file?(path) }
+      end
+    else
+      arguments.map { |argument| File.expand_path(argument) }
+    end
+
+  paths
+    .select { |path| SOURCE_EXTENSIONS.include?(File.extname(path).downcase) }
+    .sort
+end
+
+def human(bytes)
+  return "#{bytes}B" if bytes < 1024
+  return "#{(bytes / 1024.0).round}K" if bytes < 1024 * 1024
+
+  "#{(bytes / (1024.0 * 1024)).round(1)}M"
+end
+
+options = {check: false, prune: false}
+
+OptionParser.new do |parser|
+  parser.banner = "usage: bin/studio optimize-images [options] [file ...]"
+  parser.on("--check", "verify every source has a matching, up-to-date .webp") { options[:check] = true }
+  parser.on("--prune", "delete each source once its .webp is written") { options[:prune] = true }
+  parser.on("-h", "--help") do
+    puts parser
+    puts
+    puts "With no file arguments, walks every directory listed under `sources` in"
+    puts Config.relative(CONFIG_PATH)
+    exit
+  end
+end.parse!
+
+abort "usage: --check and --prune are mutually exclusive" if options[:check] && options[:prune]
+
+["magick", "cwebp"].each do |tool|
+  abort "#{tool} not found; install ImageMagick and libwebp-tools" if !system("command -v #{tool} > /dev/null 2>&1")
+end
+
+config = Config.load(CONFIG_PATH)
+encoder = Encoder.new(config.quality)
+sources = collect(config, ARGV)
+
+abort "no source images found" if sources.empty?
+
+stale = []
+before = 0
+after = 0
+written = 0
+skipped = 0
+
+sources.each do |source|
+  relative = Config.relative(source)
+  bounds = config.bounds_for(relative)
+
+  if bounds.nil?
+    skipped += 1
+    next
+  end
+
+  destination = source.sub(/#{Regexp.escape(File.extname(source))}\z/, ".webp")
+
+  if options[:check]
+    expected = encoder.encode_to_string(source, bounds)
+    actual = File.exist?(destination) ? File.binread(destination) : nil
+    stale << relative if expected != actual
+    next
+  end
+
+  encoder.encode(source, destination, bounds)
+
+  source_bytes = File.size(source)
+  destination_bytes = File.size(destination)
+  before += source_bytes
+  after += destination_bytes
+  written += 1
+
+  FileUtils.rm(source) if options[:prune]
+
+  dimensions, = Open3.capture2("identify", "-format", "%wx%h", destination)
+
+  puts format(
+    "%-52s %7s -> %7s  %s",
+    relative,
+    human(source_bytes),
+    human(destination_bytes),
+    dimensions
+  )
+end
+
+if options[:check]
+  if stale.empty?
+    puts "#{sources.size - skipped} images up to date"
+    exit
+  end
+
+  warn "stale or missing .webp for:"
+  stale.each { |path| warn "  #{path}" }
+  warn ""
+  warn "run bin/studio optimize-images to regenerate. if these look correct already,"
+  warn "confirm the encoders match the ones used to generate them:"
+  Encoder.versions.each { |version| warn "  #{version}" }
+  exit 1
+end
+
+if written.zero?
+  puts "#{skipped} skipped by config, nothing to encode"
+  exit
+end
+
+puts
+puts "#{written} images, #{human(before)} -> #{human(after)} " \
+     "(#{(100 - (after * 100.0 / before)).round(1)}% smaller)"
+puts "#{skipped} skipped by config" if skipped.positive?

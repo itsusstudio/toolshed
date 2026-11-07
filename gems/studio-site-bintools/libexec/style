@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Summary: Fix ERB style with herb
+# Auto-fix style. lint is the verifying counterpart; keep the two in sync.
+set -e
+
+mise exec -- herb-lint --simple --fix .
+
+mise exec -- herb-format .
