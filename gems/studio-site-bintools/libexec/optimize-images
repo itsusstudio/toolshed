@@ -1,5 +1,6 @@
 #!/usr/bin/env ruby
 # Summary: Encode source images to .webp within config/images.yml bounds
+# Usage: optimize-images [--check | --prune] [file ...]
 # frozen_string_literal: true
 
 require "fileutils"

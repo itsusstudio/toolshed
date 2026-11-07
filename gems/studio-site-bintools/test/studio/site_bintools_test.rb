@@ -30,6 +30,36 @@ class Studio::SiteBintoolsTest < Minitest::Test
     assert_match "optimize-images", err
   end
 
+  def test_help_flags_after_a_script_print_its_usage_and_never_run_it
+    Kernel.expects(:exec).never
+    out = StringIO.new
+
+    assert_equal 0, Studio::SiteBintools.cli(["ci", "--help"], root: @site, out: out)
+    assert_equal "Usage: bin/studio ci\n\nLint, audit, check images, then build the site for production\n", out.string
+  end
+
+  def test_scripts_with_their_own_help_get_the_flag_passed_through
+    Kernel.expects(:exec).with(File.join(Studio::SiteBintools::LIBEXEC, "optimize-images"), "--help", chdir: @site)
+
+    Studio::SiteBintools.cli ["optimize-images", "--help"], root: @site
+  end
+
+  def test_install_help_never_installs
+    Studio::SiteBintools.expects(:system).never
+    out = StringIO.new
+
+    assert_equal 0, Studio::SiteBintools.cli(["install", "--help"], root: @site, out: out)
+    assert_match "Usage: bin/studio install", out.string
+    refute File.exist?(File.join(@site, "bin/setup"))
+  end
+
+  def test_help_script_prints_its_usage_line
+    out = StringIO.new
+
+    assert_equal 0, Studio::SiteBintools.cli(["help", "optimize-images"], root: @site, out: out)
+    assert_match "Usage: bin/studio optimize-images [--check | --prune] [file ...]", out.string
+  end
+
   def test_install_copies_setup_once_and_adds_the_binstub
     Studio::SiteBintools.expects(:system).with("bundle binstubs studio-site-bintools", chdir: @site, exception: true).twice
     out = StringIO.new

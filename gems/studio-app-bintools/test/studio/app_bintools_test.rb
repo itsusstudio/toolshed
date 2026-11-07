@@ -56,6 +56,31 @@ class Studio::AppBintoolsTest < ActiveSupport::TestCase
     assert_match "db-reset", err
   end
 
+  test "help flags after a script print its usage and never run it" do
+    Kernel.expects(:exec).never
+
+    ["--help", "-h"].each do |flag|
+      out = StringIO.new
+      assert_equal 0, Studio::AppBintools.cli(["db-reset", flag], root: @root, out: out)
+      assert_equal "Usage: bin/studio db-reset\n\nRebuild the development database from schema.rb, migrate and seed\n", out.string
+    end
+  end
+
+  test "help <script> prints its usage line" do
+    out = StringIO.new
+
+    assert_equal 0, Studio::AppBintools.cli(["help", "credentials-edit"], root: @root, out: out)
+    assert_match "Usage: bin/studio credentials-edit <development|test|staging|production>", out.string
+  end
+
+  test "help with no script lists every script" do
+    out = StringIO.new
+
+    Studio::AppBintools.cli ["help"], root: @root, out: out
+
+    assert_equal Studio::AppBintools::SCRIPTS.size, out.string.scan(/^  \S/).size
+  end
+
   test "every script has a summary, is executable and finds the app through its cwd" do
     Studio::AppBintools.summaries.each do |script, summary|
       path = File.join(Studio::AppBintools::LIBEXEC, script)

@@ -4,6 +4,7 @@ Dev, database, credentials, lint and deploy scripts for studio Rails apps, run a
 
 ```sh
 bin/studio                         # list scripts
+bin/studio help credentials-edit  # usage, also <script> --help
 bin/studio db-reset
 bin/studio credentials-edit staging
 ```
@@ -46,4 +47,4 @@ The app name is the module in config/application.rb, underscored (`Workbench` is
 
 ## Adding a script
 
-Put it in `libexec/`, executable, with a `# Summary:` line under the shebang. It runs from the app root, with `STUDIO_APP` and `STUDIO_FLIPPER` set.
+Put it in `libexec/`, executable, with a `# Summary:` line under the shebang, and a `# Usage:` line under that if it takes arguments. bin/studio answers `--help` itself, so the script never sees it. It runs from the app root, with `STUDIO_APP` and `STUDIO_FLIPPER` set.
