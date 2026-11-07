@@ -4,6 +4,11 @@ module Studio
     module EventLog
       LEVELS = [:debug, :info, :warn, :error].freeze
       QUOTABLE = /[\s"=]/
+      # Rails 8.1 reports its own work on Rails.event too
+      # (action_controller.request_completed and friends). The gem already
+      # logs requests and jobs once each, and these skip unlogged_actions, so
+      # health checks would land twice per hit.
+      FRAMEWORK_EVENT = /\A(?:action|active)_[a-z]+\./
 
       class << self
         def backends
@@ -13,6 +18,8 @@ module Studio
 
       class Subscriber
         def emit(event)
+          return if event[:name].to_s.match?(FRAMEWORK_EVENT)
+
           payload = event[:payload].to_h.dup
           level = payload.delete(:level)&.to_sym || :info
           raise ArgumentError, "Rails.event level must be one of #{LEVELS.join(", ")}, got #{level.inspect}" if !LEVELS.include?(level)

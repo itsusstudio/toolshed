@@ -14,6 +14,19 @@ class Studio::Monitoring::EventLogTest < ActiveSupport::TestCase
     Rails.event.notify("recipe_url_import")
   end
 
+  test "Rails' own framework events are not logged, since the gem logs requests and jobs itself" do
+    Rails.logger.expects(:info).never
+
+    Rails.event.notify("action_controller.request_completed", controller: "HealthController")
+    Rails.event.notify("active_job.enqueued", job_class: "PingJob")
+  end
+
+  test "app events with a dot in the name are still logged" do
+    Rails.logger.expects(:info).with { |line| line.start_with?("twilio.inbound ") }
+
+    Rails.event.notify("twilio.inbound")
+  end
+
   test "lines carry the request and job ids so they join their request or job line" do
     Studio::Monitoring::Current.request_id = "req-1"
     Studio::Monitoring::Current.job_id = "job-1"
