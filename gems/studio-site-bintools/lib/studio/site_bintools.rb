@@ -30,7 +30,7 @@ module Studio
       end
 
       def summaries
-        SCRIPTS.to_h { [it, header(it)[:summary]] }
+        SCRIPTS.to_h { |script| [script, header(script)[:summary]] }
       end
 
       private
