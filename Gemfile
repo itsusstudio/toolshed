@@ -9,5 +9,4 @@ gem "minitest"
 gem "mocha"
 gem "sqlite3"
 
-gem "standard-studio", github: "itsusstudio/standard-studio", require: false
 gem "bundler-audit", require: false

@@ -1,0 +1,85 @@
+Studio/ClassStructure:
+  Description: "Keep class contents in the Rails Style Guide order."
+  Enabled: true
+  Categories:
+    attribute_macros:
+      - attribute
+      - enum
+      - store_accessor
+    association:
+      - belongs_to
+      - has_one
+      - has_many
+      - has_and_belongs_to_many
+    validation:
+      - validates
+      - validates_each
+      - validates_with
+      - validate
+    callback:
+      - after_initialize
+      - after_find
+      - after_touch
+      - before_validation
+      - after_validation
+      - before_save
+      - around_save
+      - after_save
+      - before_create
+      - around_create
+      - after_create
+      - before_update
+      - around_update
+      - after_update
+      - before_destroy
+      - around_destroy
+      - after_destroy
+      - after_commit
+      - after_create_commit
+      - after_update_commit
+      - after_destroy_commit
+      - after_save_commit
+      - after_rollback
+  ExpectedOrder:
+    - module_inclusion
+    - constants
+    - attribute_macros
+    - association
+    - validation
+    - callback
+    - public_class_methods
+    - initializer
+    - public_methods
+    - protected_methods
+    - private_methods
+
+Studio/ClassMethodsDefinitions:
+  Description: "Define class methods inside `class << self`."
+  Enabled: true
+  EnforcedStyle: self_class
+  SupportedStyles:
+    - def_self
+    - self_class
+
+Studio/NoUnless:
+  Description: "Use `if !` instead of `unless`."
+  Enabled: true
+
+Studio/WordArray:
+  Description: "Write arrays of strings with brackets, not `%w`."
+  Enabled: true
+  EnforcedStyle: brackets
+  SupportedStyles:
+    - percent
+    - brackets
+  MinSize: 2
+  WordRegex: !ruby/regexp '/\A(?:\p{Word}|\p{Word}-\p{Word}|\n|\t)+\z/'
+
+Studio/SymbolArray:
+  Description: "Write arrays of symbols with brackets, not `%i`."
+  Enabled: true
+  EnforcedStyle: brackets
+  SupportedStyles:
+    - percent
+    - brackets
+  MinSize: 2
