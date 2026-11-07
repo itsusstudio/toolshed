@@ -16,6 +16,7 @@ require "opentelemetry/instrumentation/pg"
 require "opentelemetry/instrumentation/net/http"
 
 require_relative "monitoring/configuration"
+require_relative "monitoring/filter_parameters"
 require_relative "monitoring/current"
 require_relative "monitoring/redaction"
 require_relative "monitoring/telemetry"

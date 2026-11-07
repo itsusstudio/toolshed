@@ -122,6 +122,13 @@ Studio::Monitoring.configure do |c|
 end
 ```
 
+```ruby
+# config/initializers/filter_parameter_logging.rb
+Rails.application.config.filter_parameters += Studio::Monitoring::FILTER_PARAMETERS
+```
+
+The studio filter list covers request params, event payloads, error context and trace URLs. Add app-specific names after it.
+
 Without any code, the gem also logs one `http_request` event per request and one `job_performed` event per app job, traces requests and jobs, and logs `monitoring_configured` at boot listing what is on.
 
 ## :database analytics backend

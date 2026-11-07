@@ -22,7 +22,7 @@ class DummyApp < Rails::Application
   config.secret_key_base = "test"
   config.hosts.clear
   config.active_job.queue_adapter = :inline
-  config.filter_parameters += [:passw, :token, :_key, :secret]
+  config.filter_parameters += Studio::Monitoring::FILTER_PARAMETERS
 end
 
 Studio::Monitoring.configure do |c|
