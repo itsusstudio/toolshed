@@ -10,8 +10,9 @@ The Rack::Attack rules every studio app shares. Add `gem "studio-rack-attack"` t
 
 - On only when `ENABLE_RACK_ATTACK=true`.
 - `req.client_ip` is the real client: `CF-Connecting-IP` when the request came through a Cloudflare edge, otherwise `req.ip`. Key every per-IP rule on it, never on `req.ip`. Tests that send `CF-Connecting-IP` need a Cloudflare `REMOTE_ADDR`, such as `162.158.1.1`.
+- Cloudflare's ranges are added to Rails' `trusted_proxies`, so `request.remote_ip` is the visitor, not the edge, everywhere in the app: sessions, `rate_limit`, logs.
 - A throttled page request gets `public/429.html` if the app has one, anything else plain text. There is no Retry-After header.
-- Blocks and throttles log `request_blocked` and `request_throttled` events with the rule, method and path.
+- Blocks and throttles log `request_blocked` and `request_throttled` events with the rule, method, path and client IP.
 
 Add the app's own throttles, and its cache store if it shouldn't be `Rails.cache`:
 

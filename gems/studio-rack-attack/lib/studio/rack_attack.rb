@@ -147,7 +147,7 @@ module Studio
 
       def report(name, req)
         event = name.start_with?("throttle") ? "request_throttled" : "request_blocked"
-        Monitoring::Events.warn(event, rule: req.env["rack.attack.matched"], method: req.request_method, path: req.path)
+        Monitoring::Events.warn(event, rule: req.env["rack.attack.matched"], method: req.request_method, path: req.path, client_ip: req.client_ip)
       end
     end
   end

@@ -27,6 +27,7 @@ DummyApp.routes.draw do
   get "/up", to: "pages#show"
   get "/recipes", to: "pages#show"
   get "/assets/app.css", to: "pages#show"
+  get "/remote_ip", to: "pages#remote_ip"
   get "*path", to: "pages#show", format: false
 end
 
@@ -36,6 +37,10 @@ end
 class PagesController < ApplicationController
   def show
     head :ok
+  end
+
+  def remote_ip
+    render plain: request.remote_ip
   end
 end
 
