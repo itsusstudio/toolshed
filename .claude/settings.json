@@ -1,0 +1,20 @@
+{
+  "extraKnownMarketplaces": {
+    "itsusstudio": {
+      "source": {
+        "source": "github",
+        "repo": "itsusstudio/jean-claude"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "studio-core@itsusstudio": true,
+    "studio-developer@itsusstudio": true,
+    "studio-writer@itsusstudio": true
+  },
+  "permissions": {
+    "deny": [
+      "Bash(op:*)"
+    ]
+  }
+}
