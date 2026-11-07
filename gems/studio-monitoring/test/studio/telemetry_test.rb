@@ -20,7 +20,6 @@ class Studio::Monitoring::TelemetryTest < ActiveSupport::TestCase
     assert untraced.call(rack_env("/rails/active_storage/blobs/redirect/abc"))
     assert untraced.call(rack_env("/login-link/abc"))
     assert untraced.call(rack_env("/acme-shop/magic_link/abc"))
-    assert untraced.call(rack_env("/invites", "token=secret"))
     assert_not untraced.call(rack_env("/recipes"))
   end
 

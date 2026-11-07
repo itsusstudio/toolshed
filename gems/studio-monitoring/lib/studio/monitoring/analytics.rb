@@ -33,8 +33,8 @@ module Studio
           backends.each do |backend|
             yield backend
           rescue => error
-            Logging.log_warn(self, "analytics_backend",
-              properties: {success: false, message: error.class.name, backend: backend.class.name, event_name: event_name})
+            Events.warn("analytics_backend", success: false, message: error.class.name,
+              backend: backend.class.name, event_name: event_name)
           end
         end
       end

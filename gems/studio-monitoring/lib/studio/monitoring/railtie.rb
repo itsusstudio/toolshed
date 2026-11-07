@@ -2,12 +2,15 @@ module Studio
   module Monitoring
     class Railtie < ::Rails::Railtie
       config.after_initialize do
-        Logging.log_info(Monitoring, "monitoring_configured", properties: Monitoring.summary)
+        Events.info("monitoring_configured", **Monitoring.summary)
       end
 
       initializer "studio_monitoring.current" do
         ActiveSupport.on_load(:action_controller) do
-          prepend_before_action { Current.from_request(request) }
+          prepend_before_action do
+            Current.from_request(request)
+            Redaction.mask_current_span(request)
+          end
         end
         ActiveSupport.on_load(:active_job) do
           before_perform { Current.job_id = job_id }
@@ -21,12 +24,13 @@ module Studio
         config = Monitoring.config
         config.validate!
 
+        ::Rails.event.subscribe(EventLog::Subscriber.new)
+        ::Rails.error.add_middleware(->(_error, context:, **) { Monitoring.default_properties.merge(context) })
+
         Telemetry.setup(config)
-        Posthog.setup(config)
-        Lograge.setup(app, config)
-        if !::Rails.env.local?
-          ActiveSupport::Notifications.subscribe("perform.active_job", JobSubscriber.new)
-        end
+        PosthogClient.setup(config)
+        RequestLog.setup(app, config)
+        JobLog.setup
       end
     end
   end

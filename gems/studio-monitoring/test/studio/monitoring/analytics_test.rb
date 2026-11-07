@@ -16,8 +16,7 @@ class Studio::Monitoring::AnalyticsTest < ActiveSupport::TestCase
     failing.expects(:track).raises(StandardError)
     Studio::Monitoring::Analytics.stubs(:backends).returns([failing])
 
-    Studio::Monitoring::Logging.expects(:log_warn).with(Studio::Monitoring::Analytics, "analytics_backend",
-      properties: has_entries(success: false, event_name: "recipe_saved"))
+    Studio::Monitoring::Events.expects(:warn).with("analytics_backend", has_entries(success: false, event_name: "recipe_saved"))
 
     Studio::Monitoring::Analytics.track("recipe_saved", actor_id: 1)
   end

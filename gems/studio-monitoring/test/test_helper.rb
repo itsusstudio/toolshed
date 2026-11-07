@@ -22,6 +22,7 @@ class DummyApp < Rails::Application
   config.secret_key_base = "test"
   config.hosts.clear
   config.active_job.queue_adapter = :inline
+  config.filter_parameters += [:passw, :token, :_key, :secret]
 end
 
 Studio::Monitoring.configure do |c|
@@ -46,6 +47,8 @@ end
 
 DummyApp.routes.draw do
   get "/ping", to: "ping#show"
+  get "/t/:token", to: "ping#show"
+  get "/recipes/:id", to: "ping#show"
 end
 
 class ApplicationController < ActionController::Base

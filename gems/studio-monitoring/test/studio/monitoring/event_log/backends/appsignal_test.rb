@@ -1,10 +1,10 @@
 require "test_helper"
 
-class Studio::Monitoring::Logging::Backends::AppsignalTest < ActiveSupport::TestCase
+class Studio::Monitoring::EventLog::Backends::AppsignalTest < ActiveSupport::TestCase
   test "#log does nothing in local environments" do
     ::Appsignal::Logger.expects(:new).never
 
-    Studio::Monitoring::Logging::Backends::Appsignal.new.log(:info, "test line")
+    Studio::Monitoring::EventLog::Backends::Appsignal.new.log(:info, "test line")
   end
 
   test "#log ships app events to the events group outside local environments" do
@@ -13,7 +13,7 @@ class Studio::Monitoring::Logging::Backends::AppsignalTest < ActiveSupport::Test
     appsignal_logger.expects(:info).with("test line")
     ::Appsignal::Logger.expects(:new).with("events", format: ::Appsignal::Logger::LOGFMT).returns(appsignal_logger)
 
-    Studio::Monitoring::Logging::Backends::Appsignal.new.log(:info, "test line", message: "recipe_import")
+    Studio::Monitoring::EventLog::Backends::Appsignal.new.log(:info, "test line", message: "recipe_import")
   end
 
   test "#log ships request lines to the rails group" do
@@ -22,6 +22,6 @@ class Studio::Monitoring::Logging::Backends::AppsignalTest < ActiveSupport::Test
     appsignal_logger.expects(:info).with("http_request status=200")
     ::Appsignal::Logger.expects(:new).with("rails", format: ::Appsignal::Logger::LOGFMT).returns(appsignal_logger)
 
-    Studio::Monitoring::Logging::Backends::Appsignal.new.log(:info, "http_request status=200", message: "http_request")
+    Studio::Monitoring::EventLog::Backends::Appsignal.new.log(:info, "http_request status=200", message: "http_request")
   end
 end
