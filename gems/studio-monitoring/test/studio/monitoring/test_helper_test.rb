@@ -88,6 +88,23 @@ class Studio::Monitoring::TestHelperTest < ActiveSupport::TestCase
     assert_raises(Minitest::Assertion) { assert_counter_incremented "recipe_url_import", by: 2 }
   end
 
+  test "assert_event_logged matches name, level and a filtered payload subset" do
+    Studio::Monitoring::Events.warn("checkout_return", success: false, email: "a@b.c", message: "session_not_complete")
+
+    event = assert_event_logged "checkout_return", level: :warn, payload: {success: false, email: "[FILTERED]", message: /not_complete/}
+    refute event.payload.key?(:level)
+    assert_raises(Minitest::Assertion) { assert_event_logged "checkout_return", level: :info }
+  end
+
+  test "assert_no_event_logged checks a name, a level, or everything" do
+    Studio::Monitoring::Events.info("recipe_saved")
+
+    assert_no_event_logged "recipe_viewed"
+    assert_no_event_logged level: :error
+    assert_no_event_logged { Studio::Monitoring::Logs.info("plain text is not an event") }
+    assert_raises(Minitest::Assertion) { assert_no_event_logged }
+  end
+
   test "Rails' event assertions see the level and the filtered payload" do
     assert_event_reported("checkout_return", payload: {level: :warn, success: false, email: "[FILTERED]"}) do
       Studio::Monitoring::Events.warn("checkout_return", success: false, email: "a@b.c")
