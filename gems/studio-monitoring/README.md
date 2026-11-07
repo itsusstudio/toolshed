@@ -151,7 +151,7 @@ config.ignore_namespaces = [Studio::Monitoring::RequestSampling::DROPPED_NAMESPA
 
 ## Browser analytics
 
-With `posthog_browser_hosts` set, `studio_analytics_tag` renders posthog-js: autocapture, dead clicks, session replay with every input masked unless it sits inside `[data-replay-unmask]` (passwords and one-time codes stay masked even there), and tracing headers so browser requests join the server's traces. It identifies the browser as `Current.actor_id`, the same distinct id as server events. Without the setting it renders nothing.
+With `posthog_browser_hosts` set, `studio_analytics_tag` renders posthog-js: autocapture, dead clicks, session replay with every input masked unless it sits inside `[data-replay-unmask]` (passwords, one-time codes, card, email and phone fields, and anything inside `[data-replay-mask]` stay masked even there), and tracing headers so browser requests join the server's traces. It identifies the browser as `Current.actor_id`, the same distinct id as server events. Without the setting it renders nothing.
 
 ```erb
 <%# app/views/layouts/application.html.erb, in <head> %>

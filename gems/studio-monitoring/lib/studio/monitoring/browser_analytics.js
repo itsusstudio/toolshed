@@ -9,10 +9,13 @@
     tracing_headers: [location.hostname],
     session_recording: {
       maskAllInputs: true,
-      // Every input is masked unless a field opts in; secrets stay masked
-      // even inside an opted-in form.
+      // Every input is masked unless a field opts in. Secrets, contact details
+      // and data-replay-mask stay masked even inside an opted-in form.
       maskInputFn: (text, element) => {
-        const secret = element?.type === "password" || element?.autocomplete === "one-time-code"
+        const autocomplete = element?.autocomplete || ""
+        const secret = ["password", "email", "tel"].includes(element?.type) ||
+          ["current-password", "new-password", "one-time-code"].includes(autocomplete) ||
+          autocomplete.startsWith("cc-") || element?.closest("[data-replay-mask]")
         return element?.closest("[data-replay-unmask]") && !secret ? text : "*".repeat(text.length)
       }
     },
