@@ -24,10 +24,10 @@ optimize-images needs ImageMagick (`magick`) and libwebp (`cwebp`). `--check` fa
 Add `gem "studio-site-bintools"` to the toolshed block in the Gemfile, then from the site root:
 
 ```sh
-bundle exec studio install
+bundle binstubs studio-site-bintools && bin/studio install
 ```
 
-This adds bin/studio, and copies bin/setup if the site has none; the site owns it after that. New scripts arrive with `bundle update studio-site-bintools`.
+The first adds bin/studio; `install` copies bin/setup if the site has none, and the site owns it after that. Never run a bare `studio`: Android Studio's launcher has the same name. New scripts arrive with `bundle update studio-site-bintools`.
 
 ## config/images.yml
 

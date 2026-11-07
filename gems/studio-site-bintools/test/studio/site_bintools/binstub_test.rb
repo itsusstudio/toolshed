@@ -1,7 +1,7 @@
 require "test_helper"
 
-# End to end: a real site bundle, `bin/studio install` through bundle exec,
-# and the resulting bin/studio run from outside the site.
+# End to end, as the README sets a site up: a real bundle, `bundle binstubs`,
+# `bin/studio install`, then bin/studio run from outside the site.
 class Studio::SiteBintools::BinstubTest < Minitest::Test
   include SiteHelper
 
@@ -12,7 +12,8 @@ class Studio::SiteBintools::BinstubTest < Minitest::Test
 
     output, status = Bundler.with_unbundled_env do
       system("bundle install --local --quiet", chdir: @site, exception: true)
-      Open3.capture2e("bundle exec studio install", chdir: @site)
+      system("bundle binstubs studio-site-bintools", chdir: @site, exception: true)
+      Open3.capture2e("bin/studio install", chdir: @site)
     end
     assert status.success?, output
     assert File.executable?(File.join(@site, "bin/setup"))

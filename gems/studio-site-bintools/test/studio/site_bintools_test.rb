@@ -16,7 +16,7 @@ class Studio::SiteBintoolsTest < Minitest::Test
 
     assert_match "Usage: bin/studio <script> [args]", out.string
     assert_match(/^  ci +Lint, audit, check images, then build the site for production$/, out.string)
-    assert_match(/^  install +Add bin\/studio and copy bin\/setup/, out.string)
+    assert_match(/^  install +Copy bin\/setup into the site/, out.string)
   end
 
   def test_cli_rejects_unknown_scripts_with_the_list_and_a_failing_exit
@@ -45,7 +45,6 @@ class Studio::SiteBintoolsTest < Minitest::Test
   end
 
   def test_install_help_never_installs
-    Studio::SiteBintools.expects(:system).never
     out = StringIO.new
 
     assert_equal 0, Studio::SiteBintools.cli(["install", "--help"], root: @site, out: out)
@@ -60,8 +59,7 @@ class Studio::SiteBintoolsTest < Minitest::Test
     assert_match "Usage: bin/studio optimize-images [--check | --prune] [file ...]", out.string
   end
 
-  def test_install_copies_setup_once_and_adds_the_binstub
-    Studio::SiteBintools.expects(:system).with("bundle binstubs studio-site-bintools", chdir: @site, exception: true).twice
+  def test_install_copies_setup_once
     out = StringIO.new
 
     Studio::SiteBintools.cli ["install"], root: @site, out: out

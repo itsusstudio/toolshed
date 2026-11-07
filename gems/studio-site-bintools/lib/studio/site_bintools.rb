@@ -9,7 +9,7 @@ module Studio
     HELP_FLAGS = ["-h", "--help"].freeze
     # Scripts with their own detailed --help, which bin/studio passes through.
     OWN_HELP = ["optimize-images"].freeze
-    INSTALL_SUMMARY = "Add bin/studio and copy bin/setup into the site (once)"
+    INSTALL_SUMMARY = "Copy bin/setup into the site (once)"
 
     class Error < StandardError; end
 
@@ -35,9 +35,8 @@ module Studio
 
       private
 
-      # Copies bin/setup once and adds the binstub. Setup is copied, not run
-      # through bin/studio, because it runs bundle install, before the gem
-      # may be installed; the site owns its copy after that.
+      # Copied, not run through bin/studio, because bin/setup runs bundle
+      # install, before the gem may be installed; the site owns its copy.
       def install(root, out)
         setup = File.join(root, "bin/setup")
         if File.exist?(setup)
@@ -48,9 +47,6 @@ module Studio
           File.chmod(0o755, setup)
           out.puts "  create  bin/setup"
         end
-
-        system("bundle binstubs studio-site-bintools", chdir: root, exception: true)
-        out.puts "  create  bin/studio"
         0
       end
 
