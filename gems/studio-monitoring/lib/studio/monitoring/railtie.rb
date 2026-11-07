@@ -36,7 +36,7 @@ module Studio
         config = Monitoring.config
         config.validate!
 
-        ::Rails.event.subscribe(EventLog::Subscriber.new)
+        ::Rails.event.subscribe(EventLog::Subscriber.new) { |event| EventLog.app_event?(event) }
         ::Rails.error.subscribe(RequestSampling)
         ::Rails.error.add_middleware(->(_error, context:, **) { Redaction.filter(Monitoring.default_properties.merge(context)) })
 

@@ -11,6 +11,11 @@ module Studio
       FRAMEWORK_EVENT = /\A(?:action|active)_[a-z]+\./
 
       class << self
+        # Rails.event's own filter hook, so framework events never reach emit.
+        def app_event?(event)
+          !event[:name].to_s.match?(FRAMEWORK_EVENT)
+        end
+
         def backends
           Monitoring.config.log_backends.map { |name| Backends::ALL.fetch(name) }
         end
@@ -18,8 +23,6 @@ module Studio
 
       class Subscriber
         def emit(event)
-          return if event[:name].to_s.match?(FRAMEWORK_EVENT)
-
           payload = event[:payload].to_h.dup
           level = payload.delete(:level)&.to_sym || :info
           raise ArgumentError, "Rails.event level must be one of #{LEVELS.join(", ")}, got #{level.inspect}" if !LEVELS.include?(level)
