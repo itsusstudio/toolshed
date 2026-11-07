@@ -30,6 +30,16 @@ class Studio::Monitoring::ErrorContextTest < ActiveSupport::TestCase
     assert_equal({actor_id: 42, tenant_id: 7, request_id: "req-1"}, @recorder.contexts.sole.slice(:actor_id, :tenant_id, :request_id))
   end
 
+  test "context is filtered, including controller params" do
+    params = ActionController::Parameters.new(full_name: "Jo Bloggs", email_address: "jo@example.com", note: "kept")
+
+    Rails.error.report(StandardError.new("boom"), context: {params: params, phone: "555"})
+
+    context = @recorder.contexts.sole
+    assert_equal({"full_name" => "[FILTERED]", "email_address" => "[FILTERED]", "note" => "kept"}, context[:params])
+    assert_equal "[FILTERED]", context[:phone]
+  end
+
   test "the caller's context wins over the defaults" do
     Studio::Monitoring::Current.actor_id = 42
 

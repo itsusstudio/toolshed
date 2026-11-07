@@ -25,6 +25,20 @@ module Studio
           parameter_filter.filter(key.to_s => "x")[key.to_s] != "x"
         end
 
+        # ParameterFilter only walks Hashes and Arrays, so a nested
+        # ActionController::Parameters would pass through unfiltered.
+        def plain(value)
+          case value
+          when Hash then value.to_h { |key, nested| [key, plain(nested)] }
+          when Array then value.map { |nested| plain(nested) }
+          else value.respond_to?(:to_unsafe_h) ? plain(value.to_unsafe_h) : value
+          end
+        end
+
+        def filter(hash)
+          parameter_filter.filter(plain(hash))
+        end
+
         def mask_current_span(request)
           path = masked_path(request)
           return if path.nil?

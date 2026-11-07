@@ -38,7 +38,7 @@ module Studio
 
         ::Rails.event.subscribe(EventLog::Subscriber.new)
         ::Rails.error.subscribe(RequestSampling)
-        ::Rails.error.add_middleware(->(_error, context:, **) { Monitoring.default_properties.merge(context) })
+        ::Rails.error.add_middleware(->(_error, context:, **) { Redaction.filter(Monitoring.default_properties.merge(context)) })
 
         Telemetry.setup(config)
         PosthogClient.setup(config)

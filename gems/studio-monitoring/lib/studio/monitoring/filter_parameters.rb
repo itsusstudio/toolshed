@@ -17,7 +17,9 @@ module Studio
       /\Asession_id\z/i,
       :signed_blob_id,
 
-      # Personal data
+      # Personal data. Bare "name" stays readable: apps use it for things
+      # (recipes, templates), not people.
+      :full_name, :first_name, :last_name, :given_name, :family_name, :surname,
       :email, :phone, :ip_address, :remote_ip, :address, :zip_code, :postal_code,
       :date_of_birth, :dob, :ssn, :social_security_number, :passport, :license_number, :drivers_license,
 

@@ -10,14 +10,14 @@ module Studio
       class << self
         # Only reported in local environments, as Rails.event.debug is.
         def debug(name, **payload)
-          ::Rails.event.debug(name, caller_depth: 2, **payload, level: :debug)
+          ::Rails.event.debug(name, caller_depth: 2, **Redaction.plain(payload), level: :debug)
         end
 
         # caller_depth: 2 makes Rails record the app's call site as the source,
         # not this method.
         [:info, :warn, :error].each do |level|
           define_method(level) do |name, **payload|
-            ::Rails.event.notify(name, caller_depth: 2, **payload, level: level)
+            ::Rails.event.notify(name, caller_depth: 2, **Redaction.plain(payload), level: level)
           end
         end
       end

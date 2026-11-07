@@ -58,6 +58,22 @@ class Studio::Monitoring::TestHelperTest < ActiveSupport::TestCase
     assert_analytics_tracked "$ai_generation", actor_id: 3, properties: {kind: "recipe_extraction"}
   end
 
+  test "event payloads filter controller params, which Rails' filter would skip" do
+    params = ActionController::Parameters.new(full_name: "Jo Bloggs", email_address: "jo@example.com", note: "kept")
+
+    Studio::Monitoring::Events.warn("customer_create", params: params)
+
+    assert_event_logged "customer_create", payload: {params: {"full_name" => "[FILTERED]", "email_address" => "[FILTERED]", "note" => "kept"}}
+  end
+
+  test "analytics properties are filtered like logs" do
+    Studio::Monitoring::Analytics.track("customer_added", actor_id: 1, properties: {email_address: "jo@example.com", first: true})
+    Studio::Monitoring::Analytics.identify(actor_id: 1, properties: {phone: "555", role: "owner"})
+
+    assert_analytics_tracked "customer_added", properties: {email_address: "[FILTERED]", first: true}
+    assert_analytics_identified properties: {phone: "[FILTERED]", role: "owner"}
+  end
+
   test "records tenant identities" do
     Studio::Monitoring::Analytics.identify_tenant(tenant_id: 7, properties: {plan: "pro"})
 

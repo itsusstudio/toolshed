@@ -7,7 +7,7 @@ module Studio
         end
 
         def track(event_name, actor_id: Monitoring.actor_id, properties: {})
-          properties = Monitoring.default_properties.merge(properties).compact
+          properties = Redaction.filter(Monitoring.default_properties.merge(properties)).compact
 
           each_backend(event_name) do |backend|
             backend.track(event_name, actor_id: actor_id, properties: properties)
@@ -16,7 +16,8 @@ module Studio
 
         # Person properties must stay non-identifying: no email or name.
         def identify(actor_id: Monitoring.actor_id, properties: {})
-          each_backend("identify") { |backend| backend.identify(actor_id: actor_id, properties: properties.compact) }
+          properties = Redaction.filter(properties).compact
+          each_backend("identify") { |backend| backend.identify(actor_id: actor_id, properties: properties) }
         end
 
         # Group properties for the tenant, such as plan or team size, so
@@ -26,7 +27,7 @@ module Studio
           return if tenant_id.nil?
 
           each_backend("identify_tenant") do |backend|
-            backend.identify_tenant(tenant_id: tenant_id, properties: properties.compact)
+            backend.identify_tenant(tenant_id: tenant_id, properties: Redaction.filter(properties).compact)
           end
         end
 
