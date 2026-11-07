@@ -1,0 +1,21 @@
+pre-push:
+  follow: true
+  commands:
+    ci:
+      files: echo .lefthook/pre-push/ci.rb
+      use_stdin: true
+      run: .lefthook/pre-push/ci.rb
+
+pre-commit:
+  commands:
+    ruby:
+      glob:
+        - "*.rb"
+        - "*.rake"
+        - "*.gemspec"
+        - "Gemfile"
+        - "Rakefile"
+      run: mise x -- bundle exec standardrb --force-exclusion {staged_files}
+    audit:
+      glob: "Gemfile.lock"
+      run: mise x -- bundle exec bundler-audit check --update --quiet

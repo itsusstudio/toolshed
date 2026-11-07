@@ -1,0 +1,17 @@
+[settings]
+idiomatic_version_file_enable_tools = ["ruby"]
+
+[tools]
+lefthook = "2.1.11"
+
+[tasks.ci]
+description = "Run CI for every gem, or the gems named"
+run = "bin/ci"
+
+[tasks.lint]
+description = "Verify formatting/linting"
+run = "bin/lint"
+
+[tasks.style]
+description = "Auto-fix formatting/linting"
+run = "bin/style"

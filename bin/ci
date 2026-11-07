@@ -1,0 +1,24 @@
+#!/usr/bin/env ruby
+# Usage: bin/ci [gem-name ...]   (no args = every gem)
+require "bundler/setup"
+require "active_support"
+require "active_support/continuous_integration"
+
+root = File.expand_path("..", __dir__)
+Dir.chdir(root)
+
+gems = ARGV.empty? ? Dir["gems/*/"].map { |dir| File.basename(dir) }.sort : ARGV
+unknown = gems.reject { |name| File.directory?("gems/#{name}") }
+abort "unknown gem: #{unknown.join(", ")}" if unknown.any?
+
+ActiveSupport::ContinuousIntegration.run do
+  step "Setup", "bundle check || bundle install"
+
+  step "Style", "bin/lint"
+
+  step "Security: Gem audit", "bundle exec bundler-audit check --update --quiet"
+
+  gems.each do |name|
+    step "Tests: #{name}", "cd gems/#{name} && bundle exec rake test"
+  end
+end
