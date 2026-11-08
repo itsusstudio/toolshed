@@ -3,7 +3,7 @@ module Studio
     # Defaults use ||= so an OTEL_* env var set on the host still wins.
     module Telemetry
       TRACE_SAMPLE_RATE = "0.25"
-      HISTOGRAM_BUCKETS_MS = [10, 25, 50, 100, 250, 500, 1_000, 2_500, 5_000, 10_000, 20_000, 30_000, 60_000].freeze
+      HISTOGRAM_BUCKETS_MS = [10, 25, 50, 100, 250, 500, 1_000, 2_500, 5_000, 10_000, 20_000, 30_000, 60_000, 300_000, 900_000, 3_600_000, 18_000_000].freeze
 
       class << self
         def setup(config, env: ::Rails.env)
@@ -51,7 +51,8 @@ module Studio
           OpenTelemetry.tracer_provider.sampler = RequestAndJobSampler.new(OpenTelemetry.tracer_provider.sampler)
           OpenTelemetry.tracer_provider.add_span_processor(Redaction::QuerySpanProcessor.new)
 
-          # Default buckets stop at 1 s, too short for p95 of slow work. The SDK
+          # Default buckets stop at 1 s, too short for p95 of slow work. 300_000 and
+          # 18_000_000 are the five-minute and five-hour job queue limits. The SDK
           # ignores bucket hints on instrument creation, so it takes a view.
           OpenTelemetry.meter_provider.add_view("*", type: :histogram,
             aggregation: OpenTelemetry::SDK::Metrics::Aggregation::ExplicitBucketHistogram.new(boundaries: HISTOGRAM_BUCKETS_MS))

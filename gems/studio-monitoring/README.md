@@ -143,7 +143,7 @@ Rails.application.config.filter_parameters += Studio::Monitoring::FILTER_PARAMET
 
 The studio filter list covers request params, event payloads, error context, analytics properties and trace URLs, including controller params passed inside a payload. It matches key names, never values, so free text such as a message body is sent as is. Add app-specific names after it.
 
-Without any code, the gem also logs one `http_request` event per request and one `job_performed` event per app job, traces requests and jobs, and logs `monitoring_configured` at boot listing what is on.
+Without any code, the gem also logs one `http_request` event per request and one `job_performed` event per app job, records `job.queue_wait` (by queue) and `job.duration` (by job class, queue and ok) for every job, traces requests and jobs, and logs `monitoring_configured` at boot listing what is on.
 
 ## AppSignal request sampling
 
