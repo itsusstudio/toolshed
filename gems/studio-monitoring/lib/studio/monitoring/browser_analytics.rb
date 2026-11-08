@@ -4,7 +4,6 @@ module Studio
     # errors, identified with the same distinct id as the server's events.
     module BrowserAnalytics
       SNIPPET = File.read(File.expand_path("browser_analytics.js", __dir__)).freeze
-      RESET_FLASH = :studio_analytics_reset
 
       module Helper
         # properties are registered on every browser event, so keep them low
@@ -22,19 +21,8 @@ module Studio
             posthog_masked_paths: Monitoring.config.posthog_masked_paths.to_json,
             posthog_user_id: Current.actor_id,
             posthog_tenant_id: Current.tenant_id,
-            posthog_properties: properties.compact.to_json,
-            posthog_reset: (true if flash[RESET_FLASH])
+            posthog_properties: properties.compact.to_json
           })
-        end
-      end
-
-      module Controller
-        private
-
-        # Call on sign-out: the next page drops the browser's identity, so the
-        # next person on the device is not merged into this one.
-        def reset_analytics_identity
-          flash[RESET_FLASH] = true
         end
       end
     end

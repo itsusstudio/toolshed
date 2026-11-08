@@ -6,11 +6,6 @@ class AnalyticsTagController < ApplicationController
     Studio::Monitoring::Current.tenant_id = params[:tenant_id]
     render inline: "<%= studio_analytics_tag(properties: {platform: 'web', plan: nil}) %>"
   end
-
-  def sign_out
-    reset_analytics_identity
-    redirect_to "/analytics_tag"
-  end
 end
 
 class Studio::Monitoring::BrowserAnalyticsTest < ActionDispatch::IntegrationTest
@@ -37,7 +32,6 @@ class Studio::Monitoring::BrowserAnalyticsTest < ActionDispatch::IntegrationTest
     assert_equal({"platform" => "web"}, JSON.parse(script["data-posthog-properties"]))
     assert_includes script.text, "posthog.init"
     assert_nil script["data-posthog-user-id"]
-    assert_nil script["data-posthog-reset"]
   end
 
   test "identifies the browser as the current actor in the tenant's group" do
@@ -45,16 +39,6 @@ class Studio::Monitoring::BrowserAnalyticsTest < ActionDispatch::IntegrationTest
 
     assert_equal "42", script_tag["data-posthog-user-id"]
     assert_equal "7", script_tag["data-posthog-tenant-id"]
-  end
-
-  test "the page after a sign-out resets the browser identity, once" do
-    post "/sign_out"
-    follow_redirect!
-
-    assert_equal "true", script_tag["data-posthog-reset"]
-
-    get "/analytics_tag"
-    assert_nil script_tag["data-posthog-reset"]
   end
 
   test "passes the app's masked paths so the browser cuts token URLs to their prefix" do

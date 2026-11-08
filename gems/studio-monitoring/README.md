@@ -167,14 +167,7 @@ Every URL the browser sends loses its query string and hash, and paths under `po
 
 `properties` are registered on every browser event; keep them low cardinality and free of personal data. Turbo re-runs the tag when its attributes change, such as on sign-in.
 
-On sign-out, call `reset_analytics_identity` in the controller so the next page drops the browser's identity and the next person on the device starts fresh:
-
-```ruby
-def terminate_session
-  reset_session
-  reset_analytics_identity
-end
-```
+A page rendered with no current actor drops an identified browser's identity, so the next person on the device starts fresh after a sign-out or an expired session. Set `Current.actor_id` on every page where someone is signed in, or a visit there splits their PostHog session.
 
 The loader stub only queues calls until PostHog's `array.js` loads, and that file is always the latest SDK, so SDK releases need no gem change. Refresh the stub in `browser_analytics.js` from Project settings > Web snippet when PostHog changes the snippet. `posthog_browser_hosts` takes `defaults:`, PostHog's dated behaviour defaults; the gem pins one and moves it after reading PostHog's changelog, and an app can pin its own.
 
