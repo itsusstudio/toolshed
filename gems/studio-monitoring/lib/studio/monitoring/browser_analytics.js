@@ -36,6 +36,9 @@
     if (posthogUserId) ph.identify(posthogUserId)
     if (posthogTenantId) ph.group("tenant", posthogTenantId)
   }
+  // A Turbo visit can land before the SDK loads, so the loaded callback reads
+  // the latest page's sync, not the closure of the page that called init.
+  window.studioAnalyticsSyncIdentity = syncIdentity
   // Once loaded, a Turbo re-run only refreshes identity and properties.
   if (window.posthog.__loaded) {
     syncIdentity(window.posthog)
@@ -76,7 +79,7 @@
       autocapture: true,
       capture_dead_clicks: true,
       person_profiles: "identified_only",
-      loaded: syncIdentity
+      loaded: (ph) => window.studioAnalyticsSyncIdentity(ph)
     })
   }
 }
