@@ -6,6 +6,7 @@ class Studio::CacheTest < Minitest::Test
   def setup
     Rails.cache.clear
     Flipper.instance.features.each(&:remove)
+    Studio::Cache.clear_all_process_stores
   end
 
   def teardown
@@ -27,13 +28,13 @@ class Studio::CacheTest < Minitest::Test
     assert_equal "new", BookmarkDetailsCache.fetch("x") { "new" }
   end
 
-  def test_skip_nil_keeps_failures_out
+  def test_never_cache_nil_keeps_failures_out
     ChangelogFeedCache.fetch("feed") { nil }
 
     assert_equal ["items"], ChangelogFeedCache.fetch("feed") { ["items"] }
   end
 
-  def test_without_skip_nil_nil_is_cached
+  def test_nil_is_cached_by_default
     BookmarkDetailsCache.fetch("x") { nil }
 
     assert_nil BookmarkDetailsCache.fetch("x") { "value" }
@@ -92,7 +93,126 @@ class Studio::CacheTest < Minitest::Test
     assert_equal 1.day, BookmarkDetailsCache.ttl
     assert_equal 10.minutes, ChangelogFeedCache.ttl
     assert_nil Caches::ProjectSummary.ttl
-    refute BookmarkDetailsCache.nil_skipped
-    assert ChangelogFeedCache.nil_skipped
+    assert BookmarkDetailsCache.caches_nil
+    refute ChangelogFeedCache.caches_nil
+  end
+
+  def test_rails_cache_is_the_default_store
+    assert_equal :rails_cache, BookmarkDetailsCache.store_kind
+  end
+
+  def test_store_rejects_an_unknown_kind
+    assert_raises(ArgumentError) { Class.new(Studio::Cache) { store :redis } }
+  end
+
+  def test_store_rejects_a_size_for_rails_cache
+    assert_raises(ArgumentError) { Class.new(Studio::Cache) { store :rails_cache, size: 1.megabyte } }
+  end
+
+  def test_store_rejects_process_expires_in_outside_the_layered_store
+    assert_raises(ArgumentError) { Class.new(Studio::Cache) { store :process, process_expires_in: 1.minute } }
+  end
+
+  def test_process_stores_require_a_size
+    assert_raises(ArgumentError) { Class.new(Studio::Cache) { store :process } }
+    assert_raises(ArgumentError) { Class.new(Studio::Cache) { store :process_then_rails_cache } }
+  end
+
+  def test_process_store_keeps_its_size
+    assert_equal 1.megabyte, ParsedNumberCache.process_store_size
+  end
+
+  def test_process_store_keeps_values_out_of_rails_cache
+    ParsedNumberCache.fetch("+16045551234") { "parsed" }
+
+    assert_nil Rails.cache.read(ParsedNumberCache.key("+16045551234"))
+    assert_equal "parsed", ParsedNumberCache.fetch("+16045551234") { "again" }
+  end
+
+  def test_process_store_reads_return_a_copy
+    ParsedNumberCache.fetch("x") { ["a"] }
+    ParsedNumberCache.fetch("x") { nil } << "b"
+
+    assert_equal ["a"], ParsedNumberCache.fetch("x") { nil }
+  end
+
+  def test_process_store_entries_expire_after_expires_in
+    ParsedNumberCache.fetch("x") { "old" }
+    travel 1.day + 1.second
+
+    assert_equal "new", ParsedNumberCache.fetch("x") { "new" }
+  end
+
+  def test_process_store_delete_clears_the_entry
+    ParsedNumberCache.fetch("x") { "old" }
+    ParsedNumberCache.delete("x")
+
+    assert_equal "new", ParsedNumberCache.fetch("x") { "new" }
+  end
+
+  def test_each_cache_has_its_own_process_store
+    ParsedNumberCache.fetch("x") { "parsed" }
+
+    assert_equal "summary", FeedSummaryCache.fetch("x") { "summary" }
+  end
+
+  def test_clear_process_store_empties_only_that_cache
+    ParsedNumberCache.fetch("x") { "parsed" }
+    FeedSummaryCache.fetch("x") { "summary" }
+    ParsedNumberCache.clear_process_store
+
+    assert_equal "again", ParsedNumberCache.fetch("x") { "again" }
+    assert_equal "summary", FeedSummaryCache.fetch("x") { "unused" }
+  end
+
+  def test_clear_all_process_stores_empties_every_cache
+    ParsedNumberCache.fetch("x") { "parsed" }
+    FeedSummaryCache.fetch("x") { "summary" }
+    Rails.cache.clear
+    Studio::Cache.clear_all_process_stores
+
+    assert_equal "again", ParsedNumberCache.fetch("x") { "again" }
+    assert_equal "again", FeedSummaryCache.fetch("x") { "again" }
+  end
+
+  def test_layered_store_serves_memory_before_rails_cache
+    FeedSummaryCache.fetch("feed") { "first" }
+    Rails.cache.write(FeedSummaryCache.key("feed"), "changed elsewhere")
+
+    assert_equal "first", FeedSummaryCache.fetch("feed") { "unused" }
+  end
+
+  def test_layered_store_falls_back_to_rails_cache_after_process_expiry
+    FeedSummaryCache.fetch("feed") { "first" }
+    Rails.cache.write(FeedSummaryCache.key("feed"), "changed elsewhere", expires_in: 10.minutes)
+    travel 1.minute + 1.second
+
+    assert_equal "changed elsewhere", FeedSummaryCache.fetch("feed") { "unused" }
+  end
+
+  def test_layered_store_delete_clears_both_layers
+    FeedSummaryCache.fetch("feed") { "old" }
+    FeedSummaryCache.delete("feed")
+
+    assert_nil Rails.cache.read(FeedSummaryCache.key("feed"))
+    assert_equal "new", FeedSummaryCache.fetch("feed") { "new" }
+  end
+
+  def test_process_store_ignores_its_killswitch
+    Flipper.enable(ParsedNumberCache.killswitch)
+    calls = 0
+    2.times { ParsedNumberCache.fetch("x") { calls += 1 } }
+
+    refute ParsedNumberCache.killable?
+    assert_equal 1, calls
+  end
+
+  def test_killed_layered_store_runs_the_block_every_time
+    Flipper.enable(FeedSummaryCache.killswitch)
+    calls = 0
+    2.times { FeedSummaryCache.fetch("feed") { calls += 1 } }
+
+    assert_equal 2, calls
+    assert_nil Rails.cache.read(FeedSummaryCache.key("feed"))
   end
 end
