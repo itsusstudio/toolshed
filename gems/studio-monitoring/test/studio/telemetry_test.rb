@@ -23,6 +23,12 @@ class Studio::Monitoring::TelemetryTest < ActiveSupport::TestCase
     assert_not untraced.call(rack_env("/recipes"))
   end
 
+  test "untraced requests cover unrecorded requests on any path" do
+    untraced = Studio::Monitoring::Telemetry.untraced_requests(@config.untraced_paths)
+
+    assert untraced.call(rack_env("/recipes").merge(Studio::Monitoring::UNRECORDED_REQUEST => true))
+  end
+
   test "with a PostHog project, OpenTelemetry exports to it at 25% of traces" do
     @config.posthog_project(token: "phc_1", host: "https://us.i.posthog.com")
     Studio::Monitoring::Telemetry.stubs(:configure_sdk)

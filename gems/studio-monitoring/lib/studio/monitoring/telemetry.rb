@@ -23,7 +23,7 @@ module Studio
           prefixes, patterns = paths.partition { |path| path.is_a?(String) }
           ->(env) {
             path = env["PATH_INFO"]
-            path.start_with?(*prefixes) || patterns.any? { |pattern| pattern.match?(path) }
+            env.key?(UNRECORDED_REQUEST) || path.start_with?(*prefixes) || patterns.any? { |pattern| pattern.match?(path) }
           }
         end
 

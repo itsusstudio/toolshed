@@ -29,20 +29,23 @@ module Studio
         status, headers, body = @app.call(env)
         duration = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started_at
 
-        sample(env["PATH_INFO"].to_s, status.to_i, duration)
+        sample(env, status.to_i, duration)
         [status, headers, body]
       end
 
       private
 
       # Monitoring must never break the response it is measuring.
-      def sample(path, status, duration)
-        Appsignal.set_namespace(DROPPED_NAMESPACE) if drop?(path, status, duration)
+      def sample(env, status, duration)
+        Appsignal.set_namespace(DROPPED_NAMESPACE) if drop?(env, status, duration)
       rescue => error
         ::Rails.error.report(error, handled: true, source: self.class.name)
       end
 
-      def drop?(path, status, duration)
+      def drop?(env, status, duration)
+        return true if env.key?(UNRECORDED_REQUEST)
+
+        path = env["PATH_INFO"].to_s
         return true if ignored?(path)
         return false if error_reported? || status >= 500
         return true if status == 404

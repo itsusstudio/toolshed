@@ -76,6 +76,13 @@ class Studio::Monitoring::RailtieTest < ActionDispatch::IntegrationTest
     assert_not ignore.call(ActiveSupport::Notifications::Event.new("process_action.action_controller", 0, 1, "id", {request: page}))
   end
 
+  test "lograge skips unrecorded requests" do
+    ignore = DummyApp.config.lograge.ignore_custom
+    unrecorded = ActionDispatch::Request.new(Rack::MockRequest.env_for("/recipes", Studio::Monitoring::UNRECORDED_REQUEST => true))
+
+    assert ignore.call(ActiveSupport::Notifications::Event.new("process_action.action_controller", 0, 1, "id", {request: unrecorded}))
+  end
+
   test "Rails' own request log lines are silenced for health checks" do
     assert_equal "/up", DummyApp.config.silence_healthcheck_path
   end

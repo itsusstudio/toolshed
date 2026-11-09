@@ -8,7 +8,10 @@ module Studio
           lograge = app.config.lograge
           lograge.enabled = !::Rails.env.local?
           lograge.ignore_actions = config.unlogged_actions
-          lograge.ignore_custom = ->(event) { event.payload[:request]&.path == Configuration::HEALTH_CHECK_PATH }
+          lograge.ignore_custom = lambda do |event|
+            request = event.payload[:request]
+            request.present? && (request.path == Configuration::HEALTH_CHECK_PATH || request.has_header?(UNRECORDED_REQUEST))
+          end
           lograge.custom_options = custom_options(ActiveSupport::ParameterFilter.new(app.config.filter_parameters))
           return if !lograge.enabled
 

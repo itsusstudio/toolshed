@@ -9,6 +9,12 @@ class Studio::Monitoring::RequestSamplingTest < ActiveSupport::TestCase
     call_middleware(path: "/up", roll: 0.1)
   end
 
+  test "#call drops an unrecorded request that would otherwise be kept" do
+    Appsignal.expects(:set_namespace).with("sampled_out")
+
+    call_middleware(path: "/recipes", roll: 0.1, duration: 0.6, env: {Studio::Monitoring::UNRECORDED_REQUEST => true})
+  end
+
   test "#call keeps a request that falls inside the sample" do
     Appsignal.expects(:set_namespace).never
 
@@ -93,10 +99,10 @@ class Studio::Monitoring::RequestSamplingTest < ActiveSupport::TestCase
 
   private
 
-  def call_middleware(path:, roll:, status: 200, duration: 0.01, app: ->(_env) { [status, {}, []] })
+  def call_middleware(path:, roll:, status: 200, duration: 0.01, env: {}, app: ->(_env) { [status, {}, []] })
     Process.stubs(:clock_gettime).returns(0.0, duration)
     Random.stubs(:rand).returns(roll)
 
-    Studio::Monitoring::RequestSampling.new(app).call(Rack::MockRequest.env_for(path))
+    Studio::Monitoring::RequestSampling.new(app).call(Rack::MockRequest.env_for(path, env))
   end
 end
