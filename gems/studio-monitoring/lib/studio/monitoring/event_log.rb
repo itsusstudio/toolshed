@@ -1,6 +1,5 @@
 module Studio
   module Monitoring
-    # Turns every Rails.event into one logfmt line on the configured backends.
     module EventLog
       LEVELS = [:debug, :info, :warn, :error].freeze
       QUOTABLE = /[\s"=]/

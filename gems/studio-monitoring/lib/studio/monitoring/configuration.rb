@@ -8,10 +8,10 @@ module Studio
       # purpose, after reading PostHog's changelog for what changed.
       POSTHOG_JS_DEFAULTS = "2026-05-30"
 
-      # Channel actions are named by event (subscribe), not by callback
-      # (subscribed) as AppSignal names them.
       HEALTH_CHECK_PATH = "/up"
 
+      # Channel actions are named by event (subscribe), not by callback
+      # (subscribed) as AppSignal names them.
       DEFAULT_UNLOGGED_ACTIONS = [
         "Rails::HealthController#show",
         "ActiveStorage::Blobs::RedirectController#show",
@@ -28,7 +28,7 @@ module Studio
       ].freeze
 
       # Active Storage signed blob ids sit in unnamed path segments that
-      # Redaction cannot see. Entries are path prefixes or Regexps.
+      # Redaction cannot see.
       DEFAULT_UNTRACED_PATHS = ["/assets/", "/rails/active_storage/"].freeze
 
       attr_accessor :service_name, :default_properties, :untraced_paths,
@@ -52,8 +52,6 @@ module Studio
         @posthog = PosthogProject.new(token: token, host: host)
       end
 
-      # host is where posthog-js sends events, usually a reverse proxy on the
-      # app's own domain so ad blockers let them through.
       def posthog_browser_hosts(host:, ui_host:, defaults: POSTHOG_JS_DEFAULTS)
         raise ArgumentError, "posthog_browser_hosts needs both host: and ui_host:" if host.blank? || ui_host.blank?
 

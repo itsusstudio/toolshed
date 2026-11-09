@@ -1,8 +1,5 @@
 module Studio
   module Monitoring
-    # The studio filter_parameters list: request params, Rails.event payloads,
-    # Rails.error context and trace URLs are all filtered by it.
-    #
     # Symbols match anywhere in a key, case-insensitively (:passw catches
     # password_confirmation). Words that also appear inside harmless keys are
     # anchored Regexps instead, so input_tokens, error_code and

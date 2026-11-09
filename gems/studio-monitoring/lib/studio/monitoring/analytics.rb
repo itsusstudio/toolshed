@@ -20,9 +20,7 @@ module Studio
           each_backend("identify") { |backend| backend.identify(actor_id: actor_id, properties: properties) }
         end
 
-        # Group properties for the tenant, such as plan or team size, so
-        # analytics can be broken down per tenant. Same rule: nothing
-        # identifying.
+        # Tenant properties must stay non-identifying too.
         def identify_tenant(tenant_id: Monitoring.tenant_id, properties: {})
           return if tenant_id.nil?
 

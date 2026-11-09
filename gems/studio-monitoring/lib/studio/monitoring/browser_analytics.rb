@@ -1,7 +1,5 @@
 module Studio
   module Monitoring
-    # posthog-js for the pages: product analytics, session replay and browser
-    # errors, identified with the same distinct id as the server's events.
     module BrowserAnalytics
       SNIPPET = File.read(File.expand_path("browser_analytics.js", __dir__)).freeze
 

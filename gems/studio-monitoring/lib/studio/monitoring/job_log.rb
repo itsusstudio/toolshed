@@ -1,7 +1,5 @@
 module Studio
   module Monitoring
-    # One job_performed event per app job, plus job.queue_wait and job.duration
-    # histograms for every job.
     module JobLog
       class << self
         def setup

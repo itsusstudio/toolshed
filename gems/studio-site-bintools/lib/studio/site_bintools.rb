@@ -7,15 +7,12 @@ module Studio
     SETUP = File.expand_path("site_bintools/templates/setup", __dir__)
 
     HELP_FLAGS = ["-h", "--help"].freeze
-    # Scripts with their own detailed --help, which bin/studio passes through.
     OWN_HELP = ["optimize-images"].freeze
     INSTALL_SUMMARY = "Copy bin/setup into the site (once)"
 
     class Error < StandardError; end
 
     class << self
-      # bin/studio, the site's Bundler binstub for this gem.
-      # Returns the exit status for help and errors; a script replaces the process.
       def cli(argv, root:, out: $stdout)
         script, *args = argv
         return help(out) if script.nil? || HELP_FLAGS.include?(script) || argv == ["help"]

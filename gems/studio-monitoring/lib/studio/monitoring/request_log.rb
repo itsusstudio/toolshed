@@ -2,7 +2,6 @@ require "logger"
 
 module Studio
   module Monitoring
-    # One http_request event per request, built by lograge.
     module RequestLog
       class << self
         def setup(app, config)

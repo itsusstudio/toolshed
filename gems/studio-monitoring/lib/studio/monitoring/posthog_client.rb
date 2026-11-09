@@ -1,6 +1,5 @@
 module Studio
   module Monitoring
-    # The one PostHog client for the process, plus posthog-rails exception capture.
     module PosthogClient
       EXCLUDED_EXCEPTIONS = [
         "ActionController::RoutingError",

@@ -6,8 +6,7 @@ module Studio
       FILTERED = "[FILTERED]"
 
       class << self
-        # The route pattern (/t/:token) when a path parameter has a sensitive
-        # name, so long-lived tokens in paths never reach traces or logs.
+        # Long-lived tokens in paths must never reach traces or logs.
         def masked_path(request)
           return if request.path_parameters.keys.none? { |key| sensitive?(key) }
 

@@ -3,9 +3,6 @@ require "yaml"
 require "flipper"
 
 module Studio
-  # config/feature_flags.yml lists every flag; Flipper owns whether each is on.
-  # Flags are only ever created and removed through the file, so sync! makes
-  # Flipper match it.
   module Flags
     REGISTRY = "config/feature_flags.yml"
 
@@ -24,9 +21,8 @@ module Studio
         registry.keys
       end
 
-      # Adds registered flags Flipper lacks, off, and removes the ones the
-      # registry no longer lists. Safe to run from several instances booting
-      # at once: on Postgres, all but one skip.
+      # Safe to run from several instances booting at once: on Postgres, all
+      # but one skip.
       def sync!
         with_sync_lock do
           Flipper::Adapters::Strict.with_sync_mode do

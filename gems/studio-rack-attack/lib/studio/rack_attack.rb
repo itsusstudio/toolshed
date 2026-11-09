@@ -4,8 +4,6 @@ require "rack/attack"
 require "studio/monitoring"
 
 module Studio
-  # The Rack::Attack rules every studio app shares. Apps add their own
-  # throttles in config/initializers/rack_attack.rb, keyed on req.client_ip.
   module RackAttack
     SCANNER_PATHS = %r{
       # Dotfile / VCS / secret exposure

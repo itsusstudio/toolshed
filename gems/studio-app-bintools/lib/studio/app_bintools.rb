@@ -8,10 +8,7 @@ module Studio
     class Error < StandardError; end
 
     class << self
-      # bin/studio, the app's Bundler binstub for this gem. The bundle is
-      # set up but Rails is not loaded, which keeps it fast enough for git
-      # hooks.
-      # Returns the exit status for help and errors; a script replaces the process.
+      # Rails is not loaded, which keeps bin/studio fast enough for git hooks.
       def cli(argv, root:, out: $stdout)
         script, *args = argv
         return help(out) if script.nil? || HELP_FLAGS.include?(script) || argv == ["help"]

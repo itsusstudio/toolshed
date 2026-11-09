@@ -9,8 +9,6 @@ def system!(*args)
 end
 
 FileUtils.chdir APP_ROOT do
-  # Idempotent dev setup for the marketing site. Safe to re-run anytime.
-
   puts "== Installing Ruby dependencies =="
   system! "gem install bundler --conservative"
   system("bundle check") || system!("bundle install")

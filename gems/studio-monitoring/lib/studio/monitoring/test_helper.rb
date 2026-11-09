@@ -2,7 +2,7 @@ require "studio/monitoring"
 
 module Studio
   module Monitoring
-    # What TestHelper records into. Kept out of TestHelper because every
+    # Kept out of TestHelper because every
     # constant in an included module resolves inside the including test
     # class: TestHelper::Event shadowed apps' own Event model.
     module TestRecording
@@ -82,10 +82,6 @@ module Studio
       mattr_accessor :recorder, instance_accessor: false
     end
 
-    # Include in ActiveSupport::TestCase. Every test records events, analytics
-    # and metrics in memory, and sends no analytics to PostHog or the
-    # database unless it opts in with use_analytics_backends. Errors use
-    # Rails' assert_error_reported.
     module TestHelper
       extend ActiveSupport::Concern
 
@@ -94,8 +90,6 @@ module Studio
         teardown { Studio::Monitoring::TestRecording.recorder = nil }
       end
 
-      # Sends analytics to real backends (:database, :posthog) for the rest of
-      # the test, or only inside the block. Recording carries on either way.
       def use_analytics_backends(*names)
         names.each { |name| Analytics::Backends::ALL.fetch(name) }
         previous = monitoring_recorder.live_backends
@@ -113,8 +107,6 @@ module Studio
         monitoring_recorder.events
       end
 
-      # Matches a subset of the payload; Regexp values match as text. With a
-      # block, only what the block logged counts.
       def assert_event_logged(name, level: nil, payload: {}, &block)
         events = recording(:events, &block)
         match = events.find { |e| e.name == name.to_s && (level.nil? || e.level == level) && monitoring_subset?(e.payload, payload) }
@@ -136,8 +128,6 @@ module Studio
         monitoring_recorder.metrics
       end
 
-      # Matches a subset of properties; Regexp values match as text, like
-      # assert_event_reported. With a block, only what the block tracks counts.
       def assert_analytics_tracked(event_name, actor_id: :any, properties: {}, &block)
         tracked = recording(:analytics, &block)
         match = tracked.find { |a| a.event_name == event_name.to_s && monitoring_match?(a, actor_id, properties) }

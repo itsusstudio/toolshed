@@ -12,7 +12,7 @@ module Studio
       ERROR_REPORTED_KEY = :studio_monitoring_request_sampling_error_reported
 
       class << self
-        # Rails.error subscriber. A handled error attaches to the request's
+        # A handled error attaches to the request's
         # AppSignal transaction, so dropping that request would drop the error too.
         def report(*, **)
           ActiveSupport::IsolatedExecutionState[ERROR_REPORTED_KEY] = true

@@ -3,16 +3,6 @@ require "active_support/core_ext/string/inflections"
 require "i18n"
 
 module Studio
-  # One subclass per enum:
-  #
-  #   module Enums
-  #     module Projects
-  #       class Statuses < Studio::Enum
-  #         value :active
-  #         value :archived
-  #       end
-  #     end
-  #   end
   class Enum
     class Error < StandardError; end
     class DuplicateValueError < Error; end
@@ -26,7 +16,6 @@ module Studio
         subclass.instance_variable_set(:@entries, {})
       end
 
-      # Defines NAME = "name", or NAME = stored when the stored value differs.
       def value(name, stored = name)
         key = name.to_s
         raise InvalidValueError, "#{self.name}: #{key.inspect} is not a lowercase snake_case name" if !key.match?(/\A[a-z][a-z0-9_]*\z/)
@@ -45,8 +34,6 @@ module Studio
         @entries.keys.freeze
       end
 
-      # Name to stored value, the hash Rails' enum takes:
-      #   enum :status, Enums::Projects::Statuses.to_h, default: :active
       def to_h
         @entries.dup
       end
@@ -71,16 +58,13 @@ module Studio
         @entries.key(value)
       end
 
-      # Translated under enums.<class path> by name: Enums::Projects::MaterialTypes
-      # reads enums.projects.material_types.gold. By name, not stored value,
-      # so a stored "invoice.paid" isn't read as a nested key. Falls back to
-      # the humanized name.
+      # By name, not stored value, so a stored "invoice.paid" isn't read as a
+      # nested key.
       def label(value)
         name = key_for(value) || value.to_s
         I18n.t(name, scope: i18n_scope, default: name.to_s.humanize)
       end
 
-      # [[label, value], ...] for a form select.
       def options
         values.map { [label(it), it] }
       end
