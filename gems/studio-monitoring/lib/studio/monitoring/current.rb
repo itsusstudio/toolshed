@@ -5,7 +5,7 @@ module Studio
     # them, so looking them up there would query the database each time, and
     # in development each query's own debug event would look them up again.
     class Current < ActiveSupport::CurrentAttributes
-      attribute :request_id, :job_id, :analytics_session_id, :actor_id, :tenant_id, :locale
+      attribute :request_id, :job_id, :analytics_session_id, :actor_id, :tenant_id, :locale, :unrecorded_request
 
       def actor_id=(value)
         super
@@ -25,6 +25,7 @@ module Studio
       class << self
         def from_request(request)
           self.request_id = request.request_id
+          self.unrecorded_request = request.has_header?(UNRECORDED_REQUEST)
           self.analytics_session_id = request.headers["X-POSTHOG-SESSION-ID"] || posthog_cookie_session_id(request.cookies)
         end
 

@@ -40,6 +40,8 @@ module Studio
         private
 
         def each_backend(event_name)
+          return if Current.unrecorded_request
+
           backends.each do |backend|
             yield backend
           rescue => error

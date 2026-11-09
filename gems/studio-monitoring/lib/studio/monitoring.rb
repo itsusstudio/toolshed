@@ -38,8 +38,8 @@ require_relative "monitoring/browser_analytics"
 module Studio
   module Monitoring
     # Set this Rack env key on an in-process request (a boot warm-up) to keep it
-    # out of AppSignal, the request log and traces. Clients can't set it: their
-    # headers reach Rack as HTTP_*.
+    # out of AppSignal, the request log, traces and analytics. Clients can't
+    # set it: their headers reach Rack as HTTP_*.
     UNRECORDED_REQUEST = "studio_monitoring.unrecorded_request"
 
     # Active Record and Active Job classes, loaded on first use so requiring

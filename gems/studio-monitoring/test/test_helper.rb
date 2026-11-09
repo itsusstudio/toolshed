@@ -48,9 +48,17 @@ DummyApp.routes.draw do
   get "/t/:token", to: "ping#show"
   get "/recipes/:id", to: "ping#show"
   get "/analytics_tag", to: "analytics_tag#show"
+  get "/track", to: "track#show"
 end
 
 class ApplicationController < ActionController::Base
+end
+
+class TrackController < ApplicationController
+  def show
+    Studio::Monitoring::Analytics.track("page_viewed", actor_id: 1)
+    head :ok
+  end
 end
 
 class PingController < ApplicationController

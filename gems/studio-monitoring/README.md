@@ -145,7 +145,7 @@ The studio filter list covers request params, event payloads, error context, ana
 
 Without any code, the gem also logs one `http_request` event per request and one `job_performed` event per app job, records `job.queue_wait` (by queue) and `job.duration` (by job class, queue and ok) for every job, traces requests and jobs, and logs `monitoring_configured` at boot listing what is on.
 
-A request the app makes to itself in-process, such as a boot warm-up through `Rack::MockRequest`, can stay out of AppSignal, the request log and traces by setting `Studio::Monitoring::UNRECORDED_REQUEST` in its Rack env:
+A request the app makes to itself in-process, such as a boot warm-up through `Rack::MockRequest`, can stay out of AppSignal, the request log, traces and analytics by setting `Studio::Monitoring::UNRECORDED_REQUEST` in its Rack env:
 
 ```ruby
 Rails.application.call(Rack::MockRequest.env_for(url, Studio::Monitoring::UNRECORDED_REQUEST => true))

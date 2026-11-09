@@ -83,6 +83,26 @@ class Studio::Monitoring::RailtieTest < ActionDispatch::IntegrationTest
     assert ignore.call(ActiveSupport::Notifications::Event.new("process_action.action_controller", 0, 1, "id", {request: unrecorded}))
   end
 
+  test "unrecorded requests send nothing to analytics" do
+    backend = mock("backend")
+    backend.expects(:track).never
+    Studio::Monitoring::Analytics.stubs(:backends).returns([backend])
+
+    get "/track", env: {Studio::Monitoring::UNRECORDED_REQUEST => true}
+
+    assert_response :success
+  end
+
+  test "ordinary requests still reach analytics" do
+    backend = mock("backend")
+    backend.expects(:track).with("page_viewed", has_entries(actor_id: 1))
+    Studio::Monitoring::Analytics.stubs(:backends).returns([backend])
+
+    get "/track"
+
+    assert_response :success
+  end
+
   test "Rails' own request log lines are silenced for health checks" do
     assert_equal "/up", DummyApp.config.silence_healthcheck_path
   end
