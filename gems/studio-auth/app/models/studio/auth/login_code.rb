@@ -8,6 +8,8 @@ module Studio
 
       belongs_to :user, class_name: "::User", optional: true
 
+      validates :code_digest, :expires_at, presence: true
+
       scope :live, -> { where(consumed_at: nil).where(arel_table[:expires_at].gt(Time.current)) }
       scope :within_lockout_window, -> { where(created_at: LOCKOUT_WINDOW.ago..) }
       scope :purgeable, -> { where(created_at: ...LOCKOUT_WINDOW.ago) }

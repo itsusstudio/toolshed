@@ -3,6 +3,9 @@ module Studio
     class KnownDevice < ActiveRecord::Base # standard:disable Rails/ApplicationRecord -- a gem has no ApplicationRecord
       belongs_to :user, class_name: "::User"
 
+      validates :device_token_digest, :last_seen_at, presence: true
+      validates :device_token_digest, uniqueness: {scope: :user_id}
+
       scope :trusted, -> { where(last_seen_at: KNOWN_DEVICE_TRUST.ago..) }
 
       class << self
