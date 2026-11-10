@@ -1,0 +1,8 @@
+<%= t("studio_auth.sign_in_mailer.login_code.intro") %>
+
+<%= @code %>
+
+<%= t("studio_auth.sign_in_mailer.login_code.expires", count: Studio::Auth::LoginCode::TTL.in_minutes.to_i) %>
+
+<%= t("studio_auth.sign_in_mailer.login_code.ignore") %>
+<%= render "studio/auth/sign_in_mailer/footer" %>

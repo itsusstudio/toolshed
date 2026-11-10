@@ -26,10 +26,10 @@ class Studio::Auth::DeliverabilityTest < ActiveSupport::TestCase
   test "the mail job drops a message the provider refuses instead of retrying" do
     stub_const_resend
     user = User.create!(email_address: "cook@studio.com")
-    Studio::Auth::Mailer.any_instance.expects(:deliver_to).once.raises(Resend::Error::InvalidRequestError, "Invalid `to` field")
+    Studio::Auth::SignInMailer.any_instance.expects(:deliver_to).once.raises(Resend::Error::InvalidRequestError, "Invalid `to` field")
 
     assert_nothing_raised do
-      perform_enqueued_jobs { Studio::Auth::Mailer.with(user: user).locked.deliver_later }
+      perform_enqueued_jobs { Studio::Auth::SignInMailer.with(user: user).locked.deliver_later }
     end
     assert_enqueued_jobs 0
   end

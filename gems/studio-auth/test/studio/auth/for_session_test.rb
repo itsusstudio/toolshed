@@ -8,7 +8,7 @@ class Studio::Auth::ForSessionTest < ActiveSupport::TestCase
     @user = User.create!(email_address: "cook@studio.com")
     @session = @user.sessions.create!
     @jar = ActionDispatch::TestRequest.create.cookie_jar
-    @session.remember_in(@jar)
+    @session.write_cookie(@jar)
   end
 
   test "a session idle past the idle timeout is refused" do
@@ -36,7 +36,7 @@ class Studio::Auth::ForSessionTest < ActiveSupport::TestCase
     travel(10.minutes) { Session.from_cookie(@jar) }
     assert_equal seen, @session.reload.last_seen_at
 
-    travel(Studio::Auth::SESSION_TOUCH_THROTTLE + 1.minute) { Session.from_cookie(@jar) }
+    travel(Studio::Auth::ForSession::SESSION_TOUCH_THROTTLE + 1.minute) { Session.from_cookie(@jar) }
     assert_operator @session.reload.last_seen_at, :>, seen
   end
 

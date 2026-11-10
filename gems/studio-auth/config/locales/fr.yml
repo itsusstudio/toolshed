@@ -2,6 +2,7 @@ fr: &fr
   errors:
     messages:
       undeliverable: "ne peut pas recevoir de courriels"
+      studio_email_only: "exige une adresse courriel @%{domain}"
   studio_auth:
     flash:
       too_many_requests: "Trop de tentatives. Réessayez dans quelques minutes."
@@ -11,12 +12,8 @@ fr: &fr
       too_many_attempts: "Trop d'essais. Demandez un nouveau code."
       signed_out: "Déconnexion réussie."
       signed_out_everywhere: "Sessions fermées sur tous les appareils."
-    devices:
-      browser_on_platform: "%{browser} sur %{platform}"
-      app: "L'application sur %{platform}"
-      unknown_platform: "un téléphone"
-      unknown: "Un appareil inconnu"
-    mailer:
+      admin_sign_in_again: "Reconnectez-vous pour ouvrir l'administration."
+    sign_in_mailer:
       made_in: "%{app_name}, fait à montréal"
       terms: "Conditions"
       privacy: "Confidentialité"
@@ -27,11 +24,6 @@ fr: &fr
           one: "Ce code expire dans %{count} minute."
           other: "Ce code expire dans %{count} minutes."
         ignore: "Si vous n'avez pas demandé ce courriel, vous pouvez l'ignorer sans risque."
-      new_device:
-        subject: "Nouvelle connexion à %{app_name}"
-        intro: "Quelqu'un s'est connecté à votre compte depuis un nouvel appareil."
-        details_html: "<strong>%{device}</strong>, %{time}"
-        if_not: "Si ce n'était pas vous, connectez-vous et choisissez « Se déconnecter partout »."
       locked:
         subject: "Connexion suspendue sur votre compte %{app_name}"
         intro: "Nous avons suspendu la connexion à votre compte après trop de codes incorrects."

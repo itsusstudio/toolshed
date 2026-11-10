@@ -2,6 +2,7 @@ en: &en
   errors:
     messages:
       undeliverable: "can't receive email"
+      studio_email_only: "needs an @%{domain} email address"
   studio_auth:
     flash:
       too_many_requests: "Too many attempts. Try again in a few minutes."
@@ -11,12 +12,8 @@ en: &en
       too_many_attempts: "Too many incorrect codes. Send a new one."
       signed_out: "Signed out."
       signed_out_everywhere: "Signed out on all devices."
-    devices:
-      browser_on_platform: "%{browser} on %{platform}"
-      app: "The app on %{platform}"
-      unknown_platform: "a phone"
-      unknown: "An unknown device"
-    mailer:
+      admin_sign_in_again: "Sign in again to open the admin area."
+    sign_in_mailer:
       made_in: "%{app_name}, made in montreal"
       terms: "Terms"
       privacy: "Privacy"
@@ -27,11 +24,6 @@ en: &en
           one: "This code expires in %{count} minute."
           other: "This code expires in %{count} minutes."
         ignore: "If you didn't request this email, you can safely ignore it."
-      new_device:
-        subject: "New sign-in to %{app_name}"
-        intro: "Someone just signed in to your account on a new device."
-        details_html: "<strong>%{device}</strong>, %{time}"
-        if_not: "If this wasn't you, sign in and choose Sign out everywhere."
       locked:
         subject: "Sign-in paused on your %{app_name} account"
         intro: "We paused sign-in on your account after too many wrong codes."

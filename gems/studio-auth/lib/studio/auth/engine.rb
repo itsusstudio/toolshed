@@ -1,6 +1,8 @@
 module Studio
   module Auth
     class Engine < ::Rails::Engine
+      FILTER_PARAMETERS = [/\Acode\z/].freeze
+
       # rate_limit counts in the controller cache store. A null store turns
       # every limit off; a memory store gives each process its own count.
       config.after_initialize do

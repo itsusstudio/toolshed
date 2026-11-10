@@ -27,7 +27,7 @@ class Studio::Auth::UserTest < ActiveSupport::TestCase
     user = User.create!(email_address: "cook@studio.com")
     user.login_codes.create!(
       code_digest: "d", expires_at: 1.minute.from_now,
-      failed_attempts: Studio::Auth::LOCKOUT_WRONG_CODES, failed_at: Time.current
+      failed_attempts: Studio::Auth::LoginCode::LOCKOUT_WRONG_CODES, failed_at: Time.current
     )
     assert user.sign_in_locked?
 
@@ -40,7 +40,7 @@ class Studio::Auth::UserTest < ActiveSupport::TestCase
     user = User.create!(email_address: "cook@studio.com")
     user.sessions.create!
     device_cookie = Studio::Auth::DeviceCookie.new(ActionDispatch::TestRequest.create.cookie_jar)
-    device_cookie.remember_for(user, user_agent: "test", ip_address: "1.2.3.4")
+    device_cookie.trust_for(user, user_agent: "test", ip_address: "1.2.3.4")
 
     user.destroy!
 

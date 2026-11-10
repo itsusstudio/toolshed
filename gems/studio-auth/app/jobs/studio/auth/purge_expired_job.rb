@@ -6,7 +6,7 @@ module Studio
       def perform
         ::Session.expired.in_batches(of: 1_000).delete_all
         LoginCode.purgeable.in_batches(of: 1_000).delete_all
-        KnownDevice.where(last_seen_at: ...KNOWN_DEVICE_TRUST.ago).in_batches(of: 1_000).delete_all
+        KnownDevice.where(last_seen_at: ...KnownDevice::TRUST_PERIOD.ago).in_batches(of: 1_000).delete_all
       end
     end
   end

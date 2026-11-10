@@ -44,7 +44,7 @@ module Studio
         # screen. A redirect would load /login inside the tab that asked.
         return head(:unauthorized) if native_app_request?
 
-        remember_return_to(request.fullpath) if request.get? || request.head?
+        store_return_path(request.fullpath) if request.get? || request.head?
 
         redirect_to main_app.login_path
       end
@@ -62,7 +62,7 @@ module Studio
           return redirect_to(main_app.login_path, status: :see_other, alert: t("studio_auth.flash.#{issued}"))
         end
 
-        PendingLoginCode.remember_in(session, issued, email_address: user.email_address)
+        PendingLoginCode.store_in_rails_session(session, issued, email_address: user.email_address)
         redirect_to main_app.verify_path, status: :see_other
       end
 
@@ -76,15 +76,11 @@ module Studio
         session[RETURN_TO_KEY] = return_to if return_to
 
         new_session = user.sessions.create!(**request_details)
-        new_session.remember_in(cookies)
+        new_session.write_cookie(cookies)
         assign_current_session(new_session)
-        Events.notify("session_started", actor_id: user.id)
+        Rails.event.notify("authentication.session_started", actor_id: user.id)
 
-        device_status = DeviceCookie.new(cookies).remember_for(user, **request_details)
-        if device_status == :new
-          new_device_mail = Mailer.with(user: user, user_agent: request.user_agent, signed_in_at: Time.current)
-          new_device_mail.new_device.deliver_later
-        end
+        DeviceCookie.new(cookies).trust_for(user, **request_details)
         after_sign_in(user)
         new_session
       end
@@ -93,23 +89,36 @@ module Studio
       end
 
       def terminate_session
-        Events.notify("session_ended") if current_session&.destroy
+        if (session = current_session)
+          Rails.event.notify("authentication.session_ended") if session.destroy
+          disconnect_cable([session])
+        end
         forget_session
       end
 
       def terminate_all_sessions
         if (user = current_user)
+          sessions = user.sessions.to_a
           user.sessions.delete_all
+          disconnect_cable(sessions)
           user.known_devices.delete_all
           user.login_codes.live.update_all(expires_at: Time.current)
-          Events.notify("all_sessions_ended", actor_id: user.id)
+          Rails.event.notify("authentication.all_sessions_ended", actor_id: user.id)
         end
         forget_session
       end
 
+      # An open socket outlives its cookie and would keep receiving
+      # broadcasts. ForCableConnection identifies sockets by session.
+      def disconnect_cable(sessions)
+        return if !defined?(::ActionCable)
+
+        sessions.each { ::ActionCable.server.remote_connections.where(current_session: it).disconnect }
+      end
+
       def forget_session
         assign_current_session(nil)
-        ::Session.forget(cookies)
+        ::Session.delete_cookie(cookies)
         reset_session
       end
 
@@ -127,7 +136,7 @@ module Studio
         new_session
       end
 
-      def remember_return_to(path)
+      def store_return_path(path)
         if safe_return_path?(path)
           session[RETURN_TO_KEY] = path
         else

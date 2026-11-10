@@ -11,12 +11,12 @@ module Studio
       end
 
       def require_pending_login_code
-        @pending = PendingLoginCode.from_session(session)
+        @pending = PendingLoginCode.from_rails_session(session)
         redirect_to main_app.login_path, status: :see_other if @pending.nil?
       end
 
       def clear_pending_login_code
-        PendingLoginCode.forget(session)
+        PendingLoginCode.delete_from_rails_session(session)
       end
 
       def submitted_code

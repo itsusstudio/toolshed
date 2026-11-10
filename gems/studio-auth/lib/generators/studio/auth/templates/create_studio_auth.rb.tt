@@ -9,6 +9,7 @@ class CreateStudioAuth < ActiveRecord::Migration[<%= ActiveRecord::Migration.cur
       end
     end
     add_column :sessions, :last_seen_at, :datetime if !column_exists?(:sessions, :last_seen_at)
+    add_column :users, :staff, :boolean, null: false, default: false if !column_exists?(:users, :staff)
 
     create_table :studio_auth_login_codes do |t|
       t.references :user, foreign_key: true, index: false

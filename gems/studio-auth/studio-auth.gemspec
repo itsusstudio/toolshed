@@ -5,7 +5,7 @@ Gem::Specification.new do |spec|
   spec.email = ["hello@itsusstudio.com"]
 
   spec.summary = "ITSUSSTUDIO passwordless sign-in: 6-digit email codes and persistent sessions for Rails apps"
-  spec.description = "The whole sign-in lifecycle for studio apps: email code login_codes, lockout, expiring database sessions, reauthentication and new-device mail."
+  spec.description = "The whole sign-in lifecycle for studio apps: email codes, lockout, expiring database sessions and lockout mail."
   spec.homepage = "https://github.com/itsusstudio/toolshed/tree/main/gems/studio-auth"
   spec.license = "MIT"
   spec.required_ruby_version = ">= 3.4"

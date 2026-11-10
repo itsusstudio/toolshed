@@ -1,9 +1,9 @@
-<% expires = t("studio_auth.mailer.login_code.expires", count: Studio::Auth::LOGIN_CODE_TTL.in_minutes.to_i) %>
+<% expires = t("studio_auth.sign_in_mailer.login_code.expires", count: Studio::Auth::LoginCode::TTL.in_minutes.to_i) %>
 <% content_for :preheader, expires %>
-<p style="margin:0;"><%= t("studio_auth.mailer.login_code.intro") %></p>
+<p style="margin:0;"><%= t("studio_auth.sign_in_mailer.login_code.intro") %></p>
 <p style="margin:0;padding:32px 0;font-size:56px;line-height:1;font-weight:700;
           letter-spacing:0.04em;font-variant-numeric:tabular-nums;"><%= @code %></p>
 <p style="margin:0;"><%= expires %></p>
 <% content_for :fine_print do %>
-  <p style="margin:0;"><%= t("studio_auth.mailer.login_code.ignore") %></p>
+  <p style="margin:0;"><%= t("studio_auth.sign_in_mailer.login_code.ignore") %></p>
 <% end %>

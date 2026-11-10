@@ -18,7 +18,7 @@ module Studio
         # Codes travel to the mail job encrypted, so they never sit in plain
         # text in the job table or in Active Job's argument logs.
         def encrypt(value)
-          encryptor.encrypt_and_sign(value, expires_in: LOGIN_CODE_TTL)
+          encryptor.encrypt_and_sign(value, expires_in: LoginCode::TTL)
         end
 
         def decrypt(value)

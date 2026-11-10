@@ -70,7 +70,7 @@ module Studio
           code = request_authentication_code("cook@studio.com")
           id = LoginCode.order(:created_at).last.id
 
-          LOGIN_CODE_MAX_ATTEMPTS.times { post verify_path, params: {code: wrong_code(code)} }
+          LoginCode::MAX_ATTEMPTS.times { post verify_path, params: {code: wrong_code(code)} }
           assert_response :redirect
           assert_equal :too_many_attempts, LoginCode.verify(id: id, code: code).status
         end
@@ -81,7 +81,7 @@ module Studio
 
           attacker = open_session
           attacker.post login_path, params: {email_address: "cook@studio.com"}
-          LOGIN_CODE_MAX_ATTEMPTS.times { attacker.post verify_path, params: {code: wrong_code(code)} }
+          LoginCode::MAX_ATTEMPTS.times { attacker.post verify_path, params: {code: wrong_code(code)} }
 
           post verify_path, params: {code: code}
           assert_signed_in
@@ -99,13 +99,13 @@ module Studio
           delete logout_path
 
           attacker = open_session
-          (LOCKOUT_WRONG_CODES / LOGIN_CODE_MAX_ATTEMPTS).times do
+          (LoginCode::LOCKOUT_WRONG_CODES / LoginCode::MAX_ATTEMPTS).times do
             attacker.post login_path, params: {email_address: "cook@studio.com"}
-            travel LOGIN_CODE_RESEND_INTERVAL + 1.second
-            LOGIN_CODE_MAX_ATTEMPTS.times { attacker.post verify_path, params: {code: "000000"} }
+            travel LoginCode::RESEND_INTERVAL + 1.second
+            LoginCode::MAX_ATTEMPTS.times { attacker.post verify_path, params: {code: "000000"} }
           end
           perform_enqueued_jobs
-          locked_subject = I18n.t("studio_auth.mailer.locked.subject", app_name: Auth.config.app_name)
+          locked_subject = I18n.t("studio_auth.sign_in_mailer.locked.subject", app_name: Auth.config.app_name)
           assert(ActionMailer::Base.deliveries.any? { |mail| mail.subject == locked_subject })
 
           ActionMailer::Base.deliveries.clear

@@ -8,7 +8,7 @@ class Studio::Auth::ForControllerTest < ActionDispatch::IntegrationTest
     get "/private"
     assert_redirected_to login_path
 
-    sign_in_as("cook@studio.com")
+    sign_in_with_code("cook@studio.com")
     assert_redirected_to "/private"
   end
 
@@ -20,7 +20,7 @@ class Studio::Auth::ForControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "a cookie for a missing session is looked up once per request" do
-    sign_in_as("cook@studio.com")
+    sign_in_with_code("cook@studio.com")
     Session.delete_all
 
     queries = 0
@@ -29,20 +29,6 @@ class Studio::Auth::ForControllerTest < ActionDispatch::IntegrationTest
 
     assert_equal "out out", response.body
     assert_equal 1, queries
-  end
-
-  test "a first device sends no mail and a second device does" do
-    perform_enqueued_jobs { sign_in_as("cook@studio.com") }
-    assert_equal 0, new_device_mails.size
-
-    other_device = open_session
-    ActionMailer::Base.deliveries.clear
-    perform_enqueued_jobs { other_device.post login_path, params: {email_address: "cook@studio.com"} }
-    code = ActionMailer::Base.deliveries.last.text_part.body.to_s[/\b\d{6}\b/]
-    perform_enqueued_jobs { other_device.post verify_path, params: {code: code} }
-
-    assert_equal 1, new_device_mails.size
-    assert_includes new_device_mails.first.text_part.body.to_s, "support@dummy.app"
   end
 
   test "a return path never leaves the site" do
@@ -58,7 +44,7 @@ class Studio::Auth::ForControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "strangers asking for a code from many IPs cannot lock the owner out" do
-    sign_in_as("cook@studio.com")
+    sign_in_with_code("cook@studio.com")
     delete logout_path
 
     attacker = open_session
@@ -68,11 +54,24 @@ class Studio::Auth::ForControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to root_path
   end
 
+  test "the test helper signs in without a code and signs out" do
+    extend Studio::Auth::TestHelper
+
+    sign_in_as(User.create!(email_address: "cook@studio.com"))
+
+    get "/private"
+    assert_response :success
+
+    sign_out
+    get "/private"
+    assert_redirected_to login_path
+  end
+
   test "after_sign_in runs once on a fresh sign-in" do
     signed_in = []
     ApplicationController.define_method(:after_sign_in) { |user| signed_in << user.email_address }
 
-    sign_in_as("cook@studio.com")
+    sign_in_with_code("cook@studio.com")
     assert_equal ["cook@studio.com"], signed_in
   ensure
     ApplicationController.remove_method(:after_sign_in)
@@ -130,7 +129,7 @@ class Studio::Auth::ForControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "sign out everywhere ends every session, forgets known devices and cancels codes waiting to be typed" do
-    sign_in_as("cook@studio.com")
+    sign_in_with_code("cook@studio.com")
     User.first.sessions.create!
     waiting = Studio::Auth::LoginCode.request_for(email_address: "cook@studio.com", device_cookie: Studio::Auth::DeviceCookie.new(ActionDispatch::TestRequest.create.cookie_jar), ip_address: "6.6.6.6", user_agent: "other")
 
@@ -141,17 +140,37 @@ class Studio::Auth::ForControllerTest < ActionDispatch::IntegrationTest
     assert_equal :expired, Studio::Auth::LoginCode.verify(id: waiting.id, code: waiting.code).status
   end
 
+  test "signing out disconnects that session's sockets and leaves the user's other devices connected" do
+    sign_in_with_code("cook@studio.com")
+    current = Session.last
+    other = User.first.sessions.create!
+
+    delete logout_path
+
+    assert_equal 1, cable_disconnects(current)
+    assert_equal 0, cable_disconnects(other)
+  end
+
+  test "signing out everywhere disconnects every session's sockets" do
+    sign_in_with_code("cook@studio.com")
+    sessions = [Session.last, User.first.sessions.create!]
+
+    delete logout_everywhere_path
+
+    assert_equal [1, 1], sessions.map { cable_disconnects(it) }
+  end
+
   test "signing in again in the same browser ends its previous session" do
-    sign_in_as("cook@studio.com")
+    sign_in_with_code("cook@studio.com")
     previous = Session.last
 
-    sign_in_as("cook@studio.com")
+    sign_in_with_code("cook@studio.com")
 
     refute Session.exists?(previous.id)
   end
 
   test "a session stops working once the app says the account cannot sign in" do
-    sign_in_as("cook@studio.com")
+    sign_in_with_code("cook@studio.com")
     User.any_instance.stubs(:can_sign_in?).returns(false)
 
     get "/private"
@@ -178,14 +197,14 @@ class Studio::Auth::ForControllerTest < ActionDispatch::IntegrationTest
 
   private
 
+  def cable_disconnects(session)
+    ActionCable.server.pubsub.broadcasts("action_cable/#{session.to_gid_param}").size
+  end
+
   def rate_limit_key_for(ip_address)
     controller = Studio::Auth::BaseController.new
     controller.request = ActionDispatch::TestRequest.create("REMOTE_ADDR" => ip_address)
     controller.send(:rate_limit_key)
-  end
-
-  def new_device_mails
-    ActionMailer::Base.deliveries.select { |mail| mail.subject == "New sign-in to Dummy" }
   end
 
   def request_authentication_code(email_address)

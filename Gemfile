@@ -8,5 +8,6 @@ gem "rake"
 gem "minitest"
 gem "mocha"
 gem "sqlite3"
+gem "actioncable"
 
 gem "bundler-audit", require: false

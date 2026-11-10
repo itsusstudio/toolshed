@@ -4,6 +4,7 @@ ENV["DATABASE_URL"] = "sqlite3::memory:"
 require "rails"
 require "action_controller/railtie"
 require "action_mailer/railtie"
+require "action_cable/engine"
 require "active_job/railtie"
 require "active_record/railtie"
 require "erb"
@@ -33,6 +34,7 @@ class DummyApp < Rails::Application
   config.cache_store = :memory_store
   config.active_job.queue_adapter = :test
   config.action_mailer.delivery_method = :test
+  config.action_cable.cable = {"adapter" => "test"}
   config.action_mailer.default_url_options = {host: "example.test"}
   config.i18n.available_locales = [:en, :fr, :nl]
   config.i18n.load_path += Dir[File.join(GENERATOR_TEMPLATES, "locales/*.yml")]
@@ -88,7 +90,17 @@ DummyApp.routes.draw do
   studio_auth
   root to: "pages#show"
   get "/private", to: "pages#private"
+  constraints Studio::Auth::StaffConstraint do
+    get "/admin/engine", to: proc { [200, {}, ["engine"]] }
+  end
+  match "/admin(/*path)", to: "admin#show", via: [:get, :post]
   post "/signup", to: "signups#create"
+end
+
+module ApplicationCable
+  class Connection < ActionCable::Connection::Base
+    include Studio::Auth::ForCableConnection
+  end
 end
 
 class ApplicationController < ActionController::Base
@@ -107,6 +119,14 @@ class PagesController < ApplicationController
   end
 end
 
+class AdminController < ApplicationController
+  include Studio::Auth::ForStaffController
+
+  def show
+    render plain: "admin"
+  end
+end
+
 class SignupsController < ApplicationController
   allow_unauthenticated_access
 
@@ -121,7 +141,7 @@ module AuthenticationTestHelpers
     User.create!(email_address: email_address)
   end
 
-  def sign_in_as(email_address)
+  def sign_in_with_code(email_address)
     create_authentication_user(email_address) if !User.exists?(email_address: email_address)
     post verify_path, params: {code: request_authentication_code(email_address)}
   end

@@ -1,7 +1,0 @@
-<%= t("studio_auth.mailer.locked.intro") %>
-
-<%= strip_tags(t("studio_auth.mailer.locked.try_again_html", count: Studio::Auth::LOCKOUT_DURATION.in_hours.to_i)) %>
-
-<%= t("studio_auth.mailer.locked.known_devices") %>
-
-<%= render "studio/auth/mailer/footer" %>

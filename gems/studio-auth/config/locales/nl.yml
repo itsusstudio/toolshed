@@ -2,6 +2,7 @@ nl: &nl
   errors:
     messages:
       undeliverable: "kan geen e-mail ontvangen"
+      studio_email_only: "vereist een @%{domain}-e-mailadres"
   studio_auth:
     flash:
       too_many_requests: "Te veel pogingen. Probeer het over een paar minuten opnieuw."
@@ -11,12 +12,8 @@ nl: &nl
       too_many_attempts: "Te veel pogingen. Vraag een nieuwe code aan."
       signed_out: "Je bent uitgelogd."
       signed_out_everywhere: "Je bent op alle apparaten uitgelogd."
-    devices:
-      browser_on_platform: "%{browser} op %{platform}"
-      app: "De app op %{platform}"
-      unknown_platform: "een telefoon"
-      unknown: "Een onbekend apparaat"
-    mailer:
+      admin_sign_in_again: "Log opnieuw in om het beheer te openen."
+    sign_in_mailer:
       made_in: "%{app_name}, gemaakt in montreal"
       terms: "Voorwaarden"
       privacy: "Privacy"
@@ -27,11 +24,6 @@ nl: &nl
           one: "Deze code verloopt over %{count} minuut."
           other: "Deze code verloopt over %{count} minuten."
         ignore: "Heb je deze e-mail niet aangevraagd? Dan kun je hem gerust negeren."
-      new_device:
-        subject: "Nieuwe login op je %{app_name}-account"
-        intro: "Iemand heeft zojuist vanaf een nieuw apparaat ingelogd op je account."
-        details_html: "<strong>%{device}</strong>, %{time}"
-        if_not: "Was jij het niet? Log in en kies ‘Overal uitloggen’."
       locked:
         subject: "Inloggen tijdelijk geblokkeerd voor je %{app_name}-account"
         intro: "We hebben inloggen op je account gepauzeerd na te veel onjuiste codes."

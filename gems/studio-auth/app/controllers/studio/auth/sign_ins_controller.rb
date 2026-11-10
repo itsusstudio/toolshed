@@ -9,7 +9,7 @@ module Studio
 
       rate_limit to: 10, within: 1.minute, only: :create, name: "ip",
         by: -> { rate_limit_key }, with: :too_many_requests
-      rate_limit to: SIGN_IN_IP_HOURLY_LIMIT, within: 1.hour, only: :create, name: "ip_hourly",
+      rate_limit to: LoginCode::IP_HOURLY_LIMIT, within: 1.hour, only: :create, name: "ip_hourly",
         by: -> { rate_limit_key }, with: :too_many_requests
 
       def new
@@ -28,7 +28,7 @@ module Studio
         return too_many_requests if issued == :too_many_requests
 
         email_address = TypedInput.email_address(params[:email_address])
-        PendingLoginCode.remember_in(session, issued, email_address: email_address)
+        PendingLoginCode.store_in_rails_session(session, issued, email_address: email_address)
         redirect_to main_app.verify_path, status: :see_other
       end
 

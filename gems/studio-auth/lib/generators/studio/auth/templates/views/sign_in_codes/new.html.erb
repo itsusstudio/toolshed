@@ -1,6 +1,6 @@
 <h1 id="studio-auth-code-title"><%= t("studio_auth.codes.new.title") %></h1>
 
-<p id="studio-auth-code-sent-to"><%= t("studio_auth.codes.new.sent_to", email_address: @pending.email_address, count: Studio::Auth::LOGIN_CODE_TTL.in_minutes.to_i) %></p>
+<p id="studio-auth-code-sent-to"><%= t("studio_auth.codes.new.sent_to", email_address: @pending.email_address, count: Studio::Auth::LoginCode::TTL.in_minutes.to_i) %></p>
 
 <% if flash[:alert] %>
   <p id="studio-auth-alert" role="alert"><%= flash[:alert] %></p>

@@ -1,8 +1,6 @@
 require "test_helper"
 
-class Studio::Auth::MailerTest < ActionMailer::TestCase
-  Mailer = Studio::Auth::Mailer
-
+class Studio::Auth::SignInMailerTest < ActionMailer::TestCase
   setup do
     @user = User.create!(email_address: "cook@studio.com")
     @login_code = Studio::Auth::LoginCode.create!(
@@ -41,18 +39,6 @@ class Studio::Auth::MailerTest < ActionMailer::TestCase
     assert_empty mail.attachments
   end
 
-  test "a new sign-in shows the user's own time, or UTC when the app gives no zone" do
-    signed_in_at = Time.utc(2026, 11, 10, 19, 2)
-    user = @user
-    user.define_singleton_method(:time_zone) { "America/Toronto" }
-    local = Mailer.with(user: user, user_agent: "Mozilla/5.0", signed_in_at: signed_in_at).new_device.deliver_now.text_part.body.to_s
-    assert_includes local, "14:02"
-    refute_includes local, "UTC"
-
-    utc = Mailer.with(user: User.find(@user.id), user_agent: "Mozilla/5.0", signed_in_at: signed_in_at).new_device.deliver_now.text_part.body.to_s
-    assert_includes utc, "19:02 UTC"
-  end
-
   test "login_code is written in the user's locale" do
     @user.update!(locale: "fr")
 
@@ -68,7 +54,7 @@ class Studio::Auth::MailerTest < ActionMailer::TestCase
     assert_nil login_code_mail.deliver_now
 
     Studio::Auth::AppReviewAccounts.unstub(:include?)
-    assert_nil Mailer.with(login_code: @login_code, encrypted_code: "tampered").login_code.deliver_now
+    assert_nil Studio::Auth::SignInMailer.with(login_code: @login_code, encrypted_code: "tampered").login_code.deliver_now
   end
 
   test "every locale has every key the English copy has" do
@@ -79,10 +65,10 @@ class Studio::Auth::MailerTest < ActionMailer::TestCase
   end
 
   test "every email has a preview at /rails/mailers that renders" do
-    preview = ActionMailer::Preview.find("studio/auth/mailer")
+    preview = ActionMailer::Preview.find("studio/auth/sign_in_mailer")
     users_before = User.count
 
-    assert_equal ["locked", "login_code", "new_device"], preview.emails.sort
+    assert_equal ["locked", "login_code"], preview.emails.sort
     preview.emails.each do |email|
       mail = preview.call(email)
       assert_includes mail.subject, "Dummy", "#{email} preview did not render"
@@ -124,7 +110,7 @@ class Studio::Auth::MailerTest < ActionMailer::TestCase
   end
 
   def login_code_mail
-    Mailer.with(login_code: @login_code, encrypted_code: Studio::Auth::Secrets.encrypt("123456")).login_code
+    Studio::Auth::SignInMailer.with(login_code: @login_code, encrypted_code: Studio::Auth::Secrets.encrypt("123456")).login_code
   end
 
   def keys(hash, prefix = nil)

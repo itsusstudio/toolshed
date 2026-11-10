@@ -35,12 +35,12 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
 
     refute_equal victim.id, attacker.id
     assert LoginCode.find(attacker.id).decoy?
-    Studio::Auth::LOGIN_CODE_MAX_ATTEMPTS.times { verify(attacker, code: "000000x") }
+    Studio::Auth::LoginCode::MAX_ATTEMPTS.times { verify(attacker, code: "000000x") }
     assert_equal :verified, verify(victim).status
   end
 
   test "a known device inside the cooldown gets a real code" do
-    @device.remember_for(@user, user_agent: "test", ip_address: "1.2.3.4")
+    @device.trust_for(@user, user_agent: "test", ip_address: "1.2.3.4")
     first = request_sign_in("cook@studio.com", device_cookie: Studio::Auth::DeviceCookie.new(ActionDispatch::TestRequest.create.cookie_jar))
     second = request_sign_in("cook@studio.com")
 
@@ -52,7 +52,7 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
   test "past the hourly mail budget an unknown device gets decoys" do
     LoginCode::MAIL_BUDGET.times do
       request_sign_in("cook@studio.com", device_cookie: stranger)
-      travel Studio::Auth::LOGIN_CODE_RESEND_INTERVAL + 1.second
+      travel Studio::Auth::LoginCode::RESEND_INTERVAL + 1.second
     end
 
     assert LoginCode.find(request_sign_in("cook@studio.com", device_cookie: stranger).id).decoy?
@@ -60,7 +60,7 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
 
   test "a new code expires the previous one" do
     first = request_sign_in("cook@studio.com")
-    travel Studio::Auth::LOGIN_CODE_RESEND_INTERVAL + 1.second
+    travel Studio::Auth::LoginCode::RESEND_INTERVAL + 1.second
     second = request_sign_in("cook@studio.com")
 
     assert_equal :expired, verify(first).status
@@ -70,7 +70,7 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
   test "verify refuses an expired code" do
     issued = request_sign_in("cook@studio.com")
 
-    travel Studio::Auth::LOGIN_CODE_TTL + 1.second
+    travel Studio::Auth::LoginCode::TTL + 1.second
     assert_equal :expired, verify(issued).status
   end
 
@@ -78,7 +78,7 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
     lock_account
     assert @user.sign_in_locked?
 
-    travel Studio::Auth::LOCKOUT_DURATION + 1.minute
+    travel Studio::Auth::LoginCode::LOCKOUT_DURATION + 1.minute
     issued = LoginCode.send(:issue, user: @user, known_device: false, device_cookie: stranger, ip_address: "6.6.6.6", user_agent: "attacker")
     verify(issued, code: "000000x")
 
@@ -87,12 +87,12 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
 
   test "each failure past the limit lengthens the lock" do
     lock_account
-    travel Studio::Auth::LOCKOUT_DURATION + 1.minute
+    travel Studio::Auth::LoginCode::LOCKOUT_DURATION + 1.minute
     refute @user.sign_in_locked?
 
     issued = LoginCode.send(:issue, user: @user, known_device: false, device_cookie: stranger, ip_address: "6.6.6.6", user_agent: "attacker")
     verify(issued, code: "000000x")
-    travel Studio::Auth::LOCKOUT_DURATION + 1.minute
+    travel Studio::Auth::LoginCode::LOCKOUT_DURATION + 1.minute
     assert @user.sign_in_locked?, "the 11th failure should lock for two durations"
   end
 
@@ -119,8 +119,8 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
       events = capture_event_names do
         3.times do
           issued = request_sign_in("review@studio.com", device_cookie: stranger)
-          Studio::Auth::LOGIN_CODE_MAX_ATTEMPTS.times { verify(issued, code: "000000") }
-          travel Studio::Auth::LOGIN_CODE_RESEND_INTERVAL + 1.second
+          Studio::Auth::LoginCode::MAX_ATTEMPTS.times { verify(issued, code: "000000") }
+          travel Studio::Auth::LoginCode::RESEND_INTERVAL + 1.second
         end
       end
 
@@ -134,20 +134,20 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
   end
 
   test "a device unused past the session lifetime stops skipping the lockout" do
-    @device.remember_for(@user, user_agent: "test", ip_address: "1.2.3.4")
+    @device.trust_for(@user, user_agent: "test", ip_address: "1.2.3.4")
 
-    travel Studio::Auth::KNOWN_DEVICE_TRUST + 1.day
-    refute @device.known_for?(@user)
+    travel Studio::Auth::KnownDevice::TRUST_PERIOD + 1.day
+    refute @device.trusted_for?(@user)
   end
 
   test "a stolen known-device cookie locks after its own failures, while the owner's other devices still sign in" do
     owner_laptop = stranger
-    owner_laptop.remember_for(@user, user_agent: "laptop", ip_address: "1.2.3.4")
-    @device.remember_for(@user, user_agent: "stolen", ip_address: "1.2.3.4")
+    owner_laptop.trust_for(@user, user_agent: "laptop", ip_address: "1.2.3.4")
+    @device.trust_for(@user, user_agent: "stolen", ip_address: "1.2.3.4")
 
-    (Studio::Auth::LOCKOUT_WRONG_CODES / Studio::Auth::LOGIN_CODE_MAX_ATTEMPTS).times do
+    (Studio::Auth::LoginCode::LOCKOUT_WRONG_CODES / Studio::Auth::LoginCode::MAX_ATTEMPTS).times do
       issued = request_sign_in("cook@studio.com")
-      Studio::Auth::LOGIN_CODE_MAX_ATTEMPTS.times { verify(issued, code: "000000x") }
+      Studio::Auth::LoginCode::MAX_ATTEMPTS.times { verify(issued, code: "000000x") }
     end
 
     issued = request_sign_in("cook@studio.com")
@@ -171,7 +171,7 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
     User.any_instance.stubs(:can_sign_in?).returns(false)
 
     assert_equal :invalid, verify(issued).status
-    travel Studio::Auth::LOGIN_CODE_RESEND_INTERVAL + 1.second
+    travel Studio::Auth::LoginCode::RESEND_INTERVAL + 1.second
     assert LoginCode.find(request_sign_in("cook@studio.com").id).decoy?
   end
 
@@ -180,9 +180,9 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
       reviewer = User.create!(email_address: "review@studio.com")
       events = capture_event_names do
         perform_enqueued_jobs do
-          (Studio::Auth::APP_REVIEW_LOCKOUT_WRONG_CODES / Studio::Auth::LOGIN_CODE_MAX_ATTEMPTS).times do
+          (Studio::Auth::LoginCode::APP_REVIEW_LOCKOUT_WRONG_CODES / Studio::Auth::LoginCode::MAX_ATTEMPTS).times do
             issued = request_sign_in("review@studio.com", device_cookie: stranger)
-            Studio::Auth::LOGIN_CODE_MAX_ATTEMPTS.times { verify(issued, code: "000000") }
+            Studio::Auth::LoginCode::MAX_ATTEMPTS.times { verify(issued, code: "000000") }
           end
         end
       end
@@ -195,7 +195,7 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
   end
 
   test "the per-IP hourly limit is counted in the database" do
-    Studio::Auth::SIGN_IN_IP_HOURLY_LIMIT.times { |n| request_sign_in("visitor#{n}@studio.com", device_cookie: stranger) }
+    Studio::Auth::LoginCode::IP_HOURLY_LIMIT.times { |n| request_sign_in("visitor#{n}@studio.com", device_cookie: stranger) }
 
     assert_equal :too_many_requests, request_sign_in("cook@studio.com")
   end
@@ -203,19 +203,11 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
   test "signing in on a new device replaces its cookie, so a planted one never becomes known" do
     @device.ensure_device_token!
     planted = @device.device_token
-    @user.update_columns(created_at: 1.day.ago)
 
-    assert_equal :new, @device.remember_for(@user, user_agent: "test", ip_address: "1.2.3.4")
+    @device.trust_for(@user, user_agent: "test", ip_address: "1.2.3.4")
+
     refute_equal planted, @device.device_token
-    assert @device.known_for?(@user)
-  end
-
-  test "after every known device is forgotten, the next sign-in is still a new device" do
-    @user.update_columns(created_at: 1.day.ago)
-    @device.remember_for(@user, user_agent: "test", ip_address: "1.2.3.4")
-    @user.known_devices.delete_all
-
-    assert_equal :new, stranger.remember_for(@user, user_agent: "attacker", ip_address: "6.6.6.6")
+    assert @device.trusted_for?(@user)
   end
 
   private
@@ -240,10 +232,10 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
   end
 
   def lock_account
-    (Studio::Auth::LOCKOUT_WRONG_CODES / Studio::Auth::LOGIN_CODE_MAX_ATTEMPTS).times do
+    (Studio::Auth::LoginCode::LOCKOUT_WRONG_CODES / Studio::Auth::LoginCode::MAX_ATTEMPTS).times do
       issued = LoginCode.send(:issue, user: @user, known_device: false, device_cookie: stranger, ip_address: "6.6.6.6", user_agent: "attacker")
-      Studio::Auth::LOGIN_CODE_MAX_ATTEMPTS.times { verify(issued, code: "000000x") }
-      travel Studio::Auth::LOGIN_CODE_RESEND_INTERVAL + 1.second
+      Studio::Auth::LoginCode::MAX_ATTEMPTS.times { verify(issued, code: "000000x") }
+      travel Studio::Auth::LoginCode::RESEND_INTERVAL + 1.second
     end
   end
 

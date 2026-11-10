@@ -1,5 +1,0 @@
-<% details = t("studio_auth.mailer.new_device.details_html", device: @device, time: @signed_in_at) %>
-<% content_for :preheader, strip_tags(details) %>
-<p style="margin:0;"><%= t("studio_auth.mailer.new_device.intro") %></p>
-<p class="sa-box" style="margin:16px 0 0;padding:16px;border:1px solid #000000;"><%= details %></p>
-<p style="margin:16px 0 0;"><%= t("studio_auth.mailer.new_device.if_not") %></p>

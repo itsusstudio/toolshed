@@ -4,7 +4,7 @@ module Studio
       self::SESSION_KEY = :studio_auth_pending
 
       class << self
-        def remember_in(session, issued, email_address:)
+        def store_in_rails_session(session, issued, email_address:)
           session[self::SESSION_KEY] = {
             "id" => issued.id,
             "email_address" => email_address,
@@ -12,7 +12,7 @@ module Studio
           }.compact
         end
 
-        def from_session(session)
+        def from_rails_session(session)
           stored = session[self::SESSION_KEY]
           return if !stored.is_a?(Hash) || stored["id"].blank?
 
@@ -24,7 +24,7 @@ module Studio
           ::Rails.env.development?
         end
 
-        def forget(session)
+        def delete_from_rails_session(session)
           session.delete(self::SESSION_KEY)
         end
       end

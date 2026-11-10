@@ -10,4 +10,8 @@ Studio::Auth.configure do |c|
   # 90.days absolute, for apps holding sensitive data.
   c.session_idle_timeout = 20.years
   c.session_absolute_timeout = 20.years
+  # How recently staff must have signed in to view the admin area, and to
+  # change anything in it. Writes allow 12.hours at most.
+  c.staff_read_sign_in_max_age = 12.hours
+  c.staff_write_sign_in_max_age = 12.hours
 end

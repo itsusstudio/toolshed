@@ -4,7 +4,21 @@ module Studio
       Issued = Data.define(:id, :code)
       Verification = Data.define(:status, :user)
 
+      TTL = 10.minutes
+      MAX_ATTEMPTS = 5
+      RESEND_INTERVAL = 60.seconds
       MAIL_BUDGET = 10
+      IP_HOURLY_LIMIT = 30
+
+      LOCKOUT_WINDOW = 24.hours
+      LOCKOUT_WRONG_CODES = 10
+      LOCKOUT_DURATION = 1.hour
+      APP_REVIEW_LOCKOUT_WRONG_CODES = 20
+
+      # Decoys have no user, but must run the same queries as a real address
+      # so response time doesn't reveal which addresses have accounts. No
+      # user has id 0; a nil id would query IS NULL and scan every decoy.
+      DECOY_USER_ID = 0
 
       belongs_to :user, class_name: "::User", optional: true
 
@@ -27,7 +41,7 @@ module Studio
 
           device_cookie.ensure_device_token!
           found = ::User.find_by(email_address: email_address)
-          known_device = device_cookie.known_for?(found)
+          known_device = device_cookie.trusted_for?(found)
           attributes = {
             known_device: known_device, device_cookie: device_cookie,
             ip_address: ip_address, user_agent: user_agent
@@ -67,7 +81,7 @@ module Studio
             matches = login_code.code_matches?(code.to_s)
             if matches && !blocked
               login_code.update!(consumed_at: Time.current)
-              Events.notify("login_code_verified", actor_id: login_code.user_id)
+              Rails.event.notify("authentication.login_code_verified", actor_id: login_code.user_id)
               next Verification.new(status: :verified, user: owner)
             end
 
@@ -116,7 +130,7 @@ module Studio
         end
 
         def ip_over_hourly_limit?(ip_address)
-          where(ip_address: ip_address, created_at: 1.hour.ago..).count >= SIGN_IN_IP_HOURLY_LIMIT
+          where(ip_address: ip_address, created_at: 1.hour.ago..).count >= IP_HOURLY_LIMIT
         end
 
         # Every query runs whatever the answer, so a decoy takes as long as a
@@ -143,12 +157,12 @@ module Studio
 
         def recent_login_code(user)
           live.where(user_id: user&.id || DECOY_USER_ID)
-            .where(failed_attempts: ...LOGIN_CODE_MAX_ATTEMPTS)
-            .where(created_at: LOGIN_CODE_RESEND_INTERVAL.ago..).order(:created_at).last
+            .where(failed_attempts: ...MAX_ATTEMPTS)
+            .where(created_at: RESEND_INTERVAL.ago..).order(:created_at).last
         end
 
         def issue_decoy(reason:, user:, **attributes)
-          Events.notify("sign_in_decoyed", reason: reason, actor_id: user&.id)
+          Rails.event.notify("authentication.sign_in_decoyed", reason: reason, actor_id: user&.id)
           issue(user: nil, **attributes)
         end
 
@@ -158,14 +172,14 @@ module Studio
           login_code = create!(
             user: user,
             code_digest: digest_code(code),
-            expires_at: LOGIN_CODE_TTL.from_now, known_device: known_device,
+            expires_at: TTL.from_now, known_device: known_device,
             device_token_digest: KnownDevice.digest(device_cookie.device_token),
             ip_address: ip_address, user_agent: user_agent
           )
 
           # Decoys enqueue too, so a real address takes the same time to answer.
-          Mailer.with(login_code: login_code, encrypted_code: Secrets.encrypt(code)).login_code.deliver_later
-          Events.notify("login_code_issued", actor_id: user&.id, decoy: user.nil?)
+          SignInMailer.with(login_code: login_code, encrypted_code: Secrets.encrypt(code)).login_code.deliver_later
+          Rails.event.notify("authentication.login_code_issued", actor_id: user&.id, decoy: user.nil?)
           Issued.new(id: login_code.id, code: code)
         end
 
@@ -181,16 +195,16 @@ module Studio
         def record_failure(login_code)
           login_code.update!(failed_attempts: login_code.failed_attempts + 1, failed_at: Time.current)
           just_locked = just_locked?(login_code.user, device_digest: lockout_scope(login_code))
-          Events.notify("login_code_rejected", actor_id: login_code.user_id)
+          Rails.event.notify("authentication.login_code_rejected", actor_id: login_code.user_id)
           return if login_code.decoy?
 
           app_review_account = login_code.user.app_review_account?
-          Events.notify("app_review_account_code_rejected", actor_id: login_code.user_id) if app_review_account
+          Rails.event.notify("authentication.app_review_account_code_rejected", actor_id: login_code.user_id) if app_review_account
           return if !just_locked
 
           event = app_review_account ? "app_review_account_locked" : "account_locked"
-          Events.notify(event, actor_id: login_code.user_id)
-          Mailer.with(user: login_code.user).locked.deliver_later if !app_review_account
+          Rails.event.notify("authentication.#{event}", actor_id: login_code.user_id)
+          SignInMailer.with(user: login_code.user).locked.deliver_later if !app_review_account
         end
       end
 
@@ -209,7 +223,7 @@ module Studio
       end
 
       def exhausted?
-        failed_attempts >= LOGIN_CODE_MAX_ATTEMPTS
+        failed_attempts >= MAX_ATTEMPTS
       end
 
       # The digest is compared for decoys too, so they cost the same time;

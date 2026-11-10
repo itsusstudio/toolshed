@@ -4,6 +4,7 @@ module Studio
       extend ActiveSupport::Concern
 
       COOKIE_NAME = :session_id
+      SESSION_TOUCH_THROTTLE = 1.hour
 
       included do
         belongs_to :user, class_name: "::User"
@@ -24,6 +25,10 @@ module Studio
         }
       end
 
+      def recent_enough_for_staff?(write:)
+        created_at >= Auth.config.staff_sign_in_max_age(write: write).ago
+      end
+
       class_methods do
         def from_cookie(cookie_jar, scope: all)
           id = id_from_cookie(cookie_jar)
@@ -39,12 +44,12 @@ module Studio
           cookie_jar.signed[COOKIE_NAME]
         end
 
-        def forget(cookie_jar)
+        def delete_cookie(cookie_jar)
           cookie_jar.delete(COOKIE_NAME)
         end
       end
 
-      def remember_in(cookie_jar)
+      def write_cookie(cookie_jar)
         cookie_jar.signed[COOKIE_NAME] = {
           value: id,
           expires: cookie_expires_at,
