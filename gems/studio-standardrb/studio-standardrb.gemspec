@@ -2,7 +2,7 @@ Gem::Specification.new do |spec|
   spec.name = "studio-standardrb"
   spec.version = File.read(File.expand_path("../../VERSION", __dir__)).strip
   spec.authors = ["ITSUSSTUDIO"]
-  spec.email = ["mackenzie@itsusstudio.com"]
+  spec.email = ["hello@itsusstudio.com"]
 
   spec.summary = "ITSUSSTUDIO rules for Standard Ruby"
   spec.description = "The studio's lint stack in one gem: Standard, its Rails plugin, the factory_bot and rake cops, and the studio's own rules."

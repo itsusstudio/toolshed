@@ -2,7 +2,7 @@ Gem::Specification.new do |spec|
   spec.name = "studio-app-bintools"
   spec.version = File.read(File.expand_path("../../VERSION", __dir__)).strip
   spec.authors = ["ITSUSSTUDIO"]
-  spec.email = ["mackenzie@itsusstudio.com"]
+  spec.email = ["hello@itsusstudio.com"]
 
   spec.summary = "ITSUSSTUDIO bin/ scripts for Rails apps"
   spec.description = "The dev, database, credentials, lint and deploy scripts every studio app runs, shared instead of copied. Apps run them through bin/studio, a Bundler binstub."

@@ -2,7 +2,7 @@ Gem::Specification.new do |spec|
   spec.name = "studio-settings"
   spec.version = File.read(File.expand_path("../../VERSION", __dir__)).strip
   spec.authors = ["ITSUSSTUDIO"]
-  spec.email = ["mackenzie@itsusstudio.com"]
+  spec.email = ["hello@itsusstudio.com"]
 
   spec.summary = "ITSUSSTUDIO settings: config/app.yml as dot-accessible, immutable AppSettings"
   spec.description = "Turns config_for(:app) into nested Data objects, so a mistyped or missing key raises instead of returning nil."

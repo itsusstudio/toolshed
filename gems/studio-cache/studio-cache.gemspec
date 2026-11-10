@@ -2,7 +2,7 @@ Gem::Specification.new do |spec|
   spec.name = "studio-cache"
   spec.version = File.read(File.expand_path("../../VERSION", __dir__)).strip
   spec.authors = ["ITSUSSTUDIO"]
-  spec.email = ["mackenzie@itsusstudio.com"]
+  spec.email = ["hello@itsusstudio.com"]
 
   spec.summary = "ITSUSSTUDIO caches: one class per cache over Rails.cache, each behind a Flipper killswitch"
   spec.description = "Declare a cache's TTL and version on a class; it builds its keys the Rails way and reads its killswitch flag from its name."

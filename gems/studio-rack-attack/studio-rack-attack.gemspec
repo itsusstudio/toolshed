@@ -2,7 +2,7 @@ Gem::Specification.new do |spec|
   spec.name = "studio-rack-attack"
   spec.version = File.read(File.expand_path("../../VERSION", __dir__)).strip
   spec.authors = ["ITSUSSTUDIO"]
-  spec.email = ["mackenzie@itsusstudio.com"]
+  spec.email = ["hello@itsusstudio.com"]
 
   spec.summary = "ITSUSSTUDIO Rack::Attack baseline: client IP behind Cloudflare, scanner blocklist, global throttle"
   spec.description = "The Rack::Attack rules and responses every studio app shares; apps add their own throttles on top."

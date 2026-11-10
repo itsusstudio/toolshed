@@ -2,7 +2,7 @@ Gem::Specification.new do |spec|
   spec.name = "studio-auth"
   spec.version = File.read(File.expand_path("../../VERSION", __dir__)).strip
   spec.authors = ["ITSUSSTUDIO"]
-  spec.email = ["mackenzie@itsusstudio.com"]
+  spec.email = ["hello@itsusstudio.com"]
 
   spec.summary = "ITSUSSTUDIO passwordless sign-in: 6-digit email codes and persistent sessions for Rails apps"
   spec.description = "The whole sign-in lifecycle for studio apps: email code login_codes, lockout, expiring database sessions, reauthentication and new-device mail."

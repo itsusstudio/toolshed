@@ -2,7 +2,7 @@ Gem::Specification.new do |spec|
   spec.name = "studio-enum"
   spec.version = File.read(File.expand_path("../../VERSION", __dir__)).strip
   spec.authors = ["ITSUSSTUDIO"]
-  spec.email = ["mackenzie@itsusstudio.com"]
+  spec.email = ["hello@itsusstudio.com"]
 
   spec.summary = "ITSUSSTUDIO enums: named string values with constants, Rails enum mappings and translated labels"
   spec.description = "One class per enum. Declare values once; get constants, lookups, a Rails enum mapping and I18n labels for select boxes."

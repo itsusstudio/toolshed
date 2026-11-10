@@ -2,7 +2,7 @@ Gem::Specification.new do |spec|
   spec.name = "studio-monitoring"
   spec.version = File.read(File.expand_path("../../VERSION", __dir__)).strip
   spec.authors = ["ITSUSSTUDIO"]
-  spec.email = ["mackenzie@itsusstudio.com"]
+  spec.email = ["hello@itsusstudio.com"]
 
   spec.summary = "ITSUSSTUDIO logging, errors, metrics and analytics for Rails apps"
   spec.description = "One Monitoring API (Logging, Errors, Metrics, Analytics) over AppSignal, PostHog and OpenTelemetry, set up the studio way by a Railtie."

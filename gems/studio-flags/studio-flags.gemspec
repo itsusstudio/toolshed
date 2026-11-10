@@ -2,7 +2,7 @@ Gem::Specification.new do |spec|
   spec.name = "studio-flags"
   spec.version = File.read(File.expand_path("../../VERSION", __dir__)).strip
   spec.authors = ["ITSUSSTUDIO"]
-  spec.email = ["mackenzie@itsusstudio.com"]
+  spec.email = ["hello@itsusstudio.com"]
 
   spec.summary = "ITSUSSTUDIO feature flags: a config/feature_flags.yml registry synced into Flipper"
   spec.description = "Flags are declared, described and removed in one YAML file; flipper:sync reconciles Flipper with it and the Flipper UI shows the descriptions."
