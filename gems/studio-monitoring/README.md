@@ -2,81 +2,60 @@
 
 Events, errors, logs, metrics and analytics for studio Rails apps, built on `Rails.event`, `Rails.error`, `Rails.logger`, OpenTelemetry and PostHog.
 
-## Which one to use
-
 | Module | Use it for | Ends up in |
 | --- | --- | --- |
-| `Events` | something happened that you will search, filter or chart | logfmt line in Rails, AppSignal and PostHog logs |
+| `Events` | something happened that you will search, filter or chart (pick this over `Logs` when unsure) | logfmt line in Rails, AppSignal and PostHog logs |
 | `Errors` | something failed and someone should fix it | AppSignal and PostHog error tracking |
-| `Logs` | free text for a person reading the app's own log output | `Rails.logger` only |
-| `Metrics` | a count or duration you want as a time series | PostHog metrics, through OpenTelemetry |
-| `Analytics` | a product action you want in funnels and retention | PostHog product analytics, optionally the database |
-
-When unsure between `Events` and `Logs`, pick `Events`.
+| `Logs` | free text for someone reading the app's own log | `Rails.logger` only |
+| `Metrics` | a count or duration as a time series | PostHog metrics, through OpenTelemetry |
+| `Analytics` | a product action for funnels and retention | PostHog, optionally the database |
 
 ## Events
 
-Wraps `Rails.event`. Each event becomes one structured line with the actor, tenant, request and job ids attached. Rails filters secrets out of the payload.
-
-When: a flow ran (an import, a checkout return, a webhook), with what happened and why.
+One structured line with the actor, tenant, request and job ids attached; Rails filters secrets from the payload.
 
 ```ruby
 Studio::Monitoring::Events.info("recipe_url_import", success: true, recipe_id: recipe.id)
 Studio::Monitoring::Events.warn("checkout_return", success: false, message: "session_not_complete")
-Studio::Monitoring::Events.error("stripe_webhook", success: false, message: error.class.name)
 Studio::Monitoring::Events.debug("import_parse", fields: fields.size)  # local environments only
 ```
 
-Name events in snake_case, object first. Dashboards filter on these names, so renaming one breaks them. Add `success:`, and `message:` with a short reason on failure.
+Names are snake_case, object first, and dashboards filter on them, so don't rename. Add `success:`, and a short `message:` on failure.
 
 ## Errors
 
-Wraps `Rails.error`. Every report, including errors Rails reports on its own, carries the actor, tenant, request and job ids.
-
-When: you rescued an exception that someone should still look at, or you want an error tracked and re-raised.
+Every report, including Rails' own, carries the actor, tenant, request and job ids. Don't report expected outcomes like an invalid form; log an event.
 
 ```ruby
-Studio::Monitoring::Errors.report(error, context: {url: url})       # after a rescue
-Studio::Monitoring::Errors.handle(Stripe::Error) { charge! }       # rescue and report
-Studio::Monitoring::Errors.record { import! }                      # report and re-raise
+Studio::Monitoring::Errors.report(error, context: {url: url})   # after a rescue
+Studio::Monitoring::Errors.handle(Stripe::Error) { charge! }   # rescue and report
+Studio::Monitoring::Errors.record { import! }                  # report and re-raise
 ```
-
-Don't report expected outcomes, like an invalid form; use an event.
 
 ## Logs
 
-Wraps `Rails.logger`. Plain text, never sent to AppSignal or PostHog.
-
-When: local debugging, or a note for someone tailing the logs. If you will want to search it later, use an event.
+Plain text, never sent to AppSignal or PostHog.
 
 ```ruby
 Studio::Monitoring::Logs.info("Imported #{count} recipes")
-Studio::Monitoring::Logs.debug { "Parsed #{payload.inspect}" }  # block only runs when debug is on
+Studio::Monitoring::Logs.debug { "Parsed #{payload.inspect}" }  # block runs only when debug is on
 ```
 
 ## Metrics
-
-Counters and durations through OpenTelemetry.
-
-When: you want a rate or a p95 over time, like "imports per minute" or "checkout latency".
 
 ```ruby
 Studio::Monitoring::Metrics.increment_counter("recipe_url_import", tags: {ok: true})
 Studio::Monitoring::Metrics.record_duration("recipe_url_import.duration", duration_ms, tags: {ok: true})
 ```
 
-Match the event name for the same flow, and add `.duration` for durations. Tags must stay low cardinality: never ids or URLs.
+Use the flow's event name, plus `.duration` for durations. Tags stay low cardinality: never ids or URLs.
 
 ## Analytics
 
-Product analytics in PostHog, plus the database when `:database` is on.
-
-When: a user did something you want in funnels, retention or per-tenant usage.
-
 ```ruby
 Studio::Monitoring::Analytics.track("recipe_saved", properties: {recipe_id: recipe.id})
-Studio::Monitoring::Analytics.identify(properties: {timezone: user.timezone})  # no email or name
-Studio::Monitoring::Analytics.identify_tenant(properties: {plan: "pro", seats: 4})  # the tenant group's properties
+Studio::Monitoring::Analytics.identify(properties: {timezone: user.timezone})      # never email or name
+Studio::Monitoring::Analytics.identify_tenant(properties: {plan: "pro", seats: 4})
 Studio::Monitoring::Analytics.track_llm_generation(kind: "recipe_extraction", model: model, ok: true,
   error_code: nil, duration_ms: 900, input_tokens: 1200, output_tokens: 300,
   cache_read_tokens: 0, cache_write_tokens: 0)
@@ -87,53 +66,24 @@ Studio::Monitoring::Analytics.track_llm_generation(kind: "recipe_extraction", mo
 ```ruby
 # config/initializers/monitoring.rb
 Studio::Monitoring.configure do |c|
-  # Required. Names the OpenTelemetry service, meter and logger.
-  c.service_name = "belly"
+  c.service_name = "belly" # required; names the OpenTelemetry service
 
-  # Optional. Turns on PostHog: analytics, logs, errors, traces and metrics.
-  # Omit to keep PostHog off. posthog_browser_hosts also turns on posthog-js
-  # through studio_analytics_tag; its host is where the browser sends events,
-  # ideally a reverse proxy on the app's domain.
+  # Turns on PostHog. posthog_browser_hosts also turns on posthog-js; its host
+  # should be a reverse proxy on the app's domain.
   if (posthog = AppSettings.posthog)
     c.posthog_project token: posthog.public_project_token, host: posthog.server_host
     c.posthog_browser_hosts host: posthog.proxy_host, ui_host: posthog.ui_host
   end
 
-  # Optional. Extra properties on every event, error and analytics event.
-  # Runs for each one, so read values already in memory; never query.
-  c.default_properties = -> { {platform: Current.platform} }
-
-  # Optional. Path prefixes or Regexps never traced, for noise. Defaults to
-  # assets and Active Storage. Secrets need no entry: query values and path
-  # parameters named in filter_parameters are redacted from traces and logs.
-  c.untraced_paths += ["/health/"]
-
-  # Optional. Controller#actions with no request event. Defaults to health
-  # checks, Active Storage redirects, cable and Hotwire Native config.
-  c.unlogged_actions += ["Portal::HealthController#show"]
-
-  # Optional. Path prefixes whose URLs work as keys (share links, password
-  # resets). The browser sends them to PostHog cut to the prefix. Default: none.
-  c.posthog_masked_paths = ["/t/", "/passwords/"]
-
-  # Optional. Path prefixes whose requests never reach AppSignal, such as
-  # internal admin tools. Default: none.
+  # The rest is optional.
+  c.default_properties = -> { {platform: Current.platform} } # runs per event: never query
+  c.untraced_paths += ["/health/"]                           # default: assets, Active Storage
+  c.unlogged_actions += ["Portal::HealthController#show"]    # default: health, cable, Hotwire config
+  c.posthog_masked_paths = ["/t/", "/passwords/"]            # URLs that work as keys, cut to the prefix
   c.appsignal_ignored_paths = ["/admin"]
-
-  # Optional. Any of :rails, :appsignal, :posthog. Default: all three.
-  c.log_backends = [:rails, :appsignal, :posthog]
-
-  # Optional. Any of :posthog, :database. Default: [:posthog].
-  c.analytics_backends = [:posthog, :database]
+  c.log_backends = [:rails, :appsignal, :posthog]            # the default
+  c.analytics_backends = [:posthog, :database]               # default [:posthog]
 end
-```
-
-Set who is acting and for which tenant once, where the app authenticates, and in any job that acts for someone. `actor_id` is the PostHog distinct id and `tenant_id` the PostHog tenant group. Both are plain ids, so events never query the database to find them.
-
-```ruby
-# app/controllers/concerns/authentication.rb, once the session is resumed
-Studio::Monitoring::Current.actor_id = user.id
-Studio::Monitoring::Current.tenant_id = user.space_id
 ```
 
 ```ruby
@@ -141,19 +91,20 @@ Studio::Monitoring::Current.tenant_id = user.space_id
 Rails.application.config.filter_parameters += Studio::Monitoring::FILTER_PARAMETERS
 ```
 
-The studio filter list covers request params, event payloads, error context, analytics properties and trace URLs, including controller params passed inside a payload. It matches key names, never values, so free text such as a message body is sent as is. Add app-specific names after it.
+The filter list matches key names, never values, across params, payloads, error context, analytics and trace URLs. Add the app's own names after it.
 
-Without any code, the gem also logs one `http_request` event per request and one `job_performed` event per app job, records `job.queue_wait` (by queue) and `job.duration` (by job class, queue and ok) for every job, traces requests and jobs, and logs `monitoring_configured` at boot listing what is on.
-
-A request the app makes to itself in-process, such as a boot warm-up through `Rack::MockRequest`, can stay out of AppSignal, the request log, traces and analytics by setting `Studio::Monitoring::UNRECORDED_REQUEST` in its Rack env:
+Set who is acting, and for which tenant, where the app authenticates and in any job acting for someone. They're plain ids, so events never query for them: `actor_id` is the PostHog distinct id, `tenant_id` the PostHog group.
 
 ```ruby
-Rails.application.call(Rack::MockRequest.env_for(url, Studio::Monitoring::UNRECORDED_REQUEST => true))
+Studio::Monitoring::Current.actor_id = user.id
+Studio::Monitoring::Current.tenant_id = organization.id
 ```
+
+With no code, the gem logs `http_request` per request and `job_performed` per job, records `job.queue_wait` and `job.duration`, traces requests and jobs, and logs `monitoring_configured` at boot. An in-process request, such as a boot warm-up, stays out of all of it with `Studio::Monitoring::UNRECORDED_REQUEST => true` in its Rack env.
 
 ## AppSignal request sampling
 
-AppSignal bills per request, so the gem keeps a quarter of ordinary requests and moves the rest into a namespace the agent drops. It always keeps server errors, requests that reported a handled error, and requests slower than 0.5s. It always drops 404s and `appsignal_ignored_paths`. Tell AppSignal to drop that namespace:
+AppSignal bills per request, so the gem keeps a quarter of ordinary requests. It always keeps server errors, requests with a handled error and requests over 0.5s, and always drops 404s and `appsignal_ignored_paths`. Tell AppSignal to drop the rest:
 
 ```ruby
 # config/appsignal.rb
@@ -162,22 +113,18 @@ config.ignore_namespaces = [Studio::Monitoring::RequestSampling::DROPPED_NAMESPA
 
 ## Browser analytics
 
-With `posthog_browser_hosts` set, `studio_analytics_tag` renders posthog-js: autocapture, dead clicks, session replay with every input masked unless it sits inside `[data-replay-unmask]` (passwords, one-time codes, card, email and phone fields, and anything inside `[data-replay-mask]` stay masked even there), and tracing headers so browser requests join the server's traces. It identifies the browser as `Current.actor_id`, the same distinct id as server events, and puts it in the `Current.tenant_id` group. Without the setting it renders nothing.
+With `posthog_browser_hosts` set, `studio_analytics_tag` renders posthog-js, identified as `Current.actor_id` in the `Current.tenant_id` group, with tracing headers that join the server's traces. Without it, the tag renders nothing.
 
 ```erb
-<%# app/views/layouts/application.html.erb, in <head> %>
+<%# in <head> %>
 <%= studio_analytics_tag(properties: {platform: "web"}) unless controller_path.start_with?("admin/") %>
 ```
 
-Every URL the browser sends loses its query string and hash, and paths under `posthog_masked_paths` are cut to the prefix, so a share or reset link in PostHog never works. Autocapture records what was clicked but not its text or attributes, and replay masks page text as well as inputs outside `[data-replay-unmask]` (text inside `[data-replay-mask]` stays masked even there), and blanks `mailto:` and `tel:` links.
-
-`properties` are registered on every browser event; keep them low cardinality and free of personal data. Turbo re-runs the tag when its attributes change, such as on sign-in.
-
-A page rendered with no current actor drops an identified browser's identity, so the next person on the device starts fresh after a sign-out or an expired session. Set `Current.actor_id` on every page where someone is signed in, or a visit there splits their PostHog session.
-
-The loader stub only queues calls until PostHog's `array.js` loads, and that file is always the latest SDK, so SDK releases need no gem change. Refresh the stub in `browser_analytics.js` from Project settings > Web snippet when PostHog changes the snippet. `posthog_browser_hosts` takes `defaults:`, PostHog's dated behaviour defaults; the gem pins one and moves it after reading PostHog's changelog, and an app can pin its own.
-
-Content Security Policy: the tag carries the request's nonce, and the browser needs `script-src` and `connect-src` for the browser host.
+- Privacy: URLs lose their query and hash, and `posthog_masked_paths` are cut to the prefix. Autocapture keeps no text or attributes. Session replay masks all text and inputs except inside `[data-replay-unmask]`. Passwords, one-time codes, card, email and phone fields, and `[data-replay-mask]` stay masked even there. `mailto:` and `tel:` links are blanked.
+- `properties` go on every browser event: low cardinality, no personal data.
+- Set `Current.actor_id` on every signed-in page. A page without one drops the browser's identity, so the next person on the device starts fresh.
+- The tag carries the request's CSP nonce. Allow the browser host in `script-src` and `connect-src`.
+- The stub loads PostHog's latest `array.js`, so SDK releases need no gem change. Refresh the stub in `browser_analytics.js` when PostHog changes its snippet.
 
 ## Testing
 
@@ -186,38 +133,26 @@ Content Security Policy: the tag carries the request's nonce, and the browser ne
 require "studio/monitoring/test_helper"
 
 class ActiveSupport::TestCase
-  include Studio::Monitoring::TestHelper
+  include Studio::Monitoring::TestHelper # records in memory; sends nothing
 end
 ```
 
-Each test records events, analytics and metrics in memory, and sends no analytics to PostHog or the database. Errors use Rails' own assertion.
-
 ```ruby
-# Events: payload is a subset match after filtering, Regexp values allowed
-post checkout_return_path
-assert_event_logged "checkout_return", level: :warn, payload: {success: false, message: "session_not_complete"}
+assert_event_logged "checkout_return", level: :warn, payload: {success: false} # subset match, Regexp allowed
 assert_no_event_logged level: :error
-
-# Errors
 assert_error_reported(Stripe::Error) { charge! }
-
-# Analytics
-post recipes_path, params: params
-assert_analytics_tracked "recipe_saved", actor_id: user.id, properties: {recipe_id: Recipe.last.id}
+assert_analytics_tracked "recipe_saved", actor_id: user.id, properties: {recipe_id: recipe.id}
 assert_analytics_identified actor_id: user.id
-assert_tenant_identified tenant_id: space.id, properties: {plan: "pro"}
+assert_tenant_identified tenant_id: organization.id, properties: {plan: "pro"}
 assert_no_analytics_tracked "recipe_viewed"
-
-# Metrics
 assert_counter_incremented "recipe_url_import", tags: {ok: true}
 assert_duration_recorded "recipe_url_import.duration"
 ```
 
-Each assertion takes an optional block, and then only counts what the block did. `logged_events`, `tracked_analytics` and `recorded_metrics` return everything so far.
-
-For tests that need real rows, such as admin reports or system tests, `use_analytics_backends(:database)` sends analytics there for the rest of the test, or only inside a block.
-
-Event payloads are filtered by `filter_parameters`, so property names matching the filter list are hidden: anything containing `_key`, `email` or `address`, or ending in `token`. Pick another name, such as `orphaned_groups` instead of `group_keys`.
+- Pass a block to any assertion to count only what the block did.
+- `logged_events`, `tracked_analytics` and `recorded_metrics` return everything so far.
+- `use_analytics_backends(:database)` writes real rows, for the rest of the test or inside a block.
+- Payload names matching the filter list are hidden: anything containing `_key`, `email` or `address`, or ending in `token`. Rename, e.g. `orphaned_groups` instead of `group_keys`.
 
 ## :database analytics backend
 
@@ -226,10 +161,8 @@ bin/rails g studio:monitoring:analytics_events && bin/rails db:migrate
 ```
 
 ```yaml
-# config/recurring.yml
+# config/recurring.yml; rows are kept 60 days
 purge_analytics_events:
   class: Studio::Monitoring::PurgeAnalyticsEventsJob
   schedule: every day at 4am
 ```
-
-Events are kept for 60 days.

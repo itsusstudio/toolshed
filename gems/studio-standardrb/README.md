@@ -8,7 +8,7 @@ In the toolshed `git` block of the Gemfile:
 
     gem "studio-standardrb", group: [:development, :test], require: false
 
-Don't also list `standard`, `standard-rails`, `rubocop-factory_bot` or `rubocop-rake`: they come with this gem. Pin one only when you need a specific version (`gem "standard", "1.56.0"`). Dependabot no longer bumps them; `bundle update studio-standardrb` does.
+Don't also list `standard`, `standard-rails`, `rubocop-factory_bot` or `rubocop-rake`; they come with this gem, and `bundle update studio-standardrb` bumps them. Pin one only for a specific version.
 
 `.standard.yml` (Standard can't share it between repos, so each app keeps one):
 
@@ -48,7 +48,7 @@ Inherits `Layout/ClassStructure`. Class contents go in this order:
 
 Macros not named in `config/base.yml` (`scope`, `normalizes`, `delegate`, `generates_token_for`, `attr_reader` and so on) are not checked, so they can sit where they read best.
 
-Autocorrect is unsafe. It moves lines but drops the blank lines between groups, and the order of callbacks can change behaviour, so read the diff.
+Autocorrect is unsafe: it drops blank lines between groups and can reorder callbacks, so read the diff.
 
 ### Studio/ClassMethodsDefinitions
 
