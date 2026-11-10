@@ -15,11 +15,22 @@ class Studio::Auth::InstallGeneratorTest < Rails::Generators::TestCase
   test "writes the migration, the initializer and the routes" do
     run_generator
 
-    assert_migration "db/migrate/create_studio_auth.rb", /create_table :studio_auth_login_challenges/
+    assert_migration "db/migrate/create_studio_auth.rb", /create_table :studio_auth_login_codes/
     assert_file "config/initializers/studio_auth.rb", /c\.support_email/
     assert_file "config/routes.rb", /studio_auth/
     assert_file "app/views/studio/auth/sign_ins/new.html.erb", /login_path/
     assert_file "config/locales/studio_auth.en.yml", /\Aen:\n  studio_auth:\n    sign_ins:/
     assert_file "config/locales/studio_auth.fr.yml", /Envoyer le code/
+    assert_file "config/recurring.yml", /\Adefault: &default\n  studio_auth_purge_expired:\n    class: Studio::Auth::PurgeExpiredJob\n/
+  end
+
+  test "adds the purge job to an existing recurring schedule once" do
+    File.write(File.join(destination_root, "config/recurring.yml"), "production:\n  clear_solid_queue_finished_jobs:\n    command: \"SolidQueue::Job.clear_finished_in_batches\"\n    schedule: every hour\n")
+
+    run_generator
+    run_generator
+
+    schedule = YAML.load_file(File.join(destination_root, "config/recurring.yml"))["production"]
+    assert_equal ["clear_solid_queue_finished_jobs", "studio_auth_purge_expired"], schedule.keys.sort
   end
 end

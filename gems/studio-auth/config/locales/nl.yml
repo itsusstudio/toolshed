@@ -1,4 +1,4 @@
-nl:
+nl: &nl
   studio_auth:
     flash:
       too_many_requests: "Te veel pogingen. Probeer het over een paar minuten opnieuw."
@@ -14,26 +14,27 @@ nl:
       unknown_platform: "een telefoon"
       unknown: "Een onbekend apparaat"
     mailer:
+      made_in: "%{app_name}, gemaakt in montreal"
+      terms: "Voorwaarden"
+      privacy: "Privacy"
       login_code:
         subject: "%{code} is je %{app_name}-code"
-        intro_sign_in: "Je inlogcode voor %{app_name}:"
-        intro_reauthentication: "Je verificatiecode voor %{app_name}:"
+        intro: "Je eenmalige code is:"
         expires:
-          one: "Geldig voor %{count} minuut en maar één keer te gebruiken."
-          other: "Geldig voor %{count} minuten en maar één keer te gebruiken."
-        requested_from: "Aangevraagd vanaf %{device}, IP %{ip_address}."
-        ignore: "Heb je dit niet aangevraagd? Dan kun je deze e-mail negeren. Zonder deze code kan niemand inloggen."
-        no_links: "%{app_name} stuurt nooit inloglinks per e-mail."
+          one: "Deze code verloopt over %{count} minuut."
+          other: "Deze code verloopt over %{count} minuten."
+        ignore: "Heb je deze e-mail niet aangevraagd? Dan kun je hem gerust negeren."
       new_device:
         subject: "Nieuwe login op je %{app_name}-account"
-        intro: "Iemand heeft zojuist vanaf een nieuw apparaat ingelogd op je %{app_name}-account:"
-        details: "%{device}, IP %{ip_address}, %{time} UTC"
-        if_you: "Was jij dit? Dan hoef je niets te doen."
-        if_not: "Was jij het niet? Log in, kies ‘Overal uitloggen’ en mail daarna %{support_email}."
+        intro: "Iemand heeft zojuist vanaf een nieuw apparaat ingelogd op je account."
+        details_html: "<strong>%{device}</strong>, %{time}"
+        if_not: "Was jij het niet? Log in en kies ‘Overal uitloggen’."
       locked:
         subject: "Inloggen tijdelijk geblokkeerd voor je %{app_name}-account"
-        intro: "Na te veel onjuiste codes hebben we inloggen met een code tijdelijk geblokkeerd."
-        unlock:
-          one: "Je kunt het over %{count} uur opnieuw proberen. Op apparaten waarop je eerder hebt ingelogd, kun je gewoon inloggen."
-          other: "Je kunt het over %{count} uur opnieuw proberen. Op apparaten waarop je eerder hebt ingelogd, kun je gewoon inloggen."
-        if_not: "Was jij dit niet? Mail dan %{support_email}."
+        intro: "We hebben inloggen op je account gepauzeerd na te veel onjuiste codes."
+        try_again_html:
+          one: "Je kunt het over <strong>%{count} uur</strong> opnieuw proberen."
+          other: "Je kunt het over <strong>%{count} uur</strong> opnieuw proberen."
+        known_devices: "Op apparaten waarop je eerder hebt ingelogd, kun je gewoon inloggen."
+nl-NL: *nl
+nl-BE: *nl

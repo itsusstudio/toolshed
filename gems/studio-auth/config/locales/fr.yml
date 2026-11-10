@@ -1,4 +1,4 @@
-fr:
+fr: &fr
   studio_auth:
     flash:
       too_many_requests: "Trop de tentatives. Réessayez dans quelques minutes."
@@ -14,26 +14,29 @@ fr:
       unknown_platform: "un téléphone"
       unknown: "Un appareil inconnu"
     mailer:
+      made_in: "%{app_name}, fait à montréal"
+      terms: "Conditions"
+      privacy: "Confidentialité"
       login_code:
         subject: "%{code} est votre code %{app_name}"
-        intro_sign_in: "Votre code de connexion à %{app_name} :"
-        intro_reauthentication: "Votre code de vérification %{app_name} :"
+        intro: "Votre code à usage unique est :"
         expires:
-          one: "Valable %{count} minute, une seule fois."
-          other: "Valable %{count} minutes, une seule fois."
-        requested_from: "Demandé depuis %{device}, IP %{ip_address}."
-        ignore: "Si vous n'êtes pas à l'origine de cette demande, ignorez ce message. Personne ne peut se connecter sans ce code."
-        no_links: "%{app_name} n'envoie jamais de lien de connexion par courriel."
+          one: "Ce code expire dans %{count} minute."
+          other: "Ce code expire dans %{count} minutes."
+        ignore: "Si vous n'avez pas demandé ce courriel, vous pouvez l'ignorer sans risque."
       new_device:
         subject: "Nouvelle connexion à %{app_name}"
-        intro: "Quelqu'un s'est connecté à votre compte %{app_name} depuis un nouvel appareil :"
-        details: "%{device}, IP %{ip_address}, %{time} UTC"
-        if_you: "Si c'était vous, vous n'avez rien à faire."
-        if_not: "Ce n'était pas vous? Connectez-vous, choisissez « Se déconnecter partout », puis écrivez à %{support_email}."
+        intro: "Quelqu'un s'est connecté à votre compte depuis un nouvel appareil."
+        details_html: "<strong>%{device}</strong>, %{time}"
+        if_not: "Si ce n'était pas vous, connectez-vous et choisissez « Se déconnecter partout »."
       locked:
         subject: "Connexion suspendue sur votre compte %{app_name}"
-        intro: "Après plusieurs codes incorrects, nous avons suspendu temporairement la connexion par code à votre compte."
-        unlock:
-          one: "Réessayez dans %{count} heure. Vos appareils habituels peuvent toujours se connecter."
-          other: "Réessayez dans %{count} heures. Vos appareils habituels peuvent toujours se connecter."
-        if_not: "Si ce n'était pas vous, écrivez à %{support_email}."
+        intro: "Nous avons suspendu la connexion à votre compte après trop de codes incorrects."
+        try_again_html:
+          one: "Vous pourrez réessayer dans <strong>%{count} heure</strong>."
+          other: "Vous pourrez réessayer dans <strong>%{count} heures</strong>."
+        known_devices: "Vos appareils habituels peuvent toujours se connecter."
+fr-CA: *fr
+fr-FR: *fr
+fr-BE: *fr
+fr-CH: *fr

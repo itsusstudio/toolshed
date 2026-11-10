@@ -9,11 +9,9 @@ class CreateStudioAuth < ActiveRecord::Migration[<%= ActiveRecord::Migration.cur
       end
     end
     add_column :sessions, :last_seen_at, :datetime if !column_exists?(:sessions, :last_seen_at)
-    add_column :sessions, :authenticated_at, :datetime if !column_exists?(:sessions, :authenticated_at)
 
-    create_table :studio_auth_login_challenges do |t|
+    create_table :studio_auth_login_codes do |t|
       t.references :user, foreign_key: true, index: false
-      t.string :purpose, null: false
       t.string :code_digest, null: false
       t.datetime :expires_at, null: false
       t.integer :failed_attempts, null: false, default: 0
@@ -26,17 +24,17 @@ class CreateStudioAuth < ActiveRecord::Migration[<%= ActiveRecord::Migration.cur
       t.timestamps
       t.index [:user_id, :created_at]
       t.index :created_at
-      t.index [:ip_address, :created_at], name: "index_studio_auth_login_challenges_on_ip_and_created_at"
+      t.index [:ip_address, :created_at], name: "index_studio_auth_login_codes_on_ip_and_created_at"
     end
 
     create_table :studio_auth_known_devices do |t|
       t.references :user, null: false, foreign_key: true, index: false
-      t.string :token_digest, null: false
+      t.string :device_token_digest, null: false
       t.string :ip_address
       t.string :user_agent
       t.datetime :last_seen_at, null: false
       t.timestamps
-      t.index [:user_id, :token_digest], unique: true
+      t.index [:user_id, :device_token_digest], unique: true, name: "index_studio_auth_known_devices_on_user_and_device_token"
     end
   end
 end

@@ -3,60 +3,51 @@ require "test_helper"
 class Studio::Auth::ConfigurationTest < ActiveSupport::TestCase
   Configuration = Studio::Auth::Configuration
 
-  test "validate! requires app_name, mail_from and support_email" do
-    error = assert_raises(Configuration::Error) { Configuration.new.validate! }
+  test "validate_config! requires every setting, including both session limits" do
+    error = assert_raises(Configuration::Error) { Configuration.new.validate_config! }
 
-    assert_match "set c.app_name, c.mail_from, c.support_email in config/initializers/studio_auth.rb", error.message
+    assert_match "set c.app_name, c.mail_from, c.support_email, c.mail_logo_url, c.terms_url, c.privacy_url, c.session_idle_timeout, c.session_absolute_timeout in config/initializers/studio_auth.rb", error.message
   end
 
-  test "review accounts come from credentials, normalized" do
-    stub_review_accounts([{email_address: " Review@Studio.com", login_code: 381904}])
+  test "in production the logo must be an https URL" do
+    config = valid_config
+    config.mail_logo_url = "/mail/mark.png"
+    Rails.env.stubs(:production?).returns(true)
 
-    assert_equal "381904", Studio::Auth::ReviewAccounts.code_for("review@studio.com")
-    assert Studio::Auth::ReviewAccounts.include?("REVIEW@studio.com")
+    assert_match "c.mail_logo_url must be a full https URL", assert_raises(Configuration::Error) { config.validate_config! }.message
   end
 
-  test "validate! refuses a review account with a missing, blank or short code" do
-    [{email_address: "review@studio.com"}, {email_address: "review@studio.com", login_code: ""}, {email_address: "review@studio.com", login_code: "1234"}].each do |entry|
-      stub_review_accounts([entry])
+  test "a session limit must be a duration" do
+    config = valid_config
+    config.session_absolute_timeout = 90
 
-      error = assert_raises(Configuration::Error) { valid_config.validate! }
-      assert_match "login_code must be 6 digits for review@studio.com", error.message
+    assert_match "c.session_absolute_timeout", assert_raises(Configuration::Error) { config.validate_config! }.message
+  end
+
+  test "app review accounts come from credentials, normalized" do
+    stub_app_review_accounts({" Review@Studio.com": 381904})
+
+    assert_equal "381904", Studio::Auth::AppReviewAccounts.code_for("review@studio.com")
+    assert Studio::Auth::AppReviewAccounts.include?("REVIEW@studio.com")
+  end
+
+  test "validate_config! refuses an app review account with a missing, blank or short code" do
+    [nil, "", "1234", 42424].each do |code|
+      stub_app_review_accounts({"review@studio.com": code})
+
+      error = assert_raises(Configuration::Error) { valid_config.validate_config! }
+      assert_match "codes must be 6 digits, in quotes, for review@studio.com", error.message
       assert_match "bin/rails credentials:edit --environment test", error.message
     end
   end
 
-  test "validate! refuses a review account without an email address" do
-    stub_review_accounts([{login_code: "381904"}])
+  test "validate_config! allows at most two app review accounts" do
+    stub_app_review_accounts({"apple@studio.com": "111111", "google@studio.com": "222222"})
+    assert_nil valid_config.validate_config!
 
-    error = assert_raises(Configuration::Error) { valid_config.validate! }
-    assert_match "has an entry with no email_address", error.message
-  end
-
-  test "validate! allows at most two review accounts" do
-    stub_review_accounts([
-      {email_address: "apple@studio.com", login_code: "111111"},
-      {email_address: "google@studio.com", login_code: "222222"}
-    ])
-    assert_nil valid_config.validate!
-
-    stub_review_accounts([
-      {email_address: "apple@studio.com", login_code: "111111"},
-      {email_address: "google@studio.com", login_code: "222222"},
-      {email_address: "extra@studio.com", login_code: "333333"}
-    ])
-    error = assert_raises(Configuration::Error) { valid_config.validate! }
+    stub_app_review_accounts({"apple@studio.com": "111111", "google@studio.com": "222222", "extra@studio.com": "333333"})
+    error = assert_raises(Configuration::Error) { valid_config.validate_config! }
     assert_match "allows at most 2 accounts", error.message
-  end
-
-  test "undeliverable catches reserved and placeholder domains" do
-    deliverability = Studio::Auth::Deliverability
-
-    assert deliverability.undeliverable?("a@example.com")
-    assert deliverability.undeliverable?("a@shop.test")
-    assert deliverability.undeliverable?("a@test.com")
-    assert deliverability.undeliverable?("nope")
-    refute deliverability.undeliverable?("a@usebelly.app")
   end
 
   private
@@ -66,11 +57,15 @@ class Studio::Auth::ConfigurationTest < ActiveSupport::TestCase
       config.app_name = "Dummy"
       config.mail_from = "hello@dummy.app"
       config.support_email = "support@dummy.app"
+      config.mail_logo_url = "https://dummy.app/mail/logo.png"
+      config.terms_url = "https://dummy.app/terms"
+      config.privacy_url = "https://dummy.app/privacy"
+      config.session_idle_timeout = 30.days
+      config.session_absolute_timeout = 90.days
     end
   end
 
-  def stub_review_accounts(entries)
-    Rails.application.credentials.stubs(:dig).with(:studio_auth, :review_accounts).returns(entries)
-    Studio::Auth::ReviewAccounts.reset!
+  def stub_app_review_accounts(entries)
+    Rails.application.credentials.stubs(:dig).with(:studio_auth, :app_review_accounts).returns(entries)
   end
 end

@@ -2,4 +2,12 @@ Studio::Auth.configure do |c|
   c.app_name = ""
   c.mail_from = ""
   c.support_email = ""
+  # Full URL of the logo atop the HTML mail, hosted on the app's own domain.
+  c.mail_logo_url = ""
+  c.terms_url = ""
+  c.privacy_url = ""
+  # 20.years keeps sessions until sign-out; shorter, e.g. 30.days idle and
+  # 90.days absolute, for apps holding sensitive data.
+  c.session_idle_timeout = 20.years
+  c.session_absolute_timeout = 20.years
 end

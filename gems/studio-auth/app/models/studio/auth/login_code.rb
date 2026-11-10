@@ -1,0 +1,188 @@
+module Studio
+  module Auth
+    class LoginCode < ActiveRecord::Base # standard:disable Rails/ApplicationRecord -- a gem has no ApplicationRecord
+      Issued = Data.define(:id, :code)
+      Verification = Data.define(:status, :user)
+
+      MAIL_BUDGET = 10
+
+      belongs_to :user, class_name: "::User", optional: true
+
+      scope :live, -> { where(consumed_at: nil).where(arel_table[:expires_at].gt(Time.current)) }
+      scope :within_lockout_window, -> { where(created_at: LOCKOUT_WINDOW.ago..) }
+      scope :purgeable, -> { where(created_at: ...LOCKOUT_WINDOW.ago) }
+
+      class << self
+        # Anything that would treat this browser differently from an unknown
+        # address answers with a decoy instead, so responses never reveal
+        # whether an account exists or what state it is in.
+        def request_for(email_address:, device_cookie:, ip_address:, user_agent:)
+          email_address = TypedInput.email_address(email_address)
+          return :undeliverable if Deliverability.undeliverable?(email_address)
+          # Backs up the cache-held rate limits, which turn off if the cache
+          # fails; this one counts in the primary database and fails closed.
+          return :too_many_requests if ip_over_hourly_limit?(ip_address)
+
+          device_cookie.ensure_device_token!
+          found = ::User.find_by(email_address: email_address)
+          known_device = device_cookie.known_for?(found)
+          attributes = {
+            known_device: known_device, device_cookie: device_cookie,
+            ip_address: ip_address, user_agent: user_agent
+          }
+
+          transaction do
+            user = ::User.lock.find_by(id: found&.id || DECOY_USER_ID)
+            reason = decoy_reason(user, device_cookie: device_cookie, known_device: known_device)
+
+            # The same browser asking again (a double submit, or a retry after
+            # a lost response) gets its own code back. Another browser
+            # inside the resend window must not: it could burn the first
+            # browser's attempts or read its attempt count. A known device
+            # takes over instead.
+            recent = recent_login_code(user)
+            next issue_decoy(reason: reason, user: user, **attributes) if reason
+            next Issued.new(id: recent.id, code: nil) if recent&.from?(device_cookie)
+            takes_over = known_device || user.app_review_account?
+            next issue_decoy(reason: "resend_window", user: user, **attributes) if recent && !takes_over
+
+            issue(user: user, **attributes)
+          end
+        end
+
+        def verify(id:, code:)
+          found = find_by(id: id)
+          return Verification.new(status: :expired, user: nil) if found.nil?
+
+          transaction do
+            owner = ::User.lock.find_by(id: found.user_id || DECOY_USER_ID)
+            login_code = lock.find(found.id)
+            login_code.user = owner if owner
+            next Verification.new(status: :expired, user: nil) if login_code.finished?
+            next Verification.new(status: :too_many_attempts, user: nil) if login_code.exhausted?
+
+            blocked = blocked?(login_code)
+            matches = login_code.code_matches?(code.to_s)
+            if matches && !blocked
+              login_code.update!(consumed_at: Time.current)
+              Events.notify("login_code_verified", actor_id: login_code.user_id)
+              next Verification.new(status: :verified, user: owner)
+            end
+
+            record_failure(login_code)
+            Verification.new(status: login_code.exhausted? ? :too_many_attempts : :invalid, user: nil)
+          end
+        end
+
+        def digest_code(code)
+          Secrets.digest("login_code", code)
+        end
+
+        private
+
+        def ip_over_hourly_limit?(ip_address)
+          where(ip_address: ip_address, created_at: 1.hour.ago..).count >= SIGN_IN_IP_HOURLY_LIMIT
+        end
+
+        # Every query runs whatever the answer, so a decoy takes as long as a
+        # real address.
+        def decoy_reason(user, device_cookie:, known_device:)
+          device_digest = KnownDevice.digest(device_cookie.device_token) if known_device
+          locked = Lockout.locked?(user, device_digest: device_digest)
+          over_budget = mail_count(user, device_digest) >= MAIL_BUDGET
+
+          return "unknown_address" if user.nil?
+          return "cannot_sign_in" if !user.can_sign_in?
+          return "locked" if locked
+
+          "mail_budget" if over_budget && !user.app_review_account?
+        end
+
+        # A known device has its own budget, so a stranger filling the
+        # owner's inbox can't stop the owner's own laptop from getting codes.
+        def mail_count(user, device_digest)
+          scope = where(user_id: user&.id || DECOY_USER_ID, created_at: 1.hour.ago..)
+          scope = scope.where(device_token_digest: device_digest) if device_digest
+          scope.count
+        end
+
+        def recent_login_code(user)
+          live.where(user_id: user&.id || DECOY_USER_ID)
+            .where(failed_attempts: ...LOGIN_CODE_MAX_ATTEMPTS)
+            .where(created_at: LOGIN_CODE_RESEND_INTERVAL.ago..).order(:created_at).last
+        end
+
+        def issue_decoy(reason:, user:, **attributes)
+          Events.notify("sign_in_decoyed", reason: reason, actor_id: user&.id)
+          issue(user: nil, **attributes)
+        end
+
+        def issue(user:, known_device:, device_cookie:, ip_address:, user_agent:)
+          code = (AppReviewAccounts.code_for(user.email_address) if user) || Secrets.generate_code
+          live.where(user_id: user&.id || DECOY_USER_ID).update_all(expires_at: Time.current)
+          login_code = create!(
+            user: user,
+            code_digest: digest_code(code),
+            expires_at: LOGIN_CODE_TTL.from_now, known_device: known_device,
+            device_token_digest: KnownDevice.digest(device_cookie.device_token),
+            ip_address: ip_address, user_agent: user_agent
+          )
+
+          # Decoys enqueue too, so a real address takes the same time to answer.
+          Mailer.with(login_code: login_code, encrypted_code: Secrets.encrypt(code)).login_code.deliver_later
+          Events.notify("login_code_issued", actor_id: user&.id, decoy: user.nil?)
+          Issued.new(id: login_code.id, code: code)
+        end
+
+        def blocked?(login_code)
+          locked = Lockout.locked?(login_code.user, device_digest: lockout_scope(login_code))
+          !login_code.decoy? && (locked || !login_code.user.can_sign_in?)
+        end
+
+        def lockout_scope(login_code)
+          login_code.device_token_digest if login_code.known_device
+        end
+
+        def record_failure(login_code)
+          login_code.update!(failed_attempts: login_code.failed_attempts + 1, failed_at: Time.current)
+          just_locked = Lockout.just_locked?(login_code.user, device_digest: lockout_scope(login_code))
+          Events.notify("login_code_rejected", actor_id: login_code.user_id)
+          return if login_code.decoy?
+
+          app_review_account = login_code.user.app_review_account?
+          Events.notify("app_review_account_code_rejected", actor_id: login_code.user_id) if app_review_account
+          return if !just_locked
+
+          event = app_review_account ? "app_review_account_locked" : "account_locked"
+          Events.notify(event, actor_id: login_code.user_id)
+          Mailer.with(user: login_code.user).locked.deliver_later if !app_review_account
+        end
+      end
+
+      def decoy?
+        user_id.nil?
+      end
+
+      def finished?
+        consumed_at.present? || expires_at <= Time.current
+      end
+
+      def from?(device_cookie)
+        return false if device_cookie.device_token.blank? || device_token_digest.blank?
+
+        ActiveSupport::SecurityUtils.secure_compare(device_token_digest, KnownDevice.digest(device_cookie.device_token))
+      end
+
+      def exhausted?
+        failed_attempts >= LOGIN_CODE_MAX_ATTEMPTS
+      end
+
+      # The digest is compared for decoys too, so they cost the same time;
+      # a decoy never matches.
+      def code_matches?(code)
+        matches = Secrets.matches?(code_digest, "login_code", code)
+        matches && !decoy?
+      end
+    end
+  end
+end

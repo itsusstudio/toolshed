@@ -15,5 +15,4 @@ nl:
         code_label: "Code van 6 cijfers"
         dev_code: "Dev-code: %{code}"
         sign_in: "Inloggen"
-        continue: "Doorgaan"
         start_over: "Ander e-mailadres gebruiken"

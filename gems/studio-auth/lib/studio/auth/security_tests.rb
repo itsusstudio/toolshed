@@ -43,11 +43,11 @@ module Studio
 
           code = request_authentication_code("cook@studio.com")
           post verify_path, params: {code: code}
-          assert_redirected_to authentication_landing_path
+          assert_signed_in
           refute_equal before, session.id
 
-          challenge = LoginChallenge.order(:created_at).last
-          assert_equal :expired, Challenges.verify(id: challenge.id, code: code, purpose: "sign_in").status
+          login_code = LoginCode.order(:created_at).last
+          assert_equal :expired, LoginCode.verify(id: login_code.id, code: code).status
 
           delete logout_path
           assert_nil ::Session.find_by(user: ::User.find_by(email_address: "cook@studio.com"))
@@ -62,17 +62,17 @@ module Studio
 
           assert_match(/\A\d{6}\z/, code)
           refute_includes job_arguments, code
-          refute_includes LoginChallenge.pluck(:code_digest), code
+          refute_includes LoginCode.pluck(:code_digest), code
         end
 
-        test "studio-auth: five wrong codes end the challenge" do
+        test "studio-auth: five wrong guesses end a code" do
           create_authentication_user("cook@studio.com")
           code = request_authentication_code("cook@studio.com")
-          id = LoginChallenge.order(:created_at).last.id
+          id = LoginCode.order(:created_at).last.id
 
-          CODE_MAX_ATTEMPTS.times { post verify_path, params: {code: wrong_code(code)} }
+          LOGIN_CODE_MAX_ATTEMPTS.times { post verify_path, params: {code: wrong_code(code)} }
           assert_response :redirect
-          assert_equal :too_many_attempts, Challenges.verify(id: id, code: code, purpose: "sign_in").status
+          assert_equal :too_many_attempts, LoginCode.verify(id: id, code: code).status
         end
 
         test "studio-auth: a second browser cannot reach the first browser's code" do
@@ -81,10 +81,10 @@ module Studio
 
           attacker = open_session
           attacker.post login_path, params: {email_address: "cook@studio.com"}
-          CODE_MAX_ATTEMPTS.times { attacker.post verify_path, params: {code: wrong_code(code)} }
+          LOGIN_CODE_MAX_ATTEMPTS.times { attacker.post verify_path, params: {code: wrong_code(code)} }
 
           post verify_path, params: {code: code}
-          assert_redirected_to authentication_landing_path
+          assert_signed_in
         end
 
         test "studio-auth: codes are filtered from logs" do
@@ -92,20 +92,21 @@ module Studio
           assert_equal "[FILTERED]", filter.filter("code" => "123456")["code"]
         end
 
-        test "studio-auth: wrong codes lock the account across challenges, but not for a known device" do
+        test "studio-auth: wrong codes lock the account across codes, but not for a known device" do
           create_authentication_user("cook@studio.com")
           owner_code = request_authentication_code("cook@studio.com")
           post verify_path, params: {code: owner_code}
           delete logout_path
 
           attacker = open_session
-          (FAILURE_LIMIT / CODE_MAX_ATTEMPTS).times do
+          (LOCKOUT_WRONG_CODES / LOGIN_CODE_MAX_ATTEMPTS).times do
             attacker.post login_path, params: {email_address: "cook@studio.com"}
-            travel CODE_RESEND_INTERVAL + 1.second
-            CODE_MAX_ATTEMPTS.times { attacker.post verify_path, params: {code: "000000"} }
+            travel LOGIN_CODE_RESEND_INTERVAL + 1.second
+            LOGIN_CODE_MAX_ATTEMPTS.times { attacker.post verify_path, params: {code: "000000"} }
           end
           perform_enqueued_jobs
-          assert(ActionMailer::Base.deliveries.any? { |mail| mail.subject == I18n.t("studio_auth.mailer.locked.subject", app_name: Auth.config.app_name) })
+          locked_subject = I18n.t("studio_auth.mailer.locked.subject", app_name: Auth.config.app_name)
+          assert(ActionMailer::Base.deliveries.any? { |mail| mail.subject == locked_subject })
 
           ActionMailer::Base.deliveries.clear
           perform_enqueued_jobs { attacker.post login_path, params: {email_address: "cook@studio.com"} }
@@ -113,7 +114,7 @@ module Studio
 
           code = request_authentication_code("cook@studio.com")
           post verify_path, params: {code: code}
-          assert_redirected_to authentication_landing_path
+          assert_signed_in
         ensure
           travel_back
         end
@@ -122,7 +123,7 @@ module Studio
           create_authentication_user("cook@studio.com")
           post verify_path, params: {code: request_authentication_code("cook@studio.com")}
 
-          travel SESSION_IDLE_TIMEOUT + 1.minute do
+          travel Auth.config.session_idle_timeout + 1.minute do
             get login_path
             assert_response :success
           end
@@ -144,10 +145,9 @@ module Studio
           ActionMailer::Base.deliveries.last&.text_part&.body.to_s[/\b\d{6}\b/]
         end
 
-        # Where a fresh sign-in lands; override when the app sends people
-        # somewhere other than root.
-        def authentication_landing_path
-          root_path
+        def assert_signed_in
+          assert_response :see_other
+          refute_includes [login_url, verify_url], response.location
         end
 
         def comparable_page(email_address)

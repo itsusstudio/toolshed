@@ -15,5 +15,4 @@ en:
         code_label: "6-digit code"
         dev_code: "Dev code: %{code}"
         sign_in: "Sign in"
-        continue: "Continue"
         start_over: "Use a different email"

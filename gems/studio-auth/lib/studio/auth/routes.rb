@@ -11,11 +11,6 @@ module Studio
           post "verify", to: "sign_in_codes#create"
           delete "logout", to: "sign_ins#destroy", as: :logout
           delete "logout/everywhere", to: "sign_ins#destroy_all", as: :logout_everywhere
-
-          get "reauthenticate", to: "reauthentications#new", as: :reauthentication
-          post "reauthenticate", to: "reauthentications#create"
-          get "reauthenticate/verify", to: "reauthentication_codes#new", as: :reauthentication_verify
-          post "reauthenticate/verify", to: "reauthentication_codes#create"
         end
       end
     end

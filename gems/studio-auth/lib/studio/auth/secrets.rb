@@ -1,7 +1,7 @@
 module Studio
   module Auth
     module Secrets
-      KEY_SALT = "studio-auth"
+      KEY_PURPOSE = "studio-auth"
 
       class << self
         # A keyed hash, not bcrypt: six digits are a million guesses, which a
@@ -18,7 +18,7 @@ module Studio
         # Codes travel to the mail job encrypted, so they never sit in plain
         # text in the job table or in Active Job's argument logs.
         def encrypt(value)
-          encryptor.encrypt_and_sign(value, expires_in: CODE_TTL)
+          encryptor.encrypt_and_sign(value, expires_in: LOGIN_CODE_TTL)
         end
 
         def decrypt(value)
@@ -38,11 +38,11 @@ module Studio
         private
 
         def hmac_key
-          @hmac_key ||= key_generator.generate_key("#{KEY_SALT} hmac", 32)
+          @hmac_key ||= key_generator.generate_key("#{KEY_PURPOSE} hmac", 32)
         end
 
         def encryptor
-          @encryptor ||= ActiveSupport::MessageEncryptor.new(key_generator.generate_key("#{KEY_SALT} encrypt", 32))
+          @encryptor ||= ActiveSupport::MessageEncryptor.new(key_generator.generate_key("#{KEY_PURPOSE} encrypt", 32))
         end
 
         def key_generator

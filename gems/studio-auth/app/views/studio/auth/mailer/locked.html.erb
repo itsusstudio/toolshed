@@ -1,3 +1,6 @@
+<% hours = Studio::Auth::LOCKOUT_DURATION.in_hours.to_i %>
+<% try_again = t("studio_auth.mailer.locked.try_again_html", count: hours) %>
+<% content_for :preheader, strip_tags(try_again) %>
 <p style="margin:0;"><%= t("studio_auth.mailer.locked.intro") %></p>
-<p style="margin:16px 0 0;"><%= t("studio_auth.mailer.locked.unlock", count: Studio::Auth::LOCK_DURATION.in_hours.to_i) %></p>
-<p style="margin:16px 0 0;font-size:14px;color:#52525b;"><%= t("studio_auth.mailer.locked.if_not", support_email: support_email) %></p>
+<p style="margin:16px 0 0;"><%= try_again %></p>
+<p style="margin:16px 0 0;"><%= t("studio_auth.mailer.locked.known_devices") %></p>

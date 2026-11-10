@@ -1,4 +1,4 @@
-en:
+en: &en
   studio_auth:
     flash:
       too_many_requests: "Too many attempts. Try again in a few minutes."
@@ -14,26 +14,28 @@ en:
       unknown_platform: "a phone"
       unknown: "An unknown device"
     mailer:
+      made_in: "%{app_name}, made in montreal"
+      terms: "Terms"
+      privacy: "Privacy"
       login_code:
         subject: "%{code} is your %{app_name} code"
-        intro_sign_in: "Your code to sign in to %{app_name}:"
-        intro_reauthentication: "Your code to confirm it's you in %{app_name}:"
+        intro: "Your one-time code is:"
         expires:
-          one: "It expires in %{count} minute and works once."
-          other: "It expires in %{count} minutes and works once."
-        requested_from: "Requested from %{device}, IP %{ip_address}."
-        ignore: "Didn't ask for this? Ignore this email. No one can sign in without the code."
-        no_links: "%{app_name} never emails sign-in links."
+          one: "This code expires in %{count} minute."
+          other: "This code expires in %{count} minutes."
+        ignore: "If you didn't request this email, you can safely ignore it."
       new_device:
         subject: "New sign-in to %{app_name}"
-        intro: "Your %{app_name} account was just signed in on a new device:"
-        details: "%{device}, IP %{ip_address}, %{time} UTC"
-        if_you: "If this was you, there's nothing to do."
-        if_not: "If it wasn't you, sign in and choose Sign out everywhere, then write to %{support_email}."
+        intro: "Someone just signed in to your account on a new device."
+        details_html: "<strong>%{device}</strong>, %{time}"
+        if_not: "If this wasn't you, sign in and choose Sign out everywhere."
       locked:
         subject: "Sign-in paused on your %{app_name} account"
-        intro: "We paused sign-in codes for your account after too many wrong codes."
-        unlock:
-          one: "It unlocks in %{count} hour. Devices you've signed in on before can still sign in."
-          other: "It unlocks in %{count} hours. Devices you've signed in on before can still sign in."
-        if_not: "If this wasn't you, write to %{support_email}."
+        intro: "We paused sign-in on your account after too many wrong codes."
+        try_again_html:
+          one: "You can try again in <strong>%{count} hour</strong>."
+          other: "You can try again in <strong>%{count} hours</strong>."
+        known_devices: "Devices you've signed in on before can still sign in."
+en-US: *en
+en-GB: *en
+en-CA: *en

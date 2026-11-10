@@ -15,5 +15,4 @@ fr:
         code_label: "Code à 6 chiffres"
         dev_code: "Code de dev : %{code}"
         sign_in: "Se connecter"
-        continue: "Continuer"
         start_over: "Utiliser une autre adresse"

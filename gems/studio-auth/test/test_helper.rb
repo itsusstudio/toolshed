@@ -42,6 +42,11 @@ Studio::Auth.configure do |c|
   c.app_name = "Dummy"
   c.mail_from = "Dummy <hello@dummy.app>"
   c.support_email = "support@dummy.app"
+  c.mail_logo_url = "https://dummy.app/mail/logo.png"
+  c.terms_url = "https://dummy.app/terms"
+  c.privacy_url = "https://dummy.app/privacy"
+  c.session_idle_timeout = 30.days
+  c.session_absolute_timeout = 90.days
 end
 
 DummyApp.initialize!
@@ -68,11 +73,11 @@ class ApplicationRecord < ActiveRecord::Base
 end
 
 class User < ApplicationRecord
-  include Studio::Auth::User
+  include Studio::Auth::ForUser
 end
 
 class Session < ApplicationRecord
-  include Studio::Auth::Session
+  include Studio::Auth::ForSession
 end
 
 class Current < ActiveSupport::CurrentAttributes
@@ -83,13 +88,11 @@ DummyApp.routes.draw do
   studio_auth
   root to: "pages#show"
   get "/private", to: "pages#private"
-  get "/danger", to: "dangers#show"
-  delete "/danger", to: "dangers#destroy"
   post "/signup", to: "signups#create"
 end
 
 class ApplicationController < ActionController::Base
-  include Studio::Auth::Controller
+  include Studio::Auth::ForController
 end
 
 class PagesController < ApplicationController
@@ -112,18 +115,6 @@ class SignupsController < ApplicationController
   end
 end
 
-class DangersController < ApplicationController
-  require_recent_authentication
-
-  def show
-    render plain: "danger"
-  end
-
-  def destroy
-    render plain: "destroyed"
-  end
-end
-
 module AuthenticationTestHelpers
   def create_authentication_user(email_address)
     User.create!(email_address: email_address)
@@ -140,9 +131,8 @@ class ActiveSupport::TestCase
 
   teardown do
     travel_back
-    Studio::Auth::ReviewAccounts.reset!
     Studio::Auth::KnownDevice.delete_all
-    Studio::Auth::LoginChallenge.delete_all
+    Studio::Auth::LoginCode.delete_all
     Session.delete_all
     User.delete_all
     Rails.cache.clear

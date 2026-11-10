@@ -1,7 +1,7 @@
-<%= t("studio_auth.mailer.new_device.intro", app_name: app_name) %>
+<%= t("studio_auth.mailer.new_device.intro") %>
 
-<%= t("studio_auth.mailer.new_device.details", device: @device, ip_address: @ip_address, time: l(@signed_in_at.utc, format: :long)) %>
+<%= strip_tags(t("studio_auth.mailer.new_device.details_html", device: @device, time: @signed_in_at)) %>
 
-<%= t("studio_auth.mailer.new_device.if_you") %>
+<%= t("studio_auth.mailer.new_device.if_not") %>
 
-<%= t("studio_auth.mailer.new_device.if_not", support_email: support_email) %>
+<%= render "studio/auth/mailer/footer" %>
