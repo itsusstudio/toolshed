@@ -1,0 +1,5 @@
+<%= t("studio_auth.mailer.locked.intro") %>
+
+<%= t("studio_auth.mailer.locked.unlock", count: Studio::Auth::LOCK_DURATION.in_hours.to_i) %>
+
+<%= t("studio_auth.mailer.locked.if_not", support_email: support_email) %>

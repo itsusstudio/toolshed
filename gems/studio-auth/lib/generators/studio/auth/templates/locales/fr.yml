@@ -1,0 +1,19 @@
+fr:
+  studio_auth:
+    sign_ins:
+      new:
+        title: "Se connecter à %{app_name}"
+        email_label: "Adresse courriel"
+        hint: "Vous recevrez un code à 6 chiffres par courriel."
+        submit: "Envoyer le code"
+    codes:
+      new:
+        title: "Vérifiez vos courriels"
+        sent_to:
+          one: "Si un compte existe pour %{email_address}, un code vient d'y être envoyé. Valable %{count} minute."
+          other: "Si un compte existe pour %{email_address}, un code vient d'y être envoyé. Valable %{count} minutes."
+        code_label: "Code à 6 chiffres"
+        dev_code: "Code de dev : %{code}"
+        sign_in: "Se connecter"
+        continue: "Continuer"
+        start_over: "Utiliser une autre adresse"

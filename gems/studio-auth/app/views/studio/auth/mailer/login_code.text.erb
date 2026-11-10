@@ -1,0 +1,11 @@
+<%= t("studio_auth.mailer.login_code.intro_#{@purpose}", app_name: app_name) %>
+
+<%= @code %>
+
+<%= t("studio_auth.mailer.login_code.expires", count: Studio::Auth::CODE_TTL.in_minutes.to_i) %>
+
+<%= t("studio_auth.mailer.login_code.requested_from", device: @device, ip_address: @ip_address) %>
+
+<%= t("studio_auth.mailer.login_code.ignore") %>
+
+<%= t("studio_auth.mailer.login_code.no_links", app_name: app_name) %>

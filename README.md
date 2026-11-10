@@ -3,6 +3,7 @@
 Studio Ruby gems, one per directory in `gems/`.
 
 - [studio-app-bintools](gems/studio-app-bintools)
+- [studio-auth](gems/studio-auth)
 - [studio-cache](gems/studio-cache)
 - [studio-enum](gems/studio-enum)
 - [studio-flags](gems/studio-flags)

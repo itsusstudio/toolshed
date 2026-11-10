@@ -1,0 +1,18 @@
+<h1 id="studio-auth-code-title"><%= t("studio_auth.codes.new.title") %></h1>
+
+<p id="studio-auth-code-sent-to"><%= t("studio_auth.codes.new.sent_to", email_address: @pending["email_address"], count: Studio::Auth::CODE_TTL.in_minutes.to_i) %></p>
+
+<% if flash[:alert] %>
+  <p id="studio-auth-alert" role="alert"><%= flash[:alert] %></p>
+<% end %>
+
+<%= form_with url: main_app.verify_path, id: "studio-auth-code-form", html: {novalidate: true} do |form| %>
+  <%= form.label :code, t("studio_auth.codes.new.code_label") %>
+  <%= form.text_field :code, required: true, autofocus: true, autocomplete: "one-time-code", inputmode: "numeric", maxlength: 6 %>
+  <% if @pending["dev_code"] %>
+    <p id="studio-auth-dev-code"><%= t("studio_auth.codes.new.dev_code", code: @pending["dev_code"]) %></p>
+  <% end %>
+  <%= form.submit t("studio_auth.codes.new.sign_in") %>
+<% end %>
+
+<p><%= link_to t("studio_auth.codes.new.start_over"), main_app.login_path, id: "studio-auth-start-over" %></p>

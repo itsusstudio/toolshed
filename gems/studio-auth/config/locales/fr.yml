@@ -1,0 +1,39 @@
+fr:
+  studio_auth:
+    flash:
+      too_many_requests: "Trop de tentatives. Réessayez dans quelques minutes."
+      undeliverable: "Saisissez une adresse courriel valide."
+      wrong_code: "Code incorrect. Vérifiez-le et réessayez."
+      expired: "Code expiré. Demandez-en un nouveau."
+      too_many_attempts: "Trop d'essais. Demandez un nouveau code."
+      signed_out: "Déconnexion réussie."
+      signed_out_everywhere: "Sessions fermées sur tous les appareils."
+    devices:
+      browser_on_platform: "%{browser} sur %{platform}"
+      app: "L'application sur %{platform}"
+      unknown_platform: "un téléphone"
+      unknown: "Un appareil inconnu"
+    mailer:
+      login_code:
+        subject: "%{code} est votre code %{app_name}"
+        intro_sign_in: "Votre code de connexion à %{app_name} :"
+        intro_reauthentication: "Votre code de vérification %{app_name} :"
+        expires:
+          one: "Valable %{count} minute, une seule fois."
+          other: "Valable %{count} minutes, une seule fois."
+        requested_from: "Demandé depuis %{device}, IP %{ip_address}."
+        ignore: "Si vous n'êtes pas à l'origine de cette demande, ignorez ce message. Personne ne peut se connecter sans ce code."
+        no_links: "%{app_name} n'envoie jamais de lien de connexion par courriel."
+      new_device:
+        subject: "Nouvelle connexion à %{app_name}"
+        intro: "Quelqu'un s'est connecté à votre compte %{app_name} depuis un nouvel appareil :"
+        details: "%{device}, IP %{ip_address}, %{time} UTC"
+        if_you: "Si c'était vous, vous n'avez rien à faire."
+        if_not: "Ce n'était pas vous? Connectez-vous, choisissez « Se déconnecter partout », puis écrivez à %{support_email}."
+      locked:
+        subject: "Connexion suspendue sur votre compte %{app_name}"
+        intro: "Après plusieurs codes incorrects, nous avons suspendu temporairement la connexion par code à votre compte."
+        unlock:
+          one: "Réessayez dans %{count} heure. Vos appareils habituels peuvent toujours se connecter."
+          other: "Réessayez dans %{count} heures. Vos appareils habituels peuvent toujours se connecter."
+        if_not: "Si ce n'était pas vous, écrivez à %{support_email}."

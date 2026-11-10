@@ -1,0 +1,4 @@
+<p style="margin:0;"><%= t("studio_auth.mailer.new_device.intro", app_name: app_name) %></p>
+<p style="margin:16px 0;padding:12px 16px;background:#f4f4f5;border-radius:6px;"><%= t("studio_auth.mailer.new_device.details", device: @device, ip_address: @ip_address, time: l(@signed_in_at.utc, format: :long)) %></p>
+<p style="margin:0;"><%= t("studio_auth.mailer.new_device.if_you") %></p>
+<p style="margin:16px 0 0;font-size:14px;color:#52525b;"><%= t("studio_auth.mailer.new_device.if_not", support_email: support_email) %></p>

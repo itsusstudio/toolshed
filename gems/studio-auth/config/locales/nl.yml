@@ -1,0 +1,39 @@
+nl:
+  studio_auth:
+    flash:
+      too_many_requests: "Te veel pogingen. Probeer het over een paar minuten opnieuw."
+      undeliverable: "Vul een geldig e-mailadres in."
+      wrong_code: "Onjuiste code. Controleer hem en probeer het opnieuw."
+      expired: "Code verlopen. Vraag een nieuwe aan."
+      too_many_attempts: "Te veel pogingen. Vraag een nieuwe code aan."
+      signed_out: "Je bent uitgelogd."
+      signed_out_everywhere: "Je bent op alle apparaten uitgelogd."
+    devices:
+      browser_on_platform: "%{browser} op %{platform}"
+      app: "De app op %{platform}"
+      unknown_platform: "een telefoon"
+      unknown: "Een onbekend apparaat"
+    mailer:
+      login_code:
+        subject: "%{code} is je %{app_name}-code"
+        intro_sign_in: "Je inlogcode voor %{app_name}:"
+        intro_reauthentication: "Je verificatiecode voor %{app_name}:"
+        expires:
+          one: "Geldig voor %{count} minuut en maar één keer te gebruiken."
+          other: "Geldig voor %{count} minuten en maar één keer te gebruiken."
+        requested_from: "Aangevraagd vanaf %{device}, IP %{ip_address}."
+        ignore: "Heb je dit niet aangevraagd? Dan kun je deze e-mail negeren. Zonder deze code kan niemand inloggen."
+        no_links: "%{app_name} stuurt nooit inloglinks per e-mail."
+      new_device:
+        subject: "Nieuwe login op je %{app_name}-account"
+        intro: "Iemand heeft zojuist vanaf een nieuw apparaat ingelogd op je %{app_name}-account:"
+        details: "%{device}, IP %{ip_address}, %{time} UTC"
+        if_you: "Was jij dit? Dan hoef je niets te doen."
+        if_not: "Was jij het niet? Log in, kies ‘Overal uitloggen’ en mail daarna %{support_email}."
+      locked:
+        subject: "Inloggen tijdelijk geblokkeerd voor je %{app_name}-account"
+        intro: "Na te veel onjuiste codes hebben we inloggen met een code tijdelijk geblokkeerd."
+        unlock:
+          one: "Je kunt het over %{count} uur opnieuw proberen. Op apparaten waarop je eerder hebt ingelogd, kun je gewoon inloggen."
+          other: "Je kunt het over %{count} uur opnieuw proberen. Op apparaten waarop je eerder hebt ingelogd, kun je gewoon inloggen."
+        if_not: "Was jij dit niet? Mail dan %{support_email}."

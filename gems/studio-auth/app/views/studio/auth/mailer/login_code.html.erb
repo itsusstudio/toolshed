@@ -1,0 +1,6 @@
+<p style="margin:0;"><%= t("studio_auth.mailer.login_code.intro_#{@purpose}", app_name: app_name) %></p>
+<p style="margin:16px 0;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:32px;font-weight:700;letter-spacing:6px;"><%= @code %></p>
+<p style="margin:0;"><%= t("studio_auth.mailer.login_code.expires", count: Studio::Auth::CODE_TTL.in_minutes.to_i) %></p>
+<p style="margin:16px 0 0;font-size:14px;color:#52525b;"><%= t("studio_auth.mailer.login_code.requested_from", device: @device, ip_address: @ip_address) %></p>
+<p style="margin:16px 0 0;font-size:14px;color:#52525b;"><%= t("studio_auth.mailer.login_code.ignore") %></p>
+<p style="margin:16px 0 0;font-size:14px;color:#52525b;"><%= t("studio_auth.mailer.login_code.no_links", app_name: app_name) %></p>

@@ -1,0 +1,20 @@
+<h1 id="studio-auth-sign-in-title"><%= t("studio_auth.sign_ins.new.title", app_name: Studio::Auth.config.app_name) %></h1>
+
+<% if flash[:alert] %>
+  <p id="studio-auth-alert" role="alert"><%= flash[:alert] %></p>
+<% end %>
+<% if flash[:notice] %>
+  <p id="studio-auth-notice" role="status"><%= flash[:notice] %></p>
+<% end %>
+
+<%# novalidate: browsers reject addresses typed with Arabic or Thai digits or invisible marks and block the submit silently; the server normalizes them. %>
+<%= form_with url: main_app.login_path, id: "studio-auth-sign-in-form", html: {novalidate: true} do |form| %>
+  <%= form.label :email_address, t("studio_auth.sign_ins.new.email_label") %>
+  <%= form.email_field :email_address, value: params[:email_address], required: true, autofocus: true, autocomplete: "email",
+        aria: {invalid: @email_address_error.present?, describedby: ("studio-auth-email-error" if @email_address_error)} %>
+  <% if @email_address_error %>
+    <p id="studio-auth-email-error" role="alert"><%= @email_address_error %></p>
+  <% end %>
+  <p id="studio-auth-sign-in-hint"><%= t("studio_auth.sign_ins.new.hint") %></p>
+  <%= form.submit t("studio_auth.sign_ins.new.submit") %>
+<% end %>

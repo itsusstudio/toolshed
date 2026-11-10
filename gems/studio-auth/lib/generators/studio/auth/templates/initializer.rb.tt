@@ -1,0 +1,5 @@
+Studio::Auth.configure do |c|
+  c.app_name = ""
+  c.mail_from = ""
+  c.support_email = ""
+end

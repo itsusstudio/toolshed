@@ -1,0 +1,19 @@
+en:
+  studio_auth:
+    sign_ins:
+      new:
+        title: "Sign in to %{app_name}"
+        email_label: "Email address"
+        hint: "We'll email you a 6-digit code."
+        submit: "Send code"
+    codes:
+      new:
+        title: "Check your email"
+        sent_to:
+          one: "If %{email_address} has an account, we sent it a code. It expires in %{count} minute."
+          other: "If %{email_address} has an account, we sent it a code. It expires in %{count} minutes."
+        code_label: "6-digit code"
+        dev_code: "Dev code: %{code}"
+        sign_in: "Sign in"
+        continue: "Continue"
+        start_over: "Use a different email"

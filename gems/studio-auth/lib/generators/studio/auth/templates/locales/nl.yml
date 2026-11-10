@@ -1,0 +1,19 @@
+nl:
+  studio_auth:
+    sign_ins:
+      new:
+        title: "Inloggen bij %{app_name}"
+        email_label: "E-mailadres"
+        hint: "Je ontvangt een code van 6 cijfers per e-mail."
+        submit: "Code versturen"
+    codes:
+      new:
+        title: "Check je e-mail"
+        sent_to:
+          one: "Als er een account bestaat voor %{email_address}, hebben we een code gestuurd. Die is %{count} minuut geldig."
+          other: "Als er een account bestaat voor %{email_address}, hebben we een code gestuurd. Die is %{count} minuten geldig."
+        code_label: "Code van 6 cijfers"
+        dev_code: "Dev-code: %{code}"
+        sign_in: "Inloggen"
+        continue: "Doorgaan"
+        start_over: "Ander e-mailadres gebruiken"
