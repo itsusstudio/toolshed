@@ -1,0 +1,3 @@
+class OrganizationMembership < ApplicationRecord
+  include Studio::Tenancy::ForOrganizationMembership
+end

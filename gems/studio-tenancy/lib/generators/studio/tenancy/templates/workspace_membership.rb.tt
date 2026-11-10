@@ -1,0 +1,3 @@
+class WorkspaceMembership < ApplicationRecord
+  include Studio::Tenancy::ForWorkspaceMembership
+end

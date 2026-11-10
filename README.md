@@ -12,6 +12,7 @@ Studio Ruby gems, one per directory in `gems/`.
 - [studio-settings](gems/studio-settings)
 - [studio-site-bintools](gems/studio-site-bintools)
 - [studio-standardrb](gems/studio-standardrb)
+- [studio-tenancy](gems/studio-tenancy)
 
 ## Install
 
