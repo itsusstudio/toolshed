@@ -76,11 +76,44 @@ module Studio
           end
         end
 
+        # Counted across codes, so asking for a fresh code does not buy
+        # fresh guesses. Each failure past the limit lengthens the lock by
+        # another LOCKOUT_DURATION, so one guess an hour cannot keep it going.
+        #
+        # A known device counts only its own failures: strangers cannot lock
+        # the owner out of their laptop, and a stolen device cookie still
+        # locks after LOCKOUT_WRONG_CODES guesses of its own.
+        #
+        # Review accounts must not lock on a reviewer's typos, but their code
+        # never rotates, so they stop at a hard daily cap instead.
+        def locked_out?(user, device_digest: nil)
+          failures, last_failed_at = failure_stats(user, device_digest)
+          return false if user.nil? || last_failed_at.nil?
+          return failures >= APP_REVIEW_LOCKOUT_WRONG_CODES if user.app_review_account?
+          return false if failures < LOCKOUT_WRONG_CODES
+
+          last_failed_at > (LOCKOUT_DURATION * (failures - LOCKOUT_WRONG_CODES + 1)).ago
+        end
+
         def digest_code(code)
           Secrets.digest("login_code", code)
         end
 
         private
+
+        # True only for the failure that first reaches the limit, so the
+        # owner gets one lock email, not one per guess.
+        def just_locked?(user, device_digest: nil)
+          limit = user&.app_review_account? ? APP_REVIEW_LOCKOUT_WRONG_CODES : LOCKOUT_WRONG_CODES
+          failure_stats(user, device_digest).first == limit
+        end
+
+        def failure_stats(user, device_digest)
+          user_id = user&.id || DECOY_USER_ID
+          recent = where(user_id: user_id).within_lockout_window
+          recent = recent.where(device_token_digest: device_digest) if device_digest
+          [recent.sum(:failed_attempts), recent.maximum(:failed_at)]
+        end
 
         def ip_over_hourly_limit?(ip_address)
           where(ip_address: ip_address, created_at: 1.hour.ago..).count >= SIGN_IN_IP_HOURLY_LIMIT
@@ -90,7 +123,7 @@ module Studio
         # real address.
         def decoy_reason(user, device_cookie:, known_device:)
           device_digest = KnownDevice.digest(device_cookie.device_token) if known_device
-          locked = Lockout.locked?(user, device_digest: device_digest)
+          locked = locked_out?(user, device_digest: device_digest)
           over_budget = mail_count(user, device_digest) >= MAIL_BUDGET
 
           return "unknown_address" if user.nil?
@@ -137,7 +170,7 @@ module Studio
         end
 
         def blocked?(login_code)
-          locked = Lockout.locked?(login_code.user, device_digest: lockout_scope(login_code))
+          locked = locked_out?(login_code.user, device_digest: lockout_scope(login_code))
           !login_code.decoy? && (locked || !login_code.user.can_sign_in?)
         end
 
@@ -147,7 +180,7 @@ module Studio
 
         def record_failure(login_code)
           login_code.update!(failed_attempts: login_code.failed_attempts + 1, failed_at: Time.current)
-          just_locked = Lockout.just_locked?(login_code.user, device_digest: lockout_scope(login_code))
+          just_locked = just_locked?(login_code.user, device_digest: lockout_scope(login_code))
           Events.notify("login_code_rejected", actor_id: login_code.user_id)
           return if login_code.decoy?
 

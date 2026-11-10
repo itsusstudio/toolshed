@@ -9,13 +9,28 @@ class Studio::Auth::UserTest < ActiveSupport::TestCase
   test "an email address is unique however it is typed" do
     User.create!(email_address: "taken@studio.com")
 
-    assert_includes User.new(email_address: " TAKEN@studio.com").tap(&:valid?).errors[:email_address], "has already been taken"
+    duplicate = User.new(email_address: " TAKEN@studio.com").tap(&:valid?)
+    assert_includes duplicate.errors[:email_address], "has already been taken"
+  end
+
+  test "unlock_sign_in! lifts a lockout at once" do
+    user = User.create!(email_address: "cook@studio.com")
+    user.login_codes.create!(
+      code_digest: "d", expires_at: 1.minute.from_now,
+      failed_attempts: Studio::Auth::LOCKOUT_WRONG_CODES, failed_at: Time.current
+    )
+    assert user.sign_in_locked?
+
+    user.unlock_sign_in!
+
+    refute user.sign_in_locked?
   end
 
   test "a destroyed user takes their sessions, codes and devices along" do
     user = User.create!(email_address: "cook@studio.com")
     user.sessions.create!
-    Studio::Auth::DeviceCookie.new(ActionDispatch::TestRequest.create.cookie_jar).remember_for(user, user_agent: "test", ip_address: "1.2.3.4")
+    device_cookie = Studio::Auth::DeviceCookie.new(ActionDispatch::TestRequest.create.cookie_jar)
+    device_cookie.remember_for(user, user_agent: "test", ip_address: "1.2.3.4")
 
     user.destroy!
 

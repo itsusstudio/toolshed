@@ -76,7 +76,7 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
 
   test "failures across codes lock the account and mail its owner once" do
     lock_account
-    assert Studio::Auth::Lockout.locked?(@user)
+    assert @user.sign_in_locked?
 
     travel Studio::Auth::LOCKOUT_DURATION + 1.minute
     issued = LoginCode.send(:issue, user: @user, known_device: false, device_cookie: stranger, ip_address: "6.6.6.6", user_agent: "attacker")
@@ -88,12 +88,12 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
   test "each failure past the limit lengthens the lock" do
     lock_account
     travel Studio::Auth::LOCKOUT_DURATION + 1.minute
-    refute Studio::Auth::Lockout.locked?(@user)
+    refute @user.sign_in_locked?
 
     issued = LoginCode.send(:issue, user: @user, known_device: false, device_cookie: stranger, ip_address: "6.6.6.6", user_agent: "attacker")
     verify(issued, code: "000000x")
     travel Studio::Auth::LOCKOUT_DURATION + 1.minute
-    assert Studio::Auth::Lockout.locked?(@user), "the 11th failure should lock for two durations"
+    assert @user.sign_in_locked?, "the 11th failure should lock for two durations"
   end
 
   test "a locked account gets a decoy from an unknown device" do
@@ -124,7 +124,7 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
         end
       end
 
-      refute Studio::Auth::Lockout.locked?(reviewer)
+      refute reviewer.sign_in_locked?
       assert_includes events, "authentication.app_review_account_code_rejected"
       request_sign_in("review@studio.com", device_cookie: stranger)
       second_device = request_sign_in("review@studio.com", device_cookie: stranger)
@@ -187,7 +187,7 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
         end
       end
 
-      assert Studio::Auth::Lockout.locked?(reviewer)
+      assert reviewer.sign_in_locked?
       assert_includes events, "authentication.app_review_account_locked"
       assert_empty ActionMailer::Base.deliveries
       assert LoginCode.find(request_sign_in("review@studio.com", device_cookie: stranger).id).decoy?

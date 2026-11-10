@@ -18,6 +18,18 @@ module Studio
         true
       end
 
+      def sign_in_locked?
+        LoginCode.locked_out?(self)
+      end
+
+      # For support: lifts a lockout at once. Clearing the login codes resets
+      # the wrong-code count and the hourly mail budget, and cancels any code
+      # still waiting to be typed. Sessions and known devices stay.
+      def unlock_sign_in!
+        login_codes.delete_all
+        Events.notify("sign_in_unlocked", actor_id: id)
+      end
+
       def app_review_account?
         AppReviewAccounts.include?(email_address)
       end
