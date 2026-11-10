@@ -111,7 +111,8 @@ class SignupsController < ApplicationController
   allow_unauthenticated_access
 
   def create
-    start_sign_in_for(User.create!(email_address: params[:email_address]))
+    user = User.find_by(email_address: params[:email_address]) || User.create!(email_address: params[:email_address])
+    start_sign_in_for(user)
   end
 end
 

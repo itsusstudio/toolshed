@@ -1,4 +1,7 @@
 fr: &fr
+  errors:
+    messages:
+      undeliverable: "ne peut pas recevoir de courriels"
   studio_auth:
     flash:
       too_many_requests: "Trop de tentatives. Réessayez dans quelques minutes."

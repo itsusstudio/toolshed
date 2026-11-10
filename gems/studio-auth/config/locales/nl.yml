@@ -1,4 +1,7 @@
 nl: &nl
+  errors:
+    messages:
+      undeliverable: "kan geen e-mail ontvangen"
   studio_auth:
     flash:
       too_many_requests: "Te veel pogingen. Probeer het over een paar minuten opnieuw."

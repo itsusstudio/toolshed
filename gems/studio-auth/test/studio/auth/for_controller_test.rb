@@ -121,8 +121,9 @@ class Studio::Auth::ForControllerTest < ActionDispatch::IntegrationTest
     assert_select "#studio-auth-email-error", text: I18n.t("studio_auth.flash.undeliverable")
   end
 
-  test "start_sign_in_for sends an undeliverable address back to login instead of crashing" do
-    post "/signup", params: {email_address: "new@example.com"}
+  test "start_sign_in_for sends an old undeliverable address back to login instead of crashing" do
+    User.new(email_address: "old@example.com").save!(validate: false)
+    post "/signup", params: {email_address: "old@example.com"}
 
     assert_redirected_to login_path
     assert_equal I18n.t("studio_auth.flash.undeliverable"), flash[:alert]

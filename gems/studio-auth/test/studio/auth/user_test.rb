@@ -6,6 +6,16 @@ class Studio::Auth::UserTest < ActiveSupport::TestCase
     assert_includes User.new(email_address: "garbage").tap(&:valid?).errors[:email_address], "is invalid"
   end
 
+  test "a new or changed email address must be able to receive mail" do
+    disposable = User.new(email_address: "cook@mailinator.com").tap(&:valid?)
+    assert_includes disposable.errors[:email_address], "can't receive email"
+
+    user = User.create!(email_address: "cook@studio.com")
+    user.stubs(:can_sign_in?).returns(false)
+    user.email_address = "deleted-1@deleted.invalid"
+    assert_predicate user, :valid?
+  end
+
   test "an email address is unique however it is typed" do
     User.create!(email_address: "taken@studio.com")
 

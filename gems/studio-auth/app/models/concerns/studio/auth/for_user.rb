@@ -12,6 +12,7 @@ module Studio
 
         validates :email_address, presence: true, uniqueness: true, length: {maximum: 254},
           format: {with: URI::MailTo::EMAIL_REGEXP}
+        validate :email_address_deliverable, if: :will_save_change_to_email_address?
       end
 
       def can_sign_in?
@@ -32,6 +33,18 @@ module Studio
 
       def app_review_account?
         AppReviewAccounts.include?(email_address)
+      end
+
+      private
+
+      # Saving must refuse what sign-in would: start_sign_in_for has no answer
+      # for an address the gem won't mail. Skipped for accounts that can't sign
+      # in, whose address an app may park somewhere undeliverable.
+      def email_address_deliverable
+        return if !can_sign_in? || errors.include?(:email_address)
+        deliverable = !Deliverability.undeliverable?(email_address) &&
+          !Deliverability.domain_cannot_receive_mail?(email_address)
+        errors.add(:email_address, :undeliverable) if !deliverable
       end
     end
   end
