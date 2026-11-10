@@ -169,7 +169,7 @@ With `posthog_browser_hosts` set, `studio_analytics_tag` renders posthog-js: aut
 <%= studio_analytics_tag(properties: {platform: "web"}) unless controller_path.start_with?("admin/") %>
 ```
 
-Every URL the browser sends loses its query string and hash, and paths under `posthog_masked_paths` are cut to the prefix, so a share or reset link in PostHog never works. Autocapture records what was clicked but not its text or attributes, and replay masks page text as well as inputs outside `[data-replay-unmask]`, and blanks `mailto:` and `tel:` links.
+Every URL the browser sends loses its query string and hash, and paths under `posthog_masked_paths` are cut to the prefix, so a share or reset link in PostHog never works. Autocapture records what was clicked but not its text or attributes, and replay masks page text as well as inputs outside `[data-replay-unmask]` (text inside `[data-replay-mask]` stays masked even there), and blanks `mailto:` and `tel:` links.
 
 `properties` are registered on every browser event; keep them low cardinality and free of personal data. Turbo re-runs the tag when its attributes change, such as on sign-in.
 

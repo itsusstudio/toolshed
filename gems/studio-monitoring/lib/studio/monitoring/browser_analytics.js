@@ -48,9 +48,11 @@
       ui_host: posthogUiHost,
       tracing_headers: [location.hostname],
       session_recording: {
-        // Page text is masked like inputs: shown only inside [data-replay-unmask].
+        // Page text is masked like inputs: shown only inside [data-replay-unmask],
+        // and [data-replay-mask] wins even inside it.
         maskTextSelector: "*",
-        maskTextFn: (text, element) => element?.closest("[data-replay-unmask]") ? text : text.replace(/\S/g, "*"),
+        maskTextFn: (text, element) =>
+          element?.closest("[data-replay-unmask]") && !element.closest("[data-replay-mask]") ? text : text.replace(/\S/g, "*"),
         blockSelector: 'a[href^="mailto:"], a[href^="tel:"]',
         maskCapturedNetworkRequestFn: (request) => ({...request, name: redactUrl(request.name)}),
         maskAllInputs: true,
