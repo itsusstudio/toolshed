@@ -82,15 +82,22 @@ class Studio::RackAttackTest < ActionDispatch::IntegrationTest
   end
 
   test "#remote_ip is the visitor behind a Cloudflare edge and our load balancer" do
-    get "/remote_ip", headers: {"REMOTE_ADDR" => "10.0.0.5", "HTTP_X_FORWARDED_FOR" => "203.0.113.50, #{EDGE}"}
+    get "/remote_ip", headers: {"REMOTE_ADDR" => "10.0.0.5", "HTTP_X_FORWARDED_FOR" => "203.0.113.50, #{EDGE}", "HTTP_CF_CONNECTING_IP" => "203.0.113.50"}
 
     assert_equal "203.0.113.50", response.body
   end
 
   test "#remote_ip is the visitor when a Cloudflare edge connects directly" do
-    get "/remote_ip", headers: {"REMOTE_ADDR" => EDGE, "HTTP_X_FORWARDED_FOR" => "203.0.113.50"}
+    get "/remote_ip", headers: {"REMOTE_ADDR" => EDGE, "HTTP_X_FORWARDED_FOR" => "203.0.113.50", "HTTP_CF_CONNECTING_IP" => "203.0.113.50"}
 
     assert_equal "203.0.113.50", response.body
+  end
+
+  test "#remote_ip ignores X-Forwarded-For forged by a client whose own egress is a Cloudflare IP" do
+    warp_client = "104.28.0.9"
+    get "/remote_ip", headers: {"REMOTE_ADDR" => "10.0.0.5", "HTTP_X_FORWARDED_FOR" => "198.51.100.99, #{warp_client}, #{EDGE}", "HTTP_CF_CONNECTING_IP" => warp_client}
+
+    assert_equal warp_client, response.body
   end
 
   test "#remote_ip ignores X-Forwarded-For from a client that bypassed Cloudflare" do

@@ -99,6 +99,17 @@ module Studio
       end
     end
 
+    class RemoteIp
+      def initialize(app)
+        @app = app
+      end
+
+      def call(env)
+        env["action_dispatch.remote_ip"] = ::Rack::Request.new(env).extend(ClientIp).client_ip
+        @app.call(env)
+      end
+    end
+
     class << self
       def cloudflare?(address)
         address = IPAddr.new(address.to_s)

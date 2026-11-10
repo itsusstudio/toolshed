@@ -2,9 +2,12 @@ module Studio
   module RackAttack
     # rack-attack's own Railtie adds the middleware.
     class Railtie < ::Rails::Railtie
-      # Without this, request.remote_ip stops at the Cloudflare edge, so
-      # sessions, signatures, rate_limit and logs all record a shared edge IP.
-      config.action_dispatch.trusted_proxies = ActionDispatch::RemoteIp::TRUSTED_PROXIES + CLOUDFLARE_RANGES
+      # request.remote_ip follows the same rule as Rack::Attack's client_ip.
+      # Trusting Cloudflare ranges in X-Forwarded-For instead would let a
+      # client whose own egress is a Cloudflare IP (WARP, Workers) forge it.
+      initializer "studio_rack_attack.remote_ip" do |app|
+        app.middleware.insert_after ActionDispatch::RemoteIp, RemoteIp
+      end
 
       initializer "studio_rack_attack.install", before: :load_config_initializers do
         RackAttack.install
