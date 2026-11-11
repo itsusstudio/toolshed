@@ -1,7 +1,7 @@
 // Turbo re-runs this script when its data attributes change (sign in, sign
 // out), so keep everything block-scoped.
 {
-  const { posthogToken, posthogHost, posthogUiHost, posthogDefaults, posthogMaskedPaths, posthogUserId, posthogTenantId, posthogProperties } = document.currentScript.dataset;
+  const { posthogToken, posthogHost, posthogUiHost, posthogDefaults, posthogMaskedPaths, posthogUserId, posthogTenantId, posthogWorkspaceId, posthogProperties } = document.currentScript.dataset;
   // Some URLs work as keys (share links, password resets), so URLs lose
   // their query, and masked paths are cut to their prefix. Walks the whole
   // event, as PostHog's before_send redaction guide does, so nested URLs in
@@ -33,6 +33,7 @@
   const syncIdentity = (ph) => {
     if (!posthogUserId && ph.get_property("$user_state") === "identified") ph.reset()
     ph.register(JSON.parse(posthogProperties))
+    if (posthogWorkspaceId) ph.register({ workspace_id: Number(posthogWorkspaceId) })
     if (posthogUserId) ph.identify(posthogUserId)
     if (posthogTenantId) ph.group("tenant", posthogTenantId)
   }

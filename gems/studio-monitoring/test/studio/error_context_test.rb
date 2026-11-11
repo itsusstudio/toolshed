@@ -20,14 +20,16 @@ class Studio::Monitoring::ErrorContextTest < ActiveSupport::TestCase
 
   teardown { Rails.error.unsubscribe(@recorder) }
 
-  test "every Rails.error report carries the actor, tenant and request id" do
+  test "every Rails.error report carries the actor, tenant, workspace and request id" do
     Studio::Monitoring::Current.actor_id = 42
     Studio::Monitoring::Current.tenant_id = 7
+    Studio::Monitoring::Current.workspace_id = 9
     Studio::Monitoring::Current.request_id = "req-1"
 
     Rails.error.report(StandardError.new("boom"))
 
-    assert_equal({actor_id: 42, tenant_id: 7, request_id: "req-1"}, @recorder.contexts.sole.slice(:actor_id, :tenant_id, :request_id))
+    assert_equal({actor_id: 42, tenant_id: 7, workspace_id: 9, request_id: "req-1"},
+      @recorder.contexts.sole.slice(:actor_id, :tenant_id, :workspace_id, :request_id))
   end
 
   test "context is filtered, including controller params" do

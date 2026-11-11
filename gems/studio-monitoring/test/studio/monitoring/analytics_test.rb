@@ -21,13 +21,14 @@ class Studio::Monitoring::AnalyticsTest < ActiveSupport::TestCase
     Studio::Monitoring::Analytics.track("recipe_saved", actor_id: 1)
   end
 
-  test ".track adds actor, tenant, app properties and locale, letting explicit properties override them" do
+  test ".track adds actor, tenant, workspace, app properties and locale, letting explicit properties override them" do
     Studio::Monitoring::Current.actor_id = 42
     Studio::Monitoring::Current.tenant_id = 3
+    Studio::Monitoring::Current.workspace_id = 5
     TestContext.platform = "ios"
     backend = mock("backend")
     backend.expects(:track).with("recipe_saved",
-      has_entries(properties: {actor_id: 42, tenant_id: 3, platform: "ios", locale: "fr", recipe_id: 7}))
+      has_entries(properties: {actor_id: 42, tenant_id: 3, workspace_id: 5, platform: "ios", locale: "fr", recipe_id: 7}))
     Studio::Monitoring::Analytics.stubs(:backends).returns([backend])
 
     Studio::Monitoring::Analytics.track("recipe_saved", properties: {locale: "fr", recipe_id: 7})

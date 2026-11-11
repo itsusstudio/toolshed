@@ -63,6 +63,7 @@ module Studio
           job_id: Current.job_id,
           actor_id: actor_id,
           tenant_id: tenant_id,
+          workspace_id: Current.workspace_id,
           **Monitoring.config.default_properties.call,
           locale: Current.locale || I18n.locale
         }.compact

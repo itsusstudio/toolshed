@@ -1,13 +1,15 @@
 require "test_helper"
 
 class Studio::Monitoring::TagsTest < ActiveSupport::TestCase
-  test "setting the actor, tenant and locale tags the AppSignal transaction" do
+  test "setting the actor, tenant, workspace and locale tags the AppSignal transaction" do
     Appsignal.expects(:add_tags).with({actor_id: 42})
     Appsignal.expects(:add_tags).with({tenant_id: 7})
+    Appsignal.expects(:add_tags).with({workspace_id: 9})
     Appsignal.expects(:add_tags).with({locale: "fr"})
 
     Studio::Monitoring::Current.actor_id = 42
     Studio::Monitoring::Current.tenant_id = 7
+    Studio::Monitoring::Current.workspace_id = 9
     Studio::Monitoring::Current.locale = :fr
   end
 

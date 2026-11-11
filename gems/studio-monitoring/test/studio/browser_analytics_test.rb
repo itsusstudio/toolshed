@@ -4,6 +4,7 @@ class AnalyticsTagController < ApplicationController
   def show
     Studio::Monitoring::Current.actor_id = params[:actor_id]
     Studio::Monitoring::Current.tenant_id = params[:tenant_id]
+    Studio::Monitoring::Current.workspace_id = params[:workspace_id]
     render inline: "<%= studio_analytics_tag(properties: {platform: 'web', plan: nil}) %>"
   end
 end
@@ -34,11 +35,12 @@ class Studio::Monitoring::BrowserAnalyticsTest < ActionDispatch::IntegrationTest
     assert_nil script["data-posthog-user-id"]
   end
 
-  test "identifies the browser as the current actor in the tenant's group" do
-    get "/analytics_tag", params: {actor_id: 42, tenant_id: 7}
+  test "identifies the browser as the current actor in the tenant's group, in its workspace" do
+    get "/analytics_tag", params: {actor_id: 42, tenant_id: 7, workspace_id: 9}
 
     assert_equal "42", script_tag["data-posthog-user-id"]
     assert_equal "7", script_tag["data-posthog-tenant-id"]
+    assert_equal "9", script_tag["data-posthog-workspace-id"]
   end
 
   test "passes the app's masked paths so the browser cuts token URLs to their prefix" do

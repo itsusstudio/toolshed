@@ -12,7 +12,7 @@ Events, errors, logs, metrics and analytics for studio Rails apps, built on `Rai
 
 ## Events
 
-One structured line with the actor, tenant, request and job ids attached; Rails filters secrets from the payload.
+One structured line with the actor, tenant, workspace, request and job ids attached; Rails filters secrets from the payload.
 
 ```ruby
 Studio::Monitoring::Events.info("recipe_url_import", success: true, recipe_id: recipe.id)
@@ -24,7 +24,7 @@ Names are snake_case, object first, and dashboards filter on them, so don't rena
 
 ## Errors
 
-Every report, including Rails' own, carries the actor, tenant, request and job ids. Don't report expected outcomes like an invalid form; log an event.
+Every report, including Rails' own, carries the actor, tenant, workspace, request and job ids. Don't report expected outcomes like an invalid form; log an event.
 
 ```ruby
 Studio::Monitoring::Errors.report(error, context: {url: url})   # after a rescue
@@ -93,11 +93,12 @@ Rails.application.config.filter_parameters += Studio::Monitoring::FILTER_PARAMET
 
 The filter list matches key names, never values, across params, payloads, error context, analytics and trace URLs. Add the app's own names after it.
 
-Set who is acting, and for which tenant, where the app authenticates and in any job acting for someone. They're plain ids, so events never query for them: `actor_id` is the PostHog distinct id, `tenant_id` the PostHog group.
+Set who is acting, for which tenant and in which workspace, where the app authenticates and in any job acting for someone. They're plain ids, so events never query for them: `actor_id` is the PostHog distinct id, `tenant_id` (the studio-tenancy organization) the PostHog group, and `workspace_id` a property on every event.
 
 ```ruby
 Studio::Monitoring::Current.actor_id = user.id
 Studio::Monitoring::Current.tenant_id = organization.id
+Studio::Monitoring::Current.workspace_id = workspace.id
 ```
 
 With no code, the gem logs `http_request` per request and `job_performed` per job, records `job.queue_wait` and `job.duration`, traces requests and jobs, and logs `monitoring_configured` at boot. An in-process request, such as a boot warm-up, stays out of all of it with `Studio::Monitoring::UNRECORDED_REQUEST => true` in its Rack env.
@@ -113,7 +114,7 @@ config.ignore_namespaces = [Studio::Monitoring::RequestSampling::DROPPED_NAMESPA
 
 ## Browser analytics
 
-With `posthog_browser_hosts` set, `studio_analytics_tag` renders posthog-js, identified as `Current.actor_id` in the `Current.tenant_id` group, with tracing headers that join the server's traces. Without it, the tag renders nothing.
+With `posthog_browser_hosts` set, `studio_analytics_tag` renders posthog-js, identified as `Current.actor_id` in the `Current.tenant_id` group with `Current.workspace_id` on every event, with tracing headers that join the server's traces. Without it, the tag renders nothing.
 
 ```erb
 <%# in <head> %>
