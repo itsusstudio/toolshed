@@ -40,6 +40,13 @@ class Studio::Auth::ForSessionTest < ActiveSupport::TestCase
     assert_operator @session.reload.last_seen_at, :>, seen
   end
 
+  test "#signed_in_within? compares the session's sign-in time" do
+    travel 2.hours do
+      assert @session.signed_in_within?(3.hours)
+      refute @session.signed_in_within?(1.hour)
+    end
+  end
+
   test "the cookie expires with the absolute timeout" do
     cookie = @jar.instance_variable_get(:@set_cookies)["session_id"]
 

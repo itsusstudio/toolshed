@@ -13,7 +13,6 @@ en: &en
       too_many_attempts: "Too many incorrect codes. Send a new one."
       signed_out: "Signed out."
       signed_out_everywhere: "Signed out on all devices."
-      admin_sign_in_again: "Sign in again to open the admin area."
     sign_in_mailer:
       made_in: "%{app_name}, made in montreal"
       terms: "Terms"

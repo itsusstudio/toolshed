@@ -25,8 +25,8 @@ module Studio
         }
       end
 
-      def recent_enough_for_staff?(write:)
-        created_at >= Auth.config.staff_sign_in_max_age(write: write).ago
+      def signed_in_within?(duration)
+        created_at >= duration.ago
       end
 
       class_methods do

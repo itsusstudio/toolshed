@@ -24,15 +24,6 @@ class Studio::Auth::ConfigurationTest < ActiveSupport::TestCase
     assert_match "c.session_absolute_timeout", assert_raises(Configuration::Error) { config.validate_config! }.message
   end
 
-  test "staff writes in the admin area need a sign-in within 12 hours at most" do
-    config = valid_config
-    config.staff_read_sign_in_max_age = 30.days
-    config.staff_write_sign_in_max_age = 1.day
-
-    assert_match "c.staff_write_sign_in_max_age can be at most 12 hours",
-      assert_raises(Configuration::Error) { config.validate_config! }.message
-  end
-
   test "app review accounts come from credentials, normalized" do
     stub_app_review_accounts({" Review@Studio.com": 381904})
 

@@ -9,7 +9,6 @@ require_relative "auth/typed_input"
 require_relative "auth/secrets"
 require_relative "auth/app_review_accounts"
 require_relative "auth/routes"
-require_relative "auth/staff_constraint"
 
 module Studio
   module Auth

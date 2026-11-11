@@ -1,7 +1,7 @@
 # studio-auth
 
 Passwordless sign-in for studio Rails apps: a 6-digit email code, expiring
-database sessions, staff access to `/admin`, and lockout mail.
+database sessions, the staff flag, and lockout mail.
 
 ## Rules
 
@@ -49,8 +49,6 @@ Studio::Auth.configure do |c|
   c.privacy_url = "https://itsusstudio.com/privacy"
   c.session_idle_timeout = 20.years # 20.years keeps a session until sign-out
   c.session_absolute_timeout = 20.years
-  c.staff_read_sign_in_max_age = 12.hours
-  c.staff_write_sign_in_max_age = 12.hours # 12 hours at most
 end
 ```
 
@@ -99,31 +97,11 @@ end
 
 ## Staff
 
-`users.staff` opens `/admin`. It needs an `@itsusstudio.com` address, so staff
-sign-in rests on the studio Workspace inbox. App review accounts are never
-staff, even on the studio domain. Grant it from the console, never a form. (Organization roles are studio-tenancy's, not this.)
-
-```ruby
-class Admin::BaseController < ApplicationController
-  include Studio::Auth::ForStaffController
-end
-```
-
-```ruby
-# Mounted engines skip controllers. The catch-all, behind ForStaffController,
-# answers what the constraint refuses.
-constraints Studio::Auth::StaffConstraint do
-  mount MissionControl::Jobs::Engine, at: "/admin/jobs"
-end
-match "admin/*path", to: "admin/not_found#show", via: :all
-```
-
-- Everyone but staff gets a 404.
-- Staff sign in again once their session is older than
-  `staff_read_sign_in_max_age` to view, or `staff_write_sign_in_max_age` to
-  change anything.
-- Every change emits `authentication.admin_action`, the audit trail; refused
-  visits emit `authentication.admin_access_denied`.
+`users.staff` marks studio staff, whom studio-admin lets into `/admin`. It
+needs an `@itsusstudio.com` address, so staff sign-in rests on the studio
+Workspace inbox. App review accounts are never staff, even on the studio
+domain. Grant it from the console, never a form. (Organization roles are
+studio-tenancy's, not this.)
 
 ## Tests
 

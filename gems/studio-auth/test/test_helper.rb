@@ -90,10 +90,6 @@ DummyApp.routes.draw do
   studio_auth
   root to: "pages#show"
   get "/private", to: "pages#private"
-  constraints Studio::Auth::StaffConstraint do
-    get "/admin/engine", to: proc { [200, {}, ["engine"]] }
-  end
-  match "/admin(/*path)", to: "admin#show", via: [:get, :post]
   post "/signup", to: "signups#create"
 end
 
@@ -116,14 +112,6 @@ class PagesController < ApplicationController
 
   def private
     render plain: "private"
-  end
-end
-
-class AdminController < ApplicationController
-  include Studio::Auth::ForStaffController
-
-  def show
-    render plain: "admin"
   end
 end
 

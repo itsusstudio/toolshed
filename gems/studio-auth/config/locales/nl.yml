@@ -13,7 +13,6 @@ nl: &nl
       too_many_attempts: "Te veel pogingen. Vraag een nieuwe code aan."
       signed_out: "Je bent uitgelogd."
       signed_out_everywhere: "Je bent op alle apparaten uitgelogd."
-      admin_sign_in_again: "Log opnieuw in om het beheer te openen."
     sign_in_mailer:
       made_in: "%{app_name}, gemaakt in montreal"
       terms: "Voorwaarden"
