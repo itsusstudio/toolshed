@@ -11,7 +11,6 @@ nl: &nl
       wrong_code: "Onjuiste code. Controleer hem en probeer het opnieuw."
       expired: "Code verlopen. Vraag een nieuwe aan."
       too_many_attempts: "Te veel pogingen. Vraag een nieuwe code aan."
-      signed_out: "Je bent uitgelogd."
       signed_out_everywhere: "Je bent op alle apparaten uitgelogd."
     sign_in_mailer:
       made_in: "%{app_name}, gemaakt in montreal"

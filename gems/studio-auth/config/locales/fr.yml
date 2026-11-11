@@ -11,7 +11,6 @@ fr: &fr
       wrong_code: "Code incorrect. Vérifiez-le et réessayez."
       expired: "Code expiré. Demandez-en un nouveau."
       too_many_attempts: "Trop d'essais. Demandez un nouveau code."
-      signed_out: "Déconnexion réussie."
       signed_out_everywhere: "Sessions fermées sur tous les appareils."
     sign_in_mailer:
       made_in: "%{app_name}, fait à montréal"

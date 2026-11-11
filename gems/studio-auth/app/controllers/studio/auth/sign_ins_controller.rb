@@ -34,7 +34,7 @@ module Studio
 
       def destroy
         terminate_session
-        redirect_to main_app.login_path, status: :see_other, notice: t("studio_auth.flash.signed_out")
+        redirect_to main_app.login_path, status: :see_other
       end
 
       def destroy_all
