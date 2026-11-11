@@ -11,6 +11,15 @@ class Studio::Auth::ForSessionTest < ActiveSupport::TestCase
     @session.write_cookie(@jar)
   end
 
+  test ".ordered_by_last_seen_at_desc puts the most recently used first and never-seen sessions last" do
+    @session.update_columns(last_seen_at: 2.days.ago)
+    recent = @user.sessions.create!(last_seen_at: 1.hour.ago)
+    never_seen = @user.sessions.create!
+    never_seen.update_columns(last_seen_at: nil)
+
+    assert_equal [recent, @session, never_seen], @user.sessions.ordered_by_last_seen_at_desc.to_a
+  end
+
   test "a session idle past the idle timeout is refused" do
     travel IDLE + 1.minute
     assert_nil Session.from_cookie(@jar)

@@ -12,6 +12,11 @@ fr: &fr
       expired: "Code expiré. Demandez-en un nouveau."
       too_many_attempts: "Trop d'essais. Demandez un nouveau code."
       signed_out_everywhere: "Sessions fermées sur tous les appareils."
+      signed_out_device: "Session fermée sur cet appareil."
+    session_device:
+      app_for: "%{app_name} pour %{platform}"
+      browser_on: "%{browser} sur %{os}"
+      unknown: "Appareil inconnu"
     sign_in_mailer:
       made_in: "%{app_name}, fait à montréal"
       terms: "Conditions"

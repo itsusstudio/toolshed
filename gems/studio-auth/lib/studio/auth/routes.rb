@@ -11,6 +11,7 @@ module Studio
           post "verify", to: "sign_in_codes#create"
           delete "logout", to: "sign_ins#destroy", as: :logout
           delete "logout/everywhere", to: "sign_ins#destroy_all", as: :logout_everywhere
+          delete "logout/sessions/:id", to: "sessions#destroy", as: :logout_session
         end
       end
     end

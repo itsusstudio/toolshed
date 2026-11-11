@@ -119,6 +119,17 @@ module Studio
           travel_back
         end
 
+        test "studio-auth: signing out a device only reaches the signed-in user's own sessions" do
+          victim_session = create_authentication_user("victim@studio.com").sessions.create!
+          create_authentication_user("cook@studio.com")
+          post verify_path, params: {code: request_authentication_code("cook@studio.com")}
+
+          delete logout_session_path(victim_session)
+
+          assert ::Session.exists?(victim_session.id)
+          assert_signed_in
+        end
+
         test "studio-auth: an expired or deleted session is signed out without errors" do
           create_authentication_user("cook@studio.com")
           post verify_path, params: {code: request_authentication_code("cook@studio.com")}

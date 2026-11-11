@@ -19,10 +19,15 @@ module Studio
           not_idle = where(last_seen_at: nil).or(where(last_seen_at: Auth.config.session_idle_timeout.ago..))
           where(created_at: Auth.config.session_absolute_timeout.ago..).merge(not_idle)
         }
+        scope :ordered_by_last_seen_at_desc, -> { order(arel_table[:last_seen_at].desc.nulls_last, created_at: :desc) }
         scope :expired, -> {
           where(created_at: ...Auth.config.session_absolute_timeout.ago)
             .or(where(last_seen_at: ...Auth.config.session_idle_timeout.ago))
         }
+      end
+
+      def device
+        SessionDevice.from_user_agent(user_agent)
       end
 
       def signed_in_within?(duration)

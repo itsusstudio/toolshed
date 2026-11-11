@@ -7,7 +7,7 @@ module Studio
 
       included do
         before_action :require_authentication
-        helper_method :authenticated?, :current_user
+        helper_method :authenticated?, :current_user, :current_session
       end
 
       class_methods do
@@ -98,14 +98,18 @@ module Studio
 
       def terminate_all_sessions
         if (user = current_user)
-          sessions = user.sessions.to_a
-          user.sessions.delete_all
-          disconnect_cable(sessions)
+          end_sessions(user.sessions)
           user.known_devices.delete_all
           user.login_codes.live.update_all(expires_at: Time.current)
           Rails.event.notify("authentication.all_sessions_ended", actor_id: user.id)
         end
         forget_session
+      end
+
+      def end_sessions(sessions)
+        ended = sessions.to_a
+        sessions.delete_all
+        disconnect_cable(ended)
       end
 
       # An open socket outlives its cookie and would keep receiving

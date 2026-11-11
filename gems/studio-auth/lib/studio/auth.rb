@@ -6,6 +6,7 @@ require "valid_email2"
 
 require_relative "auth/configuration"
 require_relative "auth/typed_input"
+require_relative "auth/session_device"
 require_relative "auth/secrets"
 require_relative "auth/app_review_accounts"
 require_relative "auth/routes"

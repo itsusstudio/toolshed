@@ -12,6 +12,11 @@ nl: &nl
       expired: "Code verlopen. Vraag een nieuwe aan."
       too_many_attempts: "Te veel pogingen. Vraag een nieuwe code aan."
       signed_out_everywhere: "Je bent op alle apparaten uitgelogd."
+      signed_out_device: "Je bent op dat apparaat uitgelogd."
+    session_device:
+      app_for: "%{app_name} voor %{platform}"
+      browser_on: "%{browser} op %{os}"
+      unknown: "Onbekend apparaat"
     sign_in_mailer:
       made_in: "%{app_name}, gemaakt in montreal"
       terms: "Voorwaarden"

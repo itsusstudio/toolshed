@@ -12,6 +12,11 @@ en: &en
       expired: "That code expired. Send a new one."
       too_many_attempts: "Too many incorrect codes. Send a new one."
       signed_out_everywhere: "Signed out on all devices."
+      signed_out_device: "Signed out on that device."
+    session_device:
+      app_for: "%{app_name} for %{platform}"
+      browser_on: "%{browser} on %{os}"
+      unknown: "Unknown device"
     sign_in_mailer:
       made_in: "%{app_name}, made in montreal"
       terms: "Terms"
