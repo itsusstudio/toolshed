@@ -100,8 +100,8 @@ end
 ## Staff
 
 `users.staff` opens `/admin`. It needs an `@itsusstudio.com` address, so staff
-sign-in rests on the studio Workspace inbox. Grant it from the console, never a
-form. (Organization roles are studio-tenancy's, not this.)
+sign-in rests on the studio Workspace inbox. App review accounts are never
+staff, even on the studio domain. Grant it from the console, never a form. (Organization roles are studio-tenancy's, not this.)
 
 ```ruby
 class Admin::BaseController < ApplicationController

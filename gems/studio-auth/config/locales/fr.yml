@@ -3,6 +3,7 @@ fr: &fr
     messages:
       undeliverable: "ne peut pas recevoir de courriels"
       studio_email_only: "exige une adresse courriel @%{domain}"
+      app_review_account: "ne peut pas être donné à un compte de révision d'app"
   studio_auth:
     flash:
       too_many_requests: "Trop de tentatives. Réessayez dans quelques minutes."

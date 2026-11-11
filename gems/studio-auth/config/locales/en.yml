@@ -3,6 +3,7 @@ en: &en
     messages:
       undeliverable: "can't receive email"
       studio_email_only: "needs an @%{domain} email address"
+      app_review_account: "can't be given to an app review account"
   studio_auth:
     flash:
       too_many_requests: "Too many attempts. Try again in a few minutes."

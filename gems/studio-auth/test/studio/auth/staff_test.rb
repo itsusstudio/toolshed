@@ -35,6 +35,23 @@ class Studio::Auth::StaffTest < ActionDispatch::IntegrationTest
     assert_includes user.errors.details[:staff], {error: :studio_email_only, domain: "itsusstudio.com"}
   end
 
+  test "an app review account is never staff, so its shared code opens nothing" do
+    Rails.application.credentials.stubs(:dig).with(:studio_auth, :app_review_accounts)
+      .returns({"apple+review@itsusstudio.com": "424242"})
+    reviewer = User.create!(email_address: "apple+review@itsusstudio.com")
+
+    reviewer.staff = true
+    refute_predicate reviewer, :valid?
+    assert_includes reviewer.errors.details[:staff], {error: :app_review_account}
+
+    reviewer.update_column(:staff, true)
+    sign_in_as(reviewer)
+    get "/admin"
+
+    assert_response :not_found
+    refute_includes User.staff, reviewer
+  end
+
   test "staff get in, and the page is kept out of search engines" do
     sign_in_as(User.create!(email_address: "boss@itsusstudio.com", staff: true))
 

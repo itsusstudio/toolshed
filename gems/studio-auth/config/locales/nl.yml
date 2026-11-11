@@ -3,6 +3,7 @@ nl: &nl
     messages:
       undeliverable: "kan geen e-mail ontvangen"
       studio_email_only: "vereist een @%{domain}-e-mailadres"
+      app_review_account: "kan niet aan een app-reviewaccount worden gegeven"
   studio_auth:
     flash:
       too_many_requests: "Te veel pogingen. Probeer het over een paar minuten opnieuw."

@@ -20,13 +20,17 @@ module Studio
 
         validate :staff_email_domain, if: -> { self[:staff] }
 
-        scope :staff, -> { where(staff: true).where(arel_table[:email_address].matches("%@#{STAFF_EMAIL_DOMAIN}")) }
+        scope :staff, -> {
+          where(staff: true).where(arel_table[:email_address].matches("%@#{STAFF_EMAIL_DOMAIN}"))
+            .where.not(email_address: AppReviewAccounts.all.keys)
+        }
       end
 
       # Checked on every staff request, so a flag set from the console or by a
-      # bug on any other address opens nothing.
+      # bug on any other address opens nothing. App review accounts are
+      # refused too: their fixed code is shared with the store reviewers.
       def staff?
-        super && email_address.to_s.end_with?("@#{STAFF_EMAIL_DOMAIN}")
+        super && email_address.to_s.end_with?("@#{STAFF_EMAIL_DOMAIN}") && !app_review_account?
       end
 
       def can_sign_in?
@@ -52,9 +56,11 @@ module Studio
       private
 
       def staff_email_domain
-        return if email_address.to_s.end_with?("@#{STAFF_EMAIL_DOMAIN}")
-
-        errors.add(:staff, :studio_email_only, domain: STAFF_EMAIL_DOMAIN)
+        if !email_address.to_s.end_with?("@#{STAFF_EMAIL_DOMAIN}")
+          errors.add(:staff, :studio_email_only, domain: STAFF_EMAIL_DOMAIN)
+        elsif app_review_account?
+          errors.add(:staff, :app_review_account)
+        end
       end
 
       # Saving must refuse what sign-in would: start_sign_in_for has no answer
