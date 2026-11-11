@@ -19,7 +19,7 @@ fr: &fr
       terms: "Conditions"
       privacy: "Confidentialité"
       login_code:
-        subject: "%{code} est votre code %{app_name}"
+        subject: "%{code} est votre code de connexion %{app_name}"
         intro: "Votre code à usage unique est :"
         expires:
           one: "Ce code expire dans %{count} minute."

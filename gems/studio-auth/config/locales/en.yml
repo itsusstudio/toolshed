@@ -19,7 +19,7 @@ en: &en
       terms: "Terms"
       privacy: "Privacy"
       login_code:
-        subject: "%{code} is your %{app_name} code"
+        subject: "%{code} is your %{app_name} sign-in code"
         intro: "Your one-time code is:"
         expires:
           one: "This code expires in %{count} minute."

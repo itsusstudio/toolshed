@@ -19,7 +19,7 @@ nl: &nl
       terms: "Voorwaarden"
       privacy: "Privacy"
       login_code:
-        subject: "%{code} is je %{app_name}-code"
+        subject: "%{code} is je inlogcode voor %{app_name}"
         intro: "Je eenmalige code is:"
         expires:
           one: "Deze code verloopt over %{count} minuut."

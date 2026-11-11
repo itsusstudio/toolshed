@@ -12,7 +12,7 @@ class Studio::Auth::SignInMailerTest < ActionMailer::TestCase
   test "login_code has text and HTML parts, the code in the subject, and only the support and legal links" do
     mail = login_code_mail.deliver_now
 
-    assert_equal "123456 is your Dummy code", mail.subject
+    assert_equal "123456 is your Dummy sign-in code", mail.subject
     assert_equal ["hello@dummy.app"], mail.from
     assert_equal "multipart/alternative", mail.mime_type
     assert_equal "auto-generated", mail["Auto-Submitted"].value
@@ -42,7 +42,7 @@ class Studio::Auth::SignInMailerTest < ActionMailer::TestCase
   test "login_code is written in the user's locale" do
     @user.update!(locale: "fr")
 
-    assert_equal "123456 est votre code Dummy", login_code_mail.deliver_now.subject
+    assert_equal "123456 est votre code de connexion Dummy", login_code_mail.deliver_now.subject
   end
 
   test "login_code sends nothing for a decoy, an app review account or a code that expired in the queue" do
