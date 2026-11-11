@@ -9,5 +9,6 @@ gem "minitest"
 gem "mocha"
 gem "sqlite3"
 gem "actioncable"
+gem "propshaft"
 
 gem "bundler-audit", require: false

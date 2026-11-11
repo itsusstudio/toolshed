@@ -2,6 +2,7 @@
 
 Studio Ruby gems, one per directory in `gems/`.
 
+- [studio-admin](gems/studio-admin)
 - [studio-app-bintools](gems/studio-app-bintools)
 - [studio-auth](gems/studio-auth)
 - [studio-cache](gems/studio-cache)
