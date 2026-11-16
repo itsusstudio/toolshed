@@ -23,6 +23,16 @@ class Studio::Auth::UserTest < ActiveSupport::TestCase
     assert_includes duplicate.errors[:email_address], "has already been taken"
   end
 
+  test "an app can let users without a login leave the email address blank" do
+    User.any_instance.stubs(:requires_email_address?).returns(false)
+    first = User.create!(email_address: "")
+    second = User.create!(email_address: nil)
+
+    assert_nil first.email_address
+    assert_nil second.email_address
+    refute_predicate first, :can_sign_in?
+  end
+
   test "unlock_sign_in! lifts a lockout at once" do
     user = User.create!(email_address: "cook@studio.com")
     user.login_codes.create!(

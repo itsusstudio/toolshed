@@ -13,11 +13,12 @@ module Studio
           foreign_key: :email_address, inverse_of: false, dependent: :delete_all
         has_many :known_devices, class_name: "Studio::Auth::KnownDevice", dependent: :delete_all
 
-        normalizes :email_address, with: ->(email_address) { TypedInput.email_address(email_address) }
+        normalizes :email_address, with: ->(email_address) { TypedInput.email_address(email_address).presence }
 
-        validates :email_address, presence: true, uniqueness: true, length: {maximum: 254},
-          format: {with: URI::MailTo::EMAIL_REGEXP}
-        validate :email_address_deliverable, if: :will_save_change_to_email_address?
+        validates :email_address, presence: true, if: :requires_email_address?
+        validates :email_address, uniqueness: true, length: {maximum: 254},
+          format: {with: URI::MailTo::EMAIL_REGEXP}, allow_nil: true
+        validate :email_address_deliverable, if: -> { email_address.present? && will_save_change_to_email_address? }
 
         validate :staff_email_domain, if: -> { self[:staff] }
 
@@ -35,6 +36,12 @@ module Studio
       end
 
       def can_sign_in?
+        email_address.present?
+      end
+
+      # A user who never signs in, like a team member without a login, may
+      # have no email address. Apps override this to say which users those are.
+      def requires_email_address?
         true
       end
 

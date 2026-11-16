@@ -126,6 +126,10 @@ locale files (`studio_auth.codes.new.title`, ...) only where a locale needs it.
 - Override `after_sign_in(user)`, `after_authentication_path` (root by default)
   or `terminate_all_sessions` (call `super`).
 - Override `can_sign_in?` on the user to shut out deleted or suspended accounts.
+  By default a user with no email address can't sign in.
+- Override `requires_email_address?` to let users who never sign in, like a
+  team member without a login, leave `email_address` blank. Their column must
+  allow NULL.
 - Hotwire Native requests (the app's `hotwire_native_app?`) get a 401 instead of
   a redirect to sign-in.
 - Routes: `login_path`, `verify_path`, and `logout_path` and

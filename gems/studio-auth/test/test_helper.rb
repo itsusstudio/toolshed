@@ -53,7 +53,7 @@ ActiveRecord::Schema.verbose = false
 ActiveRecord::Migration.verbose = false
 ActiveRecord::Schema.define do
   create_table :users do |t|
-    t.string :email_address, null: false, index: {unique: true}
+    t.string :email_address, index: {unique: true}
     t.string :locale
     t.timestamps
   end
