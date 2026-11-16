@@ -5,10 +5,34 @@ en: &en
       studio_email_only: "needs an @%{domain} email address"
       app_review_account: "can't be given to an app review account"
   studio_auth:
+    sign_ins:
+      new:
+        title: "Sign in to %{app_name}"
+        heading: "Sign in"
+        email_label: "Email address"
+        submit: "Send code"
+        no_account: "Don’t have an account?"
+        sign_up: "Sign up"
+    codes:
+      new:
+        title: "Check your email"
+        sent_to: "We sent a six-digit code to %{email_address}."
+        change: "Change"
+        code_label: "Code"
+        hint:
+          one: "The code works for %{count} minute."
+          other: "The code works for %{count} minutes."
+        sign_in: "Sign in"
+        resend_prompt: "Didn’t get it?"
+        resend: "Send a new code"
+        dev_code: "Dev code: %{code}"
+        copy: "Copy"
+    terms: "Terms"
+    privacy: "Privacy"
     flash:
       too_many_requests: "Too many attempts. Try again in a few minutes."
       undeliverable: "Enter a valid email address."
-      wrong_code: "That code didn't work. Check it and try again."
+      wrong_code: "Incorrect code"
       expired: "That code expired. Send a new one."
       too_many_attempts: "Too many incorrect codes. Send a new one."
       signed_out_everywhere: "Signed out on all devices."
@@ -18,23 +42,22 @@ en: &en
       browser_on: "%{browser} on %{os}"
       unknown: "Unknown device"
     sign_in_mailer:
-      made_in: "%{app_name}, made in montreal"
-      terms: "Terms"
-      privacy: "Privacy"
       login_code:
-        subject: "%{code} is your %{app_name} sign-in code"
-        intro: "Your one-time code is:"
+        subject: "%{code} is your %{app_name} code"
+        heading: "Your sign-in code"
+        intro: "Enter this code in %{app_name} to finish signing in."
         expires:
-          one: "This code expires in %{count} minute."
-          other: "This code expires in %{count} minutes."
-        ignore: "If you didn't request this email, you can safely ignore it."
+          one: "This code works for %{count} minute."
+          other: "This code works for %{count} minutes."
+        ignore: "If you didn’t try to sign in, ignore this email."
       locked:
         subject: "Sign-in paused on your %{app_name} account"
+        heading: "Sign-in paused"
         intro: "We paused sign-in on your account after too many wrong codes."
-        try_again_html:
-          one: "You can try again in <strong>%{count} hour</strong>."
-          other: "You can try again in <strong>%{count} hours</strong>."
-        known_devices: "Devices you've signed in on before can still sign in."
+        try_again:
+          one: "You can try again in %{count} hour."
+          other: "You can try again in %{count} hours."
+        known_devices: "Devices you’ve signed in on before can still sign in."
 en-US: *en
 en-GB: *en
 en-CA: *en

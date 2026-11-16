@@ -1,0 +1,29 @@
+<% content_for :page_title, t("studio_auth.sign_ins.new.title", app_name: Studio::Auth.config.app_name) %>
+
+<h1 id="studio-auth-sign-in-title" class="u-text-page-title"><%= t("studio_auth.sign_ins.new.heading") %></h1>
+
+<%# novalidate: browsers reject addresses typed with Arabic or Thai digits or invisible marks and block the submit silently; the server normalizes them. %>
+<%= form_with url: main_app.login_path, id: "studio-auth-sign-in-form", class: "u-form", html: {novalidate: true} do |form| %>
+  <div class="u-field">
+    <%= form.label :email_address, t("studio_auth.sign_ins.new.email_label") %>
+    <%= form.email_field :email_address,
+          value: params[:email_address] || @pending_email_address,
+          class: "u-input",
+          placeholder: " ",
+          required: true,
+          autofocus: true,
+          autocomplete: "email",
+          aria: {invalid: @field_error.present?, describedby: ("studio-auth-email-error" if @field_error)} %>
+    <% if @field_error %>
+      <p id="studio-auth-email-error" class="u-error" role="alert"><%= @field_error %></p>
+    <% end %>
+  </div>
+  <%= form.button t("studio_auth.sign_ins.new.submit"), id: "studio-auth-sign-in-submit", class: "u-btn u-btn-primary" %>
+<% end %>
+
+<% if main_app.respond_to?(:signup_path) %>
+  <p id="studio-auth-sign-up" class="u-text-small">
+    <%= t("studio_auth.sign_ins.new.no_account") %>
+    <%= link_to t("studio_auth.sign_ins.new.sign_up"), main_app.signup_path %>
+  </p>
+<% end %>

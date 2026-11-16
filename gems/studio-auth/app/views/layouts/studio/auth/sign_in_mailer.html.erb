@@ -1,43 +1,8 @@
-<!DOCTYPE html>
-<html lang="<%= I18n.locale %>">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="color-scheme" content="light dark">
-    <meta name="supported-color-schemes" content="light dark">
-    <meta name="format-detection" content="telephone=no, date=no, address=no, email=no">
-    <title><%= message.subject %></title>
-    <style>
-      @media (prefers-color-scheme: dark) {
-        .sa-page { background: #000000 !important; }
-        .sa-text { color: #ffffff !important; }
-        .sa-quiet { color: #a3a3a3 !important; }
-        .sa-footer { color: #8a8a8a !important; }
-        .sa-box { border-color: #ffffff !important; }
-      }
-    </style>
-  </head>
-  <body class="sa-page" style="margin:0;padding:0;background:#ffffff;-webkit-text-size-adjust:100%;text-size-adjust:100%;">
-    <% if content_for?(:preheader) %>
-      <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;"><%= yield :preheader %></div>
-    <% end %>
-    <table role="presentation" class="sa-page" width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;">
-      <tr>
-        <td align="center" style="padding:48px 24px;">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;margin:0 auto;">
-            <tr>
-              <td class="sa-text" style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:18px;line-height:1.5;color:#000000;text-align:left;">
-                <img src="<%= Studio::Auth.config.mail_logo_url %>" alt="<%= app_name %>" height="40" style="display:block;border:0;height:40px;width:auto;margin:0 0 56px;">
-                <%= yield %>
-                <% if content_for?(:fine_print) %>
-                  <div class="sa-quiet" style="margin:32px 0 0;font-size:18px;line-height:1.5;color:#525252;"><%= yield :fine_print %></div>
-                <% end %>
-                <%= render "studio/auth/sign_in_mailer/footer" %>
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-    </table>
-  </body>
-</html>
+<%= uniform_mail.layout(yield,
+      title: message.subject,
+      preheader: content_for(:preheader),
+      sender: Studio::Auth.config.app_name,
+      address: Studio::Auth.config.mail_address,
+      labels: t("uniform.mail"),
+      terms_url: Studio::Auth.config.terms_url,
+      privacy_url: Studio::Auth.config.privacy_url) %>

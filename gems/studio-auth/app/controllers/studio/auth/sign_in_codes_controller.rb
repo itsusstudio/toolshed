@@ -19,11 +19,13 @@ module Studio
           start_new_session_for(result.user)
           redirect_to after_authentication_path, status: :see_other
         when :invalid
-          flash.now[:alert] = t("studio_auth.flash.wrong_code")
+          @field_error = t("studio_auth.flash.wrong_code")
           render :new, status: :unprocessable_content
         else
+          flash[:studio_auth_field_error] = t("studio_auth.flash.#{result.status}")
+          flash[:studio_auth_email_address] = @pending.email_address
           clear_pending_login_code
-          redirect_to main_app.login_path, status: :see_other, alert: t("studio_auth.flash.#{result.status}")
+          redirect_to main_app.login_path, status: :see_other
         end
       end
     end

@@ -5,10 +5,34 @@ nl: &nl
       studio_email_only: "vereist een @%{domain}-e-mailadres"
       app_review_account: "kan niet aan een app-reviewaccount worden gegeven"
   studio_auth:
+    sign_ins:
+      new:
+        title: "Inloggen bij %{app_name}"
+        heading: "Inloggen"
+        email_label: "E-mailadres"
+        submit: "Code versturen"
+        no_account: "Heb je nog geen account?"
+        sign_up: "Account aanmaken"
+    codes:
+      new:
+        title: "Check je e-mail"
+        sent_to: "We hebben een code van zes cijfers gestuurd naar %{email_address}."
+        change: "Wijzigen"
+        code_label: "Code"
+        hint:
+          one: "De code werkt %{count} minuut."
+          other: "De code werkt %{count} minuten."
+        sign_in: "Inloggen"
+        resend_prompt: "Niet ontvangen?"
+        resend: "Nieuwe code versturen"
+        dev_code: "Dev-code: %{code}"
+        copy: "Kopiëren"
+    terms: "Voorwaarden"
+    privacy: "Privacy"
     flash:
       too_many_requests: "Te veel pogingen. Probeer het over een paar minuten opnieuw."
       undeliverable: "Vul een geldig e-mailadres in."
-      wrong_code: "Onjuiste code. Controleer hem en probeer het opnieuw."
+      wrong_code: "Onjuiste code"
       expired: "Code verlopen. Vraag een nieuwe aan."
       too_many_attempts: "Te veel pogingen. Vraag een nieuwe code aan."
       signed_out_everywhere: "Je bent op alle apparaten uitgelogd."
@@ -18,22 +42,21 @@ nl: &nl
       browser_on: "%{browser} op %{os}"
       unknown: "Onbekend apparaat"
     sign_in_mailer:
-      made_in: "%{app_name}, gemaakt in montreal"
-      terms: "Voorwaarden"
-      privacy: "Privacy"
       login_code:
-        subject: "%{code} is je inlogcode voor %{app_name}"
-        intro: "Je eenmalige code is:"
+        subject: "%{code} is je %{app_name}-code"
+        heading: "Je inlogcode"
+        intro: "Vul deze code in %{app_name} in om verder te gaan met inloggen."
         expires:
-          one: "Deze code verloopt over %{count} minuut."
-          other: "Deze code verloopt over %{count} minuten."
-        ignore: "Heb je deze e-mail niet aangevraagd? Dan kun je hem gerust negeren."
+          one: "Deze code werkt %{count} minuut."
+          other: "Deze code werkt %{count} minuten."
+        ignore: "Heb je niet geprobeerd in te loggen? Dan kun je deze e-mail negeren."
       locked:
-        subject: "Inloggen tijdelijk geblokkeerd voor je %{app_name}-account"
-        intro: "We hebben inloggen op je account gepauzeerd na te veel onjuiste codes."
-        try_again_html:
-          one: "Je kunt het over <strong>%{count} uur</strong> opnieuw proberen."
-          other: "Je kunt het over <strong>%{count} uur</strong> opnieuw proberen."
-        known_devices: "Op apparaten waarop je eerder hebt ingelogd, kun je gewoon inloggen."
+        subject: "Inloggen gepauzeerd voor je %{app_name}-account"
+        heading: "Inloggen gepauzeerd"
+        intro: "We hebben inloggen voor je account gepauzeerd na te veel verkeerde codes."
+        try_again:
+          one: "Je kunt het over %{count} uur opnieuw proberen."
+          other: "Je kunt het over %{count} uur opnieuw proberen."
+        known_devices: "Apparaten waarmee je eerder bent ingelogd, kunnen nog steeds inloggen."
 nl-NL: *nl
 nl-BE: *nl

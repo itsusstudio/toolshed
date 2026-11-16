@@ -1,0 +1,47 @@
+<% content_for :page_title, t("studio_auth.codes.new.title") %>
+
+<hgroup>
+  <h1 id="studio-auth-code-title" class="u-text-page-title"><%= t("studio_auth.codes.new.title") %></h1>
+  <p id="studio-auth-code-sent-to" class="u-text-small">
+    <%= t("studio_auth.codes.new.sent_to", email_address: @pending.email_address) %>
+    <%= link_to t("studio_auth.codes.new.change"), main_app.login_path, id: "studio-auth-start-over" %>
+  </p>
+</hgroup>
+
+<%= form_with url: main_app.verify_path, id: "studio-auth-code-form", class: "u-stack u-gap-6", html: {novalidate: true} do |form| %>
+  <div class="u-field">
+    <%= form.label :code, t("studio_auth.codes.new.code_label") %>
+    <u-input-code submit>
+      <%= form.text_field :code,
+            class: "u-input",
+            placeholder: " ",
+            required: true,
+            autofocus: true,
+            autocomplete: "one-time-code",
+            inputmode: "numeric",
+            pattern: "[0-9]{6}",
+            maxlength: 6,
+            aria: {invalid: @field_error.present?, describedby: (@field_error ? "studio-auth-code-error" : "studio-auth-code-hint")} %>
+    </u-input-code>
+    <% if @field_error %>
+      <p id="studio-auth-code-error" class="u-error" role="alert"><%= @field_error %></p>
+    <% else %>
+      <small id="studio-auth-code-hint"><%= t("studio_auth.codes.new.hint", count: Studio::Auth::LoginCode::TTL.in_minutes.to_i) %></small>
+    <% end %>
+  </div>
+  <%= form.button t("studio_auth.codes.new.sign_in"), id: "studio-auth-code-submit", class: "u-btn u-btn-primary" %>
+<% end %>
+
+<%# Asking again inside LoginCode::RESEND_INTERVAL gets the same code back, not a new mail. %>
+<%= form_with url: main_app.login_path, id: "studio-auth-resend-form", class: "u-text-small" do |form| %>
+  <%= form.hidden_field :email_address, value: @pending.email_address %>
+  <%= t("studio_auth.codes.new.resend_prompt") %>
+  <%= form.button t("studio_auth.codes.new.resend"), class: "u-link-btn" %>
+<% end %>
+
+<% if @pending.dev_code %>
+  <p id="studio-auth-dev-code" class="u-text-small">
+    <%= t("studio_auth.codes.new.dev_code", code: @pending.dev_code) %>
+    <u-copy><button type="button" class="u-link-btn" data-copy="<%= @pending.dev_code %>" data-copied="<%= t("uniform.copy.copied") %>" data-copy-failed="<%= t("uniform.copy.failed") %>" hidden><%= t("studio_auth.codes.new.copy") %></button></u-copy>
+  </p>
+<% end %>

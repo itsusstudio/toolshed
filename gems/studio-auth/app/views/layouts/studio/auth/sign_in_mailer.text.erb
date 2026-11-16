@@ -1,0 +1,8 @@
+<%= uniform_mail.layout(yield,
+      title: message.subject,
+      preheader: content_for(:preheader),
+      sender: Studio::Auth.config.app_name,
+      address: Studio::Auth.config.mail_address,
+      labels: t("uniform.mail"),
+      terms_url: Studio::Auth.config.terms_url,
+      privacy_url: Studio::Auth.config.privacy_url) %>

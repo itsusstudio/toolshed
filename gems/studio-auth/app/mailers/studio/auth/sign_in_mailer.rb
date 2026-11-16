@@ -1,13 +1,13 @@
 module Studio
   module Auth
     # Not ApplicationMailer: the app's mailer layout and hooks must not touch
-    # auth mail. An app restyles it at layouts/studio/auth/sign_in_mailer.
+    # auth mail. Its layout and views are Uniform's mail blocks.
     class SignInMailer < ActionMailer::Base # standard:disable Rails/ApplicationMailer
       self.delivery_job = MailDeliveryJob
 
       default from: -> { Auth.config.mail_from }
 
-      helper_method :app_name, :support_email
+      helper_method :app_name
 
       # Returns without mailing for decoys, app review accounts and codes
       # that expired in the queue; Action Mailer then delivers nothing.
@@ -51,10 +51,6 @@ module Studio
 
       def app_name
         Auth.config.app_name
-      end
-
-      def support_email
-        Auth.config.support_email
       end
     end
   end

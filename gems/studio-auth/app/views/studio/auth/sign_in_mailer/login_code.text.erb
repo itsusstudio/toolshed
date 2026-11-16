@@ -1,8 +1,8 @@
-<%= t("studio_auth.sign_in_mailer.login_code.intro") %>
-
-<%= @code %>
-
-<%= t("studio_auth.sign_in_mailer.login_code.expires", count: Studio::Auth::LoginCode::TTL.in_minutes.to_i) %>
-
-<%= t("studio_auth.sign_in_mailer.login_code.ignore") %>
-<%= render "studio/auth/sign_in_mailer/footer" %>
+<% u = uniform_mail -%>
+<% minutes = Studio::Auth::LoginCode::TTL.in_minutes.to_i -%>
+<% content_for :preheader, t("studio_auth.sign_in_mailer.login_code.expires", count: minutes) -%>
+<%= u.heading t("studio_auth.sign_in_mailer.login_code.heading") %>
+<%= u.paragraph t("studio_auth.sign_in_mailer.login_code.intro", app_name: app_name) %>
+<%= u.code @code %>
+<%= u.paragraph t("studio_auth.sign_in_mailer.login_code.expires", count: minutes) %>
+<%= u.paragraph t("studio_auth.sign_in_mailer.login_code.ignore") %>

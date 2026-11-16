@@ -16,6 +16,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_dependency "railties", ">= 8.1"
+  spec.add_dependency "studio-uniform"
   spec.add_dependency "actionpack", ">= 8.1"
   spec.add_dependency "activejob", ">= 8.1"
   spec.add_dependency "activerecord", ">= 8.1"

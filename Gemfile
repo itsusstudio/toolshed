@@ -10,5 +10,6 @@ gem "mocha"
 gem "sqlite3"
 gem "actioncable"
 gem "propshaft"
+gem "studio-uniform", github: "itsusstudio/uniform", branch: "main", glob: "uniform/*.gemspec"
 
 gem "bundler-audit", require: false

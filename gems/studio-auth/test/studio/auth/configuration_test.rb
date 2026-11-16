@@ -6,15 +6,18 @@ class Studio::Auth::ConfigurationTest < ActiveSupport::TestCase
   test "validate_config! requires every setting, including both session limits" do
     error = assert_raises(Configuration::Error) { Configuration.new.validate_config! }
 
-    assert_match "set c.app_name, c.mail_from, c.support_email, c.mail_logo_url, c.terms_url, c.privacy_url, c.session_idle_timeout, c.session_absolute_timeout in config/initializers/studio_auth.rb", error.message
+    assert_match "set c.app_name, c.mail_from, c.mail_address, c.terms_url, c.privacy_url, c.session_idle_timeout, c.session_absolute_timeout in config/initializers/studio_auth.rb", error.message
   end
 
-  test "in production the logo must be an https URL" do
+  test "the wordmark is serif or sans" do
     config = valid_config
-    config.mail_logo_url = "/mail/mark.png"
-    Rails.env.stubs(:production?).returns(true)
+    config.wordmark = "script"
 
-    assert_match "c.mail_logo_url must be a full https URL", assert_raises(Configuration::Error) { config.validate_config! }.message
+    assert_match "c.wordmark is \"serif\" or \"sans\"", assert_raises(Configuration::Error) { config.validate_config! }.message
+  end
+
+  test "the page layout defaults to the app's application layout" do
+    assert_equal "application", Configuration.new.page_layout
   end
 
   test "a session limit must be a duration" do
@@ -56,8 +59,7 @@ class Studio::Auth::ConfigurationTest < ActiveSupport::TestCase
     Configuration.new.tap do |config|
       config.app_name = "Dummy"
       config.mail_from = "hello@dummy.app"
-      config.support_email = "support@dummy.app"
-      config.mail_logo_url = "https://dummy.app/mail/logo.png"
+      config.mail_address = ["Dummy", "1 Main Street", "Toronto ON"]
       config.terms_url = "https://dummy.app/terms"
       config.privacy_url = "https://dummy.app/privacy"
       config.session_idle_timeout = 30.days

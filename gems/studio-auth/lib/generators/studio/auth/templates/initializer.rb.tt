@@ -1,9 +1,11 @@
 Studio::Auth.configure do |c|
   c.app_name = ""
   c.mail_from = ""
-  c.support_email = ""
-  # Full URL of the logo atop the HTML mail, hosted on the app's own domain.
-  c.mail_logo_url = ""
+  # The sender's name, street and city, one line each, at the foot of mail.
+  c.mail_address = ["", "", ""]
+  # The app's Uniform document layout, and its name's wordmark voice.
+  c.page_layout = "application"
+  c.wordmark = "serif"
   c.terms_url = ""
   c.privacy_url = ""
   # 20.years keeps sessions until sign-out; shorter, e.g. 30.days idle and

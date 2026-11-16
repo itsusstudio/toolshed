@@ -9,20 +9,19 @@ class Studio::Auth::SignInMailerTest < ActionMailer::TestCase
     )
   end
 
-  test "login_code has text and HTML parts, the code in the subject, and only the support and legal links" do
+  test "login_code has text and HTML parts, the code in the subject, and only the legal links" do
     mail = login_code_mail.deliver_now
 
-    assert_equal "123456 is your Dummy sign-in code", mail.subject
+    assert_equal "123456 is your Dummy code", mail.subject
     assert_equal ["hello@dummy.app"], mail.from
     assert_equal "multipart/alternative", mail.mime_type
     assert_equal "auto-generated", mail["Auto-Submitted"].value
-    assert_includes mail.text_part.body.to_s, "This code expires in 10 minutes."
+    assert_includes mail.text_part.body.to_s, "This code works for 10 minutes."
     [mail.text_part, mail.html_part].each do |part|
       assert_includes part.body.to_s, "123456"
-      assert_includes part.body.to_s, "safely ignore it"
-      assert_no_match(%r{https?://(?!dummy\.app/(mail/logo\.png|terms|privacy)")}, part.body.to_s)
-      assert_equal ["mailto:support@dummy.app", "https://dummy.app/terms", "https://dummy.app/privacy"], part.body.to_s.scan(/href="([^"]+)"/).flatten.uniq if part == mail.html_part
+      assert_includes part.body.to_s, "ignore this email"
     end
+    assert_equal ["https://dummy.app/terms", "https://dummy.app/privacy"], mail.html_part.body.to_s.scan(/href="([^"]+)"/).flatten.uniq
   end
 
   test "the footer links the app's legal pages" do
@@ -32,17 +31,18 @@ class Studio::Auth::SignInMailerTest < ActionMailer::TestCase
     assert_includes body, %(href="https://dummy.app/privacy")
   end
 
-  test "the app's logo heads the mail, with nothing attached" do
+  test "the app's name heads the mail and its address closes it, with nothing attached" do
     mail = login_code_mail.deliver_now
 
-    assert_includes mail.html_part.body.to_s, %(src="https://dummy.app/mail/logo.png" alt="Dummy")
+    assert_match %r{>Dummy</td>}, mail.html_part.body.to_s
+    assert_includes mail.text_part.body.to_s, "Dummy\n1 Main Street\nToronto ON"
     assert_empty mail.attachments
   end
 
   test "login_code is written in the user's locale" do
     @user.update!(locale: "fr")
 
-    assert_equal "123456 est votre code de connexion Dummy", login_code_mail.deliver_now.subject
+    assert_equal "123456 est votre code Dummy", login_code_mail.deliver_now.subject
   end
 
   test "login_code sends nothing for a decoy, an app review account or a code that expired in the queue" do
@@ -79,7 +79,7 @@ class Studio::Auth::SignInMailerTest < ActionMailer::TestCase
 
   test "a regional locale gets the gem's strings even when the app doesn't offer the bare language" do
     with_locales([:en, :"fr-CA"]) do
-      assert_equal "Code incorrect. Vérifiez-le et réessayez.", I18n.t("studio_auth.flash.wrong_code", locale: :"fr-CA")
+      assert_equal "Code incorrect", I18n.t("studio_auth.flash.wrong_code", locale: :"fr-CA")
     end
   end
 

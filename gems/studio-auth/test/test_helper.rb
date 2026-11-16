@@ -15,15 +15,13 @@ require "mocha/minitest"
 DUMMY_ROOT = File.expand_path("dummy", __dir__)
 FileUtils.mkdir_p(File.join(DUMMY_ROOT, "log"))
 FileUtils.mkdir_p(File.join(DUMMY_ROOT, "tmp"))
-GENERATOR_TEMPLATES = File.expand_path("../lib/generators/studio/auth/templates", __dir__)
 
-# The dummy app owns its pages and page copy the way a real app does after
-# the install generator.
+# The gem's auth layout renders inside the app's Uniform document layout,
+# which yields the gem's page block.
 FileUtils.rm_rf(File.join(DUMMY_ROOT, "app/views"))
-FileUtils.mkdir_p(File.join(DUMMY_ROOT, "app/views/studio/auth"))
-FileUtils.cp_r(File.join(GENERATOR_TEMPLATES, "views/."), File.join(DUMMY_ROOT, "app/views/studio/auth"))
-FileUtils.mkdir_p(File.join(DUMMY_ROOT, "app/views/layouts/studio/auth"))
-File.write(File.join(DUMMY_ROOT, "app/views/layouts/studio/auth/base.html.erb"), "<main id=\"auth-layout\"><%= yield %></main>")
+FileUtils.mkdir_p(File.join(DUMMY_ROOT, "app/views/layouts"))
+File.write(File.join(DUMMY_ROOT, "app/views/layouts/application.html.erb"),
+  "<html><head><%= yield :head %></head><body><%= content_for?(:studio_auth_page) ? yield(:studio_auth_page) : yield %></body></html>")
 
 class DummyApp < Rails::Application
   config.root = DUMMY_ROOT
@@ -37,14 +35,12 @@ class DummyApp < Rails::Application
   config.action_cable.cable = {"adapter" => "test"}
   config.action_mailer.default_url_options = {host: "example.test"}
   config.i18n.available_locales = [:en, :fr, :nl]
-  config.i18n.load_path += Dir[File.join(GENERATOR_TEMPLATES, "locales/*.yml")]
 end
 
 Studio::Auth.configure do |c|
   c.app_name = "Dummy"
   c.mail_from = "Dummy <hello@dummy.app>"
-  c.support_email = "support@dummy.app"
-  c.mail_logo_url = "https://dummy.app/mail/logo.png"
+  c.mail_address = ["Dummy", "1 Main Street", "Toronto ON"]
   c.terms_url = "https://dummy.app/terms"
   c.privacy_url = "https://dummy.app/privacy"
   c.session_idle_timeout = 30.days

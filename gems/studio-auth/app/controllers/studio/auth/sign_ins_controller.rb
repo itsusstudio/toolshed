@@ -13,6 +13,8 @@ module Studio
         by: -> { rate_limit_key }, with: :too_many_requests
 
       def new
+        @pending_email_address = flash[:studio_auth_email_address] || PendingLoginCode.from_rails_session(session)&.email_address
+        @field_error = flash[:studio_auth_field_error]
       end
 
       def create
@@ -22,7 +24,7 @@ module Studio
         )
 
         if issued == :undeliverable
-          @email_address_error = t("studio_auth.flash.undeliverable")
+          @field_error = t("studio_auth.flash.undeliverable")
           return render(:new, status: :unprocessable_content)
         end
         return too_many_requests if issued == :too_many_requests

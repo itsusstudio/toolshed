@@ -40,20 +40,6 @@ module Studio
             append_to_file path, "\nproduction:\n#{entry.indent(2)}"
           end
         end
-
-        def copy_pages
-          directory "views", "app/views/studio/auth"
-        end
-
-        def create_page_translations
-          ::I18n.available_locales.each do |locale|
-            base = locale.to_s.split("-").first
-            locales = File.join(self.class.source_root, "locales")
-            source = File.exist?(File.join(locales, "#{base}.yml")) ? base : "en"
-            body = File.read(File.join(locales, "#{source}.yml")).sub(/\A#{source}:/, "#{locale}:")
-            create_file "config/locales/studio_auth.#{locale}.yml", body
-          end
-        end
       end
     end
   end

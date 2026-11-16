@@ -6,7 +6,7 @@ module Studio
       private
 
       def too_many_requests
-        flash.now[:alert] = t("studio_auth.flash.too_many_requests")
+        @field_error = t("studio_auth.flash.too_many_requests")
         render :new, status: :too_many_requests
       end
 

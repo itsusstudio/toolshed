@@ -30,10 +30,6 @@ The users table needs a unique `email_address` and `created_at`; the migration
 adds `staff` if it's missing. The generator also writes:
 
 - the initializer, below
-- the two sign-in pages in `app/views/studio/auth/`, with their copy in
-  `config/locales/studio_auth.<locale>.yml`. Restyle and reword them freely, but
-  keep the form fields and route helpers. They render inside
-  `app/views/layouts/studio/auth/base.html.erb`.
 - a daily `Studio::Auth::PurgeExpiredJob` in `config/recurring.yml`
 
 Rate limits need a cache store every process shares, such as Solid Cache.
@@ -43,8 +39,9 @@ Rate limits need a cache store every process shares, such as Solid Cache.
 Studio::Auth.configure do |c|
   c.app_name = "Belly"
   c.mail_from = "Belly <hello@usebelly.app>"
-  c.support_email = "support@usebelly.app"
-  c.mail_logo_url = "https://my.usebelly.app/mail/belly-wordmark.png" # 80px tall, shown at 40px
+  c.mail_address = ["it's us studio", "216-4035 rue Saint-Ambroise", "Montréal QC H4C 2E1"]
+  c.page_layout = "uniform" # the app's Uniform document layout
+  c.wordmark = "sans" # the app name's voice: "serif" or "sans"
   c.terms_url = "https://itsusstudio.com/terms"
   c.privacy_url = "https://itsusstudio.com/privacy"
   c.session_idle_timeout = 20.years # 20.years keeps a session until sign-out
@@ -75,6 +72,31 @@ module ApplicationCable
   end
 end
 ```
+
+## Sign-in pages and mail
+
+The gem owns the sign-in and code pages and the sign-in mail: markup, copy
+(en, fr, nl) and the server logic behind them. They're built from
+[Uniform](https://github.com/itsusstudio/uniform) and nothing else: the pages
+sit in `u-auth-shell`, the code field is `<u-input-code submit>`, and the mail
+uses Uniform's layout and blocks. The gem ships no CSS, JavaScript or logo.
+Every studio app shows the same pages and mail. The app supplies only:
+
+- its name, set as a Uniform wordmark in the voice `c.wordmark` names
+- a blurb under the name, as `studio_auth.blurb` in its own locale files
+  (optional)
+- `c.mail_address`, the sender's name, street and city at the foot of each mail
+- a Uniform document layout, named by `c.page_layout`, that links Uniform's
+  stylesheets and renders the gem's page block in its body:
+  `<%= content_for?(:studio_auth_page) ? yield(:studio_auth_page) : yield %>`
+  (the gem also sets `content_for :page_title`)
+
+The sign-in page links "Don't have an account? Sign up" to the app's
+`signup` route when it has one.
+
+Don't copy the gem's views into the app: a view at the same path overrides
+the gem's and the pages drift apart again. Reword through the app's own
+locale files (`studio_auth.codes.new.title`, ...) only where a locale needs it.
 
 ## Use
 

@@ -5,10 +5,34 @@ fr: &fr
       studio_email_only: "exige une adresse courriel @%{domain}"
       app_review_account: "ne peut pas être donné à un compte de révision d'app"
   studio_auth:
+    sign_ins:
+      new:
+        title: "Se connecter à %{app_name}"
+        heading: "Se connecter"
+        email_label: "Adresse courriel"
+        submit: "Envoyer le code"
+        no_account: "Pas encore de compte ?"
+        sign_up: "S’inscrire"
+    codes:
+      new:
+        title: "Consultez vos courriels"
+        sent_to: "Nous avons envoyé un code à six chiffres à %{email_address}."
+        change: "Modifier"
+        code_label: "Code"
+        hint:
+          one: "Le code est valable %{count} minute."
+          other: "Le code est valable %{count} minutes."
+        sign_in: "Se connecter"
+        resend_prompt: "Vous ne l’avez pas reçu ?"
+        resend: "Renvoyer un code"
+        dev_code: "Code de dev : %{code}"
+        copy: "Copier"
+    terms: "Conditions"
+    privacy: "Confidentialité"
     flash:
       too_many_requests: "Trop de tentatives. Réessayez dans quelques minutes."
       undeliverable: "Saisissez une adresse courriel valide."
-      wrong_code: "Code incorrect. Vérifiez-le et réessayez."
+      wrong_code: "Code incorrect"
       expired: "Code expiré. Demandez-en un nouveau."
       too_many_attempts: "Trop d'essais. Demandez un nouveau code."
       signed_out_everywhere: "Sessions fermées sur tous les appareils."
@@ -18,23 +42,22 @@ fr: &fr
       browser_on: "%{browser} sur %{os}"
       unknown: "Appareil inconnu"
     sign_in_mailer:
-      made_in: "%{app_name}, fait à montréal"
-      terms: "Conditions"
-      privacy: "Confidentialité"
       login_code:
-        subject: "%{code} est votre code de connexion %{app_name}"
-        intro: "Votre code à usage unique est :"
+        subject: "%{code} est votre code %{app_name}"
+        heading: "Votre code de connexion"
+        intro: "Entrez ce code dans %{app_name} pour terminer la connexion."
         expires:
-          one: "Ce code expire dans %{count} minute."
-          other: "Ce code expire dans %{count} minutes."
-        ignore: "Si vous n'avez pas demandé ce courriel, vous pouvez l'ignorer sans risque."
+          one: "Ce code est valable %{count} minute."
+          other: "Ce code est valable %{count} minutes."
+        ignore: "Si vous n’avez pas essayé de vous connecter, ignorez ce courriel."
       locked:
         subject: "Connexion suspendue sur votre compte %{app_name}"
+        heading: "Connexion suspendue"
         intro: "Nous avons suspendu la connexion à votre compte après trop de codes incorrects."
-        try_again_html:
-          one: "Vous pourrez réessayer dans <strong>%{count} heure</strong>."
-          other: "Vous pourrez réessayer dans <strong>%{count} heures</strong>."
-        known_devices: "Vos appareils habituels peuvent toujours se connecter."
+        try_again:
+          one: "Vous pourrez réessayer dans %{count} heure."
+          other: "Vous pourrez réessayer dans %{count} heures."
+        known_devices: "Les appareils sur lesquels vous vous êtes déjà connecté peuvent toujours se connecter."
 fr-CA: *fr
 fr-FR: *fr
 fr-BE: *fr

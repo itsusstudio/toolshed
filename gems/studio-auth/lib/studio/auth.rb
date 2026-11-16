@@ -3,6 +3,7 @@ require "active_support"
 require "active_support/core_ext"
 require "openssl"
 require "valid_email2"
+require "studio/uniform"
 
 require_relative "auth/configuration"
 require_relative "auth/typed_input"

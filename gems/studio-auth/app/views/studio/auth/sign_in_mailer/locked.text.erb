@@ -1,7 +1,7 @@
-<%= t("studio_auth.sign_in_mailer.locked.intro") %>
-
-<%= strip_tags(t("studio_auth.sign_in_mailer.locked.try_again_html", count: Studio::Auth::LoginCode::LOCKOUT_DURATION.in_hours.to_i)) %>
-
-<%= t("studio_auth.sign_in_mailer.locked.known_devices") %>
-
-<%= render "studio/auth/sign_in_mailer/footer" %>
+<% u = uniform_mail -%>
+<% hours = Studio::Auth::LoginCode::LOCKOUT_DURATION.in_hours.to_i -%>
+<% content_for :preheader, t("studio_auth.sign_in_mailer.locked.try_again", count: hours) -%>
+<%= u.heading t("studio_auth.sign_in_mailer.locked.heading") %>
+<%= u.paragraph t("studio_auth.sign_in_mailer.locked.intro") %>
+<%= u.paragraph t("studio_auth.sign_in_mailer.locked.try_again", count: hours) %>
+<%= u.paragraph t("studio_auth.sign_in_mailer.locked.known_devices") %>

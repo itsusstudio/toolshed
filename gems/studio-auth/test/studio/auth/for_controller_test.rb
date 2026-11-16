@@ -41,6 +41,8 @@ class Studio::Auth::ForControllerTest < ActionDispatch::IntegrationTest
 
     post login_path, params: {email_address: "cook@studio.com"}
     assert_response :too_many_requests
+    assert_select "input[name=email_address][aria-invalid=true][value=?]", "cook@studio.com"
+    assert_select "#studio-auth-email-error", text: I18n.t("studio_auth.flash.too_many_requests")
   end
 
   test "strangers asking for a code from many IPs cannot lock the owner out" do
@@ -101,6 +103,64 @@ class Studio::Auth::ForControllerTest < ActionDispatch::IntegrationTest
     post verify_path, params: {code: code.tr("0123456789", "٠١٢٣٤٥٦٧٨٩")}
 
     assert_redirected_to root_path
+  end
+
+  test "the sign-in page is the gem's Uniform auth shell, inside the app layout, with the app's name as its wordmark" do
+    get login_path
+
+    assert_select "body .u-auth-shell main#studio-auth-page"
+    assert_select ".u-auth-shell > header a.u-wordmark.u-wordmark-serif", text: "Dummy"
+    assert_select ".u-auth-shell > footer a[href=?]", "https://dummy.app/terms"
+    assert_select "input.u-input[name=email_address][autocomplete=email]"
+  end
+
+  test "the code page resends to the same address, and a new code arrives once the resend window passes" do
+    User.create!(email_address: "cook@studio.com")
+    post login_path, params: {email_address: "cook@studio.com"}
+    get verify_path
+
+    assert_select "form#studio-auth-resend-form[action=?] input[name=email_address][value=?]", login_path, "cook@studio.com"
+
+    travel Studio::Auth::LoginCode::RESEND_INTERVAL + 1.second do
+      assert_difference -> { Studio::Auth::LoginCode.where.not(user_id: nil).count }, 1 do
+        post login_path, params: {email_address: "cook@studio.com"}
+      end
+      assert_redirected_to verify_path
+    end
+  end
+
+  test "going back to change the address prefills it without putting it in the URL" do
+    post login_path, params: {email_address: "cook@studio.com"}
+    get verify_path
+    assert_select "a#studio-auth-start-over[href=?]", login_path
+
+    get login_path
+    assert_select "input[name=email_address][value=?]", "cook@studio.com"
+  end
+
+  test "too many wrong codes sends you back to sign in with the error under the prefilled field" do
+    User.create!(email_address: "cook@studio.com")
+    post login_path, params: {email_address: "cook@studio.com"}
+
+    Studio::Auth::LoginCode::MAX_ATTEMPTS.times { post verify_path, params: {code: "000000"} }
+    assert_redirected_to login_path
+    follow_redirect!
+
+    assert_select "input[name=email_address][value=?][aria-invalid=true]", "cook@studio.com"
+    assert_select "#studio-auth-email-error", text: I18n.t("studio_auth.flash.too_many_attempts")
+    assert_select "#studio-auth-alert", count: 0
+  end
+
+  test "a wrong code shows its error under the field, not as a banner" do
+    User.create!(email_address: "cook@studio.com")
+    post login_path, params: {email_address: "cook@studio.com"}
+
+    post verify_path, params: {code: "000000"}
+
+    assert_response :unprocessable_content
+    assert_select "input[name=code][aria-invalid=true][aria-describedby=studio-auth-code-error]"
+    assert_select "#studio-auth-code-error", text: I18n.t("studio_auth.flash.wrong_code")
+    assert_select "#studio-auth-alert", count: 0
   end
 
   test "an address typed on an Arabic keyboard gets a real code" do
