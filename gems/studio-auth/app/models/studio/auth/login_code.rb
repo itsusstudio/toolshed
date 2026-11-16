@@ -42,6 +42,7 @@ module Studio
           app_review = AppReviewAccounts.include?(email_address)
 
           transaction do
+            lock_address(email_address)
             # The same browser asking again (a double submit, or a retry after
             # a lost response) gets its own code back. Another browser inside
             # the resend window must not: it could burn the first browser's
@@ -62,6 +63,7 @@ module Studio
           return Verification.new(status: :expired) if found.nil?
 
           transaction do
+            lock_address(found.email_address)
             login_code = lock.find(found.id)
             next Verification.new(status: :expired) if login_code.finished?
             next Verification.new(status: :too_many_attempts) if login_code.exhausted?
@@ -104,6 +106,14 @@ module Studio
         end
 
         private
+
+        # Serializes requests and guesses for one address, so two at once
+        # can't both slip under the resend window, mail budget or lockout.
+        def lock_address(email_address)
+          return if !connection.adapter_name.match?(/postg/i)
+
+          connection.execute(sanitize_sql_array(["SELECT pg_advisory_xact_lock(hashtext(?))", "studio_auth_login_code:#{email_address}"]))
+        end
 
         # True only for the failure that first reaches the limit, so the
         # owner gets one lock email, not one per guess.
