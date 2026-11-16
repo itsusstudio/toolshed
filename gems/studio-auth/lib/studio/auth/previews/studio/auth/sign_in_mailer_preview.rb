@@ -11,6 +11,12 @@ module Studio
         SignInMailer.with(login_code: sample_login_code, user: nil, encrypted_code: Secrets.encrypt("381904")).login_code
       end
 
+      def invite
+        invitation = Invitation.new(user: user, invited_by: ::User.new(email_address: "dana@example.com"),
+          email_address: "sam@example.com", expires_at: Invitation::TTL.from_now)
+        SignInMailer.with(invitation: invitation, encrypted_token: Secrets.encrypt("x7Kq2mP9")).invite
+      end
+
       def locked
         SignInMailer.with(user: user).locked
       end

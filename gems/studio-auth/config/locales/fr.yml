@@ -29,7 +29,13 @@ fr: &fr
         copy: "Copier"
     terms: "Conditions"
     privacy: "Confidentialité"
+    invitations:
+      show:
+        title: "Rejoindre %{place}"
+        signs_in_as: "Vous vous connecterez à %{app_name} avec %{email_address}."
+        join: "Rejoindre %{place}"
     flash:
+      invitation_unavailable: "Ce lien d’invitation n’est plus valide. Demandez-en un nouveau."
       too_many_requests: "Trop de tentatives. Réessayez dans quelques minutes."
       undeliverable: "Saisissez une adresse courriel valide."
       wrong_code: "Code incorrect"
@@ -58,6 +64,15 @@ fr: &fr
           one: "Ce code est valable %{count} minute."
           other: "Ce code est valable %{count} minutes."
         ignore: "Si vous n’avez pas essayé de vous inscrire, ignorez ce courriel. Nous ne créerons pas de compte."
+      invite:
+        subject: "%{inviter} vous invite à rejoindre %{place}"
+        heading: "%{inviter} vous invite à rejoindre %{place}"
+        intro: "%{inviter} (%{inviter_email}) vous a ajouté à %{place} sur %{app_name}."
+        intro_with_role: "%{inviter} (%{inviter_email}) vous a ajouté à %{place} sur %{app_name} avec le rôle %{role}."
+        join: "Rejoindre %{place}"
+        expires:
+          one: "Cette invitation est valable %{count} jour."
+          other: "Cette invitation est valable %{count} jours."
       locked:
         subject: "Connexion suspendue sur votre compte %{app_name}"
         heading: "Connexion suspendue"

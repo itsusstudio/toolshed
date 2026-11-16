@@ -29,7 +29,13 @@ nl: &nl
         copy: "Kopiëren"
     terms: "Voorwaarden"
     privacy: "Privacy"
+    invitations:
+      show:
+        title: "Word lid van %{place}"
+        signs_in_as: "Je logt in bij %{app_name} als %{email_address}."
+        join: "Word lid van %{place}"
     flash:
+      invitation_unavailable: "Deze uitnodigingslink is niet meer geldig. Vraag een nieuwe aan."
       too_many_requests: "Te veel pogingen. Probeer het over een paar minuten opnieuw."
       undeliverable: "Vul een geldig e-mailadres in."
       wrong_code: "Onjuiste code"
@@ -58,6 +64,15 @@ nl: &nl
           one: "Deze code werkt %{count} minuut."
           other: "Deze code werkt %{count} minuten."
         ignore: "Heb je niet geprobeerd je aan te melden? Dan kun je deze e-mail negeren. We maken geen account aan."
+      invite:
+        subject: "%{inviter} heeft je uitgenodigd voor %{place}"
+        heading: "%{inviter} heeft je uitgenodigd voor %{place}"
+        intro: "%{inviter} (%{inviter_email}) heeft je toegevoegd aan %{place} op %{app_name}."
+        intro_with_role: "%{inviter} (%{inviter_email}) heeft je toegevoegd aan %{place} op %{app_name} met de rol %{role}."
+        join: "Word lid van %{place}"
+        expires:
+          one: "Deze uitnodiging werkt %{count} dag."
+          other: "Deze uitnodiging werkt %{count} dagen."
       locked:
         subject: "Inloggen gepauzeerd voor je %{app_name}-account"
         heading: "Inloggen gepauzeerd"

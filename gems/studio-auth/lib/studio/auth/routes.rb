@@ -12,6 +12,8 @@ module Studio
           delete "logout", to: "sign_ins#destroy", as: :logout
           delete "logout/everywhere", to: "sign_ins#destroy_all", as: :logout_everywhere
           delete "logout/sessions/:id", to: "sessions#destroy", as: :logout_session
+          get "invites/:token", to: "invitations#show", as: :invitation
+          patch "invites/:token", to: "invitations#update"
         end
       end
     end

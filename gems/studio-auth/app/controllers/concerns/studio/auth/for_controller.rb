@@ -89,6 +89,9 @@ module Studio
       def after_sign_in(user)
       end
 
+      def after_invitation_accepted(user)
+      end
+
       def terminate_session
         if (session = current_session)
           Rails.event.notify("authentication.session_ended") if session.destroy

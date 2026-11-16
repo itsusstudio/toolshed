@@ -1,0 +1,9 @@
+<% u = uniform_mail -%>
+<% place = @details.fetch(:place, app_name) -%>
+<% days = Studio::Auth::Invitation::TTL.in_days.to_i -%>
+<% content_for :preheader, t("studio_auth.sign_in_mailer.invite.heading", inviter: @inviter_name, place: place) -%>
+<%= u.heading t("studio_auth.sign_in_mailer.invite.heading", inviter: @inviter_name, place: place) %>
+<%= u.paragraph t("studio_auth.sign_in_mailer.invite.#{@details[:role] ? "intro_with_role" : "intro"}",
+      inviter: @inviter_name, inviter_email: @inviter.email_address, place: place, app_name: app_name, role: @details[:role]) %>
+<%= u.button t("studio_auth.sign_in_mailer.invite.join", place: place), @url %>
+<%= u.notes t("studio_auth.sign_in_mailer.invite.expires", count: days) %>

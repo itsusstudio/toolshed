@@ -149,6 +149,7 @@ class ActiveSupport::TestCase
     travel_back
     Studio::Auth::KnownDevice.delete_all
     Studio::Auth::LoginCode.delete_all
+    Studio::Auth::Invitation.delete_all
     Session.delete_all
     User.delete_all
     Rails.cache.clear

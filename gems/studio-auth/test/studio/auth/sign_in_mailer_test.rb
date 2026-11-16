@@ -78,7 +78,7 @@ class Studio::Auth::SignInMailerTest < ActionMailer::TestCase
     preview = ActionMailer::Preview.find("studio/auth/sign_in_mailer")
     users_before = User.count
 
-    assert_equal ["locked", "login_code", "sign_up_code"], preview.emails.sort
+    assert_equal ["invite", "locked", "login_code", "sign_up_code"], preview.emails.sort
     preview.emails.each do |email|
       mail = preview.call(email)
       assert_includes mail.subject, "Dummy", "#{email} preview did not render"

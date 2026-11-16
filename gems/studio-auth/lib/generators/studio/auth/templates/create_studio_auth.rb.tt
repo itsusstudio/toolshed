@@ -28,6 +28,20 @@ class CreateStudioAuth < ActiveRecord::Migration[<%= ActiveRecord::Migration.cur
       t.index [:ip_address, :created_at], name: "index_studio_auth_login_codes_on_ip_and_created_at"
     end
 
+    create_table :studio_auth_invitations do |t|
+      t.references :user, null: false, foreign_key: true
+      t.references :invited_by, null: false, foreign_key: {to_table: :users}
+      t.string :email_address, null: false
+      t.string :token_digest, null: false
+      t.datetime :expires_at, null: false
+      t.datetime :accepted_at
+      t.datetime :revoked_at
+      t.timestamps
+      t.index :token_digest, unique: true
+      t.index :user_id, unique: true, where: "accepted_at IS NULL AND revoked_at IS NULL",
+        name: "index_studio_auth_invitations_on_open_user"
+    end
+
     create_table :studio_auth_known_devices do |t|
       t.references :user, null: false, foreign_key: true, index: false
       t.string :device_token_digest, null: false

@@ -29,7 +29,13 @@ en: &en
         copy: "Copy"
     terms: "Terms"
     privacy: "Privacy"
+    invitations:
+      show:
+        title: "Join %{place}"
+        signs_in_as: "You’ll sign in to %{app_name} as %{email_address}."
+        join: "Join %{place}"
     flash:
+      invitation_unavailable: "That invite link is no longer valid. Ask for a new one."
       too_many_requests: "Too many attempts. Try again in a few minutes."
       undeliverable: "Enter a valid email address."
       wrong_code: "Incorrect code"
@@ -58,6 +64,15 @@ en: &en
           one: "This code works for %{count} minute."
           other: "This code works for %{count} minutes."
         ignore: "If you didn’t try to sign up, ignore this email. We won’t create an account."
+      invite:
+        subject: "%{inviter} invited you to %{place}"
+        heading: "%{inviter} invited you to %{place}"
+        intro: "%{inviter} (%{inviter_email}) added you to %{place} on %{app_name}."
+        intro_with_role: "%{inviter} (%{inviter_email}) added you to %{place} on %{app_name} with the %{role} role."
+        join: "Join %{place}"
+        expires:
+          one: "This invite works for %{count} day."
+          other: "This invite works for %{count} days."
       locked:
         subject: "Sign-in paused on your %{app_name} account"
         heading: "Sign-in paused"

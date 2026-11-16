@@ -12,6 +12,8 @@ module Studio
         has_many :login_codes, class_name: "Studio::Auth::LoginCode", primary_key: :email_address,
           foreign_key: :email_address, inverse_of: false, dependent: :delete_all
         has_many :known_devices, class_name: "Studio::Auth::KnownDevice", dependent: :delete_all
+        has_many :invitations, class_name: "Studio::Auth::Invitation", dependent: :delete_all
+        has_one :open_invitation, -> { open }, class_name: "Studio::Auth::Invitation", inverse_of: :user
 
         normalizes :email_address, with: ->(email_address) { TypedInput.email_address(email_address).presence }
 
@@ -43,6 +45,12 @@ module Studio
       # have no email address. Apps override this to say which users those are.
       def requires_email_address?
         true
+      end
+
+      # Only users without a login can be invited; apps can narrow it further,
+      # e.g. not while archived.
+      def can_be_invited?
+        email_address.blank?
       end
 
       def sign_in_locked?

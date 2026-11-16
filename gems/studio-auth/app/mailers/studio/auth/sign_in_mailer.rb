@@ -28,6 +28,23 @@ module Studio
         deliver_to(@user, :locked)
       end
 
+      # The app names where and as what through user.invitation_details,
+      # e.g. {place: "Kensington Repair", role: "Staff"}.
+      def invite
+        @invitation = params[:invitation]
+        return if @invitation.accepted_at || @invitation.revoked_at
+
+        token = Secrets.decrypt(params[:encrypted_token])
+        return if token.nil?
+
+        @url = main_app.invitation_url(token: token)
+        @details = @invitation.user.try(:invitation_details) || {}
+        @inviter = @invitation.invited_by
+        @inviter_name = @inviter.try(:full_name).presence || @inviter.email_address
+        deliver(@invitation.email_address, :invite, locale: @invitation.user.try(:locale),
+          inviter: @inviter_name, place: @details.fetch(:place, app_name))
+      end
+
       private
 
       def deliver_to(user, action, **subject_values)

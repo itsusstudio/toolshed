@@ -1,0 +1,14 @@
+<% place = (@invitation.user.try(:invitation_details) || {}).fetch(:place, Studio::Auth.config.app_name) %>
+<% content_for :page_title, t("studio_auth.invitations.show.title", place: place) %>
+
+<hgroup>
+  <h1 id="studio-auth-invitation-title" class="u-text-page-title">
+    <%= t("studio_auth.invitations.show.title", place: place) %>
+  </h1>
+  <p class="u-text-small">
+    <%= t("studio_auth.invitations.show.signs_in_as", email_address: @invitation.email_address, app_name: Studio::Auth.config.app_name) %>
+  </p>
+</hgroup>
+
+<%= button_to t("studio_auth.invitations.show.join", place: place), main_app.invitation_path(token: params[:token]),
+      method: :patch, id: "studio-auth-invitation-join", class: "u-btn u-btn-primary" %>

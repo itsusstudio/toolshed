@@ -83,6 +83,9 @@ add_column :studio_auth_login_codes, :email_address, :string
 add_index :studio_auth_login_codes, [:email_address, :created_at], algorithm: :concurrently
 ```
 
+Invitations need the `studio_auth_invitations` table; copy its `create_table`
+from the install template into a migration.
+
 ## Sign-in pages and mail
 
 The gem owns the sign-in and code pages and the sign-in mail: markup, copy
@@ -139,6 +142,28 @@ locale files (`studio_auth.codes.new.title`, ...) only where a locale needs it.
 - Mail follows the user's `locale`. The gem owns the mail and flash copy (en,
   fr, nl). Restyle the mail at `layouts/studio/auth/sign_in_mailer`, and preview
   it at `/rails/mailers`.
+
+## Invitations
+
+An invite gives an existing user without a login an email address and signs
+them in. The app creates the user first (a team member it can already assign
+work to), then calls:
+
+```ruby
+Studio::Auth::Invitation.invite!(user: member, email_address: "dana@example.com", invited_by: current_user)
+member.open_invitation&.revoke!
+```
+
+- `invite!` replaces any open invite for that user and mails a link to
+  `/invites/:token`. Only the token's digest is stored. Links work 7 days.
+- Opening the link proves the inbox: one button sets the user's
+  `email_address`, marks the invite accepted and signs them in.
+- The mail and page say who invited them, where, and as what. Define
+  `invitation_details` on the user to return `{place:, role:}`; without it the
+  place is the app name. The inviter shows by `full_name`, or their address.
+- Override `can_be_invited?` on the user to refuse invites (by default, users
+  who already have an address), and `after_invitation_accepted(user)` in the
+  controller for analytics.
 
 ## Staff
 
