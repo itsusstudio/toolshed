@@ -3,6 +3,8 @@ require "ipaddr"
 module Studio
   module Auth
     class BaseController < ::ApplicationController
+      layout "studio/auth"
+
       private
 
       def too_many_requests

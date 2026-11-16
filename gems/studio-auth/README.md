@@ -94,6 +94,8 @@ Every studio app shows the same pages and mail. The app supplies only:
 The sign-in page links "Don't have an account? Sign up" to the app's
 `signup` route when it has one.
 
+App pages can use the same frame with `layout "studio/auth"`.
+
 Don't copy the gem's views into the app: a view at the same path overrides
 the gem's and the pages drift apart again. Reword through the app's own
 locale files (`studio_auth.codes.new.title`, ...) only where a locale needs it.
