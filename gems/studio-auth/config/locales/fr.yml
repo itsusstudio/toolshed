@@ -43,7 +43,7 @@ fr: &fr
       unknown: "Appareil inconnu"
     sign_in_mailer:
       login_code:
-        subject: "%{code} est votre code %{app_name}"
+        subject: "%{code} est votre code de connexion %{app_name}"
         heading: "Votre code de connexion"
         intro: "Entrez ce code dans %{app_name} pour terminer la connexion."
         expires:
@@ -51,7 +51,7 @@ fr: &fr
           other: "Ce code est valable %{count} minutes."
         ignore: "Si vous n’avez pas essayé de vous connecter, ignorez ce courriel."
       sign_up_code:
-        subject: "%{code} est votre code %{app_name}"
+        subject: "%{code} est votre code d’inscription %{app_name}"
         heading: "Votre code d’inscription"
         intro: "Entrez ce code dans %{app_name} pour terminer la création de votre compte."
         expires:

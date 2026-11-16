@@ -43,7 +43,7 @@ nl: &nl
       unknown: "Onbekend apparaat"
     sign_in_mailer:
       login_code:
-        subject: "%{code} is je %{app_name}-code"
+        subject: "%{code} is je %{app_name}-inlogcode"
         heading: "Je inlogcode"
         intro: "Vul deze code in %{app_name} in om verder te gaan met inloggen."
         expires:
@@ -51,7 +51,7 @@ nl: &nl
           other: "Deze code werkt %{count} minuten."
         ignore: "Heb je niet geprobeerd in te loggen? Dan kun je deze e-mail negeren."
       sign_up_code:
-        subject: "%{code} is je %{app_name}-code"
+        subject: "%{code} is je %{app_name}-aanmeldcode"
         heading: "Je aanmeldcode"
         intro: "Vul deze code in %{app_name} in om je account aan te maken."
         expires:
