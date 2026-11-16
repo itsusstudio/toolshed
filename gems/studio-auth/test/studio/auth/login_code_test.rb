@@ -70,6 +70,13 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
     assert_equal :verified, verify(second).status
   end
 
+  test "verify refuses a code issued without an address, from before codes were keyed by address" do
+    issued = request_sign_in("cook@studio.com")
+    LoginCode.where(id: issued.id).update_all(email_address: "")
+
+    assert_equal :expired, verify(issued).status
+  end
+
   test "verify refuses an expired code" do
     issued = request_sign_in("cook@studio.com")
 

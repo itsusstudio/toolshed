@@ -65,7 +65,8 @@ module Studio
           transaction do
             lock_address(found.email_address)
             login_code = lock.find(found.id)
-            next Verification.new(status: :expired) if login_code.finished?
+            # Codes issued before codes were keyed by address have none.
+            next Verification.new(status: :expired) if login_code.finished? || login_code.email_address.blank?
             next Verification.new(status: :too_many_attempts) if login_code.exhausted?
 
             user = ::User.find_by(email_address: login_code.email_address)
