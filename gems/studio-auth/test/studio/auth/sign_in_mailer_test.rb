@@ -4,7 +4,7 @@ class Studio::Auth::SignInMailerTest < ActionMailer::TestCase
   setup do
     @user = User.create!(email_address: "cook@studio.com")
     @login_code = Studio::Auth::LoginCode.create!(
-      user: @user, code_digest: "digest", expires_at: 10.minutes.from_now,
+      email_address: "cook@studio.com", code_digest: "digest", expires_at: 10.minutes.from_now,
       ip_address: "1.2.3.4", user_agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15 Version/17.0 Safari/605.1.15"
     )
   end
@@ -45,11 +45,21 @@ class Studio::Auth::SignInMailerTest < ActionMailer::TestCase
     assert_equal "123456 est votre code Dummy", login_code_mail.deliver_now.subject
   end
 
-  test "login_code sends nothing for a decoy, an app review account or a code that expired in the queue" do
-    @login_code.update!(user: nil)
-    assert_nil login_code_mail.deliver_now
+  test "an address with no account gets the sign-up mail, in the language the visitor used" do
+    @login_code.update!(email_address: "new@studio.com")
+    mail = Studio::Auth::SignInMailer.with(login_code: @login_code, encrypted_code: Studio::Auth::Secrets.encrypt("123456"), locale: "fr").login_code.deliver_now
 
-    @login_code.update!(user: @user)
+    assert_equal ["new@studio.com"], mail.to
+    assert_includes mail.text_part.body.to_s, I18n.t("studio_auth.sign_in_mailer.sign_up_code.heading", locale: :fr)
+  end
+
+  test "login_code sends nothing for an unknown address without sign-up, an app review account or a code that expired in the queue" do
+    @login_code.update!(email_address: "new@studio.com")
+    Studio::Auth.stubs(:sign_up?).returns(false)
+    assert_nil login_code_mail.deliver_now
+    Studio::Auth.unstub(:sign_up?)
+
+    @login_code.update!(email_address: "cook@studio.com")
     Studio::Auth::AppReviewAccounts.stubs(:include?).returns(true)
     assert_nil login_code_mail.deliver_now
 
@@ -68,7 +78,7 @@ class Studio::Auth::SignInMailerTest < ActionMailer::TestCase
     preview = ActionMailer::Preview.find("studio/auth/sign_in_mailer")
     users_before = User.count
 
-    assert_equal ["locked", "login_code"], preview.emails.sort
+    assert_equal ["locked", "login_code", "sign_up_code"], preview.emails.sort
     preview.emails.each do |email|
       mail = preview.call(email)
       assert_includes mail.subject, "Dummy", "#{email} preview did not render"

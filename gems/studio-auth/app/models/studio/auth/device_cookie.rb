@@ -12,7 +12,9 @@ module Studio
       end
 
       def trusted_for?(user)
-        user_id = user&.id || LoginCode::DECOY_USER_ID
+        # The same query runs with or without an account, so timing doesn't
+        # reveal which addresses have one. No user has id 0.
+        user_id = user&.id || 0
         known_device = KnownDevice.trusted.exists?(user_id: user_id, device_token_digest: digest)
         known_device && user.present? && device_token.present?
       end

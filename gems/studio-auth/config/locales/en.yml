@@ -50,6 +50,14 @@ en: &en
           one: "This code works for %{count} minute."
           other: "This code works for %{count} minutes."
         ignore: "If you didn’t try to sign in, ignore this email."
+      sign_up_code:
+        subject: "%{code} is your %{app_name} code"
+        heading: "Your sign-up code"
+        intro: "Enter this code in %{app_name} to finish creating your account."
+        expires:
+          one: "This code works for %{count} minute."
+          other: "This code works for %{count} minutes."
+        ignore: "If you didn’t try to sign up, ignore this email. We won’t create an account."
       locked:
         subject: "Sign-in paused on your %{app_name} account"
         heading: "Sign-in paused"

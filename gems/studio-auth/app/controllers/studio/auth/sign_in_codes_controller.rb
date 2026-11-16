@@ -13,16 +13,23 @@ module Studio
       def create
         result = LoginCode.verify(id: @pending.id, code: submitted_code)
 
-        case result.status
+        status, user = result.status, result.user
+        if status == :verified && user.nil?
+          user = create_account_for(result.email_address)
+          return clear_pending_login_code if performed?
+          status = :expired if user.nil?
+        end
+
+        case status
         when :verified
           clear_pending_login_code
-          start_new_session_for(result.user)
+          start_new_session_for(user)
           redirect_to after_authentication_path, status: :see_other
         when :invalid
           @field_error = t("studio_auth.flash.wrong_code")
           render :new, status: :unprocessable_content
         else
-          flash[:studio_auth_field_error] = t("studio_auth.flash.#{result.status}")
+          flash[:studio_auth_field_error] = t("studio_auth.flash.#{status}")
           flash[:studio_auth_email_address] = @pending.email_address
           clear_pending_login_code
           redirect_to main_app.login_path, status: :see_other

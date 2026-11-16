@@ -9,7 +9,8 @@ module Studio
 
       included do
         has_many :sessions, class_name: "::Session", dependent: :delete_all
-        has_many :login_codes, class_name: "Studio::Auth::LoginCode", dependent: :delete_all
+        has_many :login_codes, class_name: "Studio::Auth::LoginCode", primary_key: :email_address,
+          foreign_key: :email_address, inverse_of: false, dependent: :delete_all
         has_many :known_devices, class_name: "Studio::Auth::KnownDevice", dependent: :delete_all
 
         normalizes :email_address, with: ->(email_address) { TypedInput.email_address(email_address) }
@@ -38,7 +39,7 @@ module Studio
       end
 
       def sign_in_locked?
-        LoginCode.locked_out?(self)
+        LoginCode.locked_out?(email_address)
       end
 
       # For support: lifts a lockout at once. Clearing the login codes resets

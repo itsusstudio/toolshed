@@ -12,7 +12,7 @@ class CreateStudioAuth < ActiveRecord::Migration[<%= ActiveRecord::Migration.cur
     add_column :users, :staff, :boolean, null: false, default: false if !column_exists?(:users, :staff)
 
     create_table :studio_auth_login_codes do |t|
-      t.references :user, foreign_key: true, index: false
+      t.string :email_address, null: false
       t.string :code_digest, null: false
       t.datetime :expires_at, null: false
       t.integer :failed_attempts, null: false, default: 0
@@ -23,7 +23,7 @@ class CreateStudioAuth < ActiveRecord::Migration[<%= ActiveRecord::Migration.cur
       t.string :ip_address
       t.string :user_agent
       t.timestamps
-      t.index [:user_id, :created_at]
+      t.index [:email_address, :created_at]
       t.index :created_at
       t.index [:ip_address, :created_at], name: "index_studio_auth_login_codes_on_ip_and_created_at"
     end

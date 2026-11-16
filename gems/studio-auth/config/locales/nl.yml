@@ -50,6 +50,14 @@ nl: &nl
           one: "Deze code werkt %{count} minuut."
           other: "Deze code werkt %{count} minuten."
         ignore: "Heb je niet geprobeerd in te loggen? Dan kun je deze e-mail negeren."
+      sign_up_code:
+        subject: "%{code} is je %{app_name}-code"
+        heading: "Je aanmeldcode"
+        intro: "Vul deze code in %{app_name} in om je account aan te maken."
+        expires:
+          one: "Deze code werkt %{count} minuut."
+          other: "Deze code werkt %{count} minuten."
+        ignore: "Heb je niet geprobeerd je aan te melden? Dan kun je deze e-mail negeren. We maken geen account aan."
       locked:
         subject: "Inloggen gepauzeerd voor je %{app_name}-account"
         heading: "Inloggen gepauzeerd"

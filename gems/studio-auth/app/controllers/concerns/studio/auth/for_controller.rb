@@ -54,16 +54,17 @@ module Studio
       end
 
       def start_sign_in_for(user)
-        issued = LoginCode.request_for(
-          email_address: user.email_address, device_cookie: DeviceCookie.new(cookies),
-          ip_address: request.remote_ip, user_agent: request.user_agent
-        )
-        if issued == :undeliverable || issued == :too_many_requests
-          return redirect_to(main_app.login_path, status: :see_other, alert: t("studio_auth.flash.#{issued}"))
-        end
+        start_sign_up_for(user.email_address)
+      end
 
-        PendingLoginCode.store_in_rails_session(session, issued, email_address: user.email_address)
-        redirect_to main_app.verify_path, status: :see_other
+      def start_sign_up_for(email_address)
+        issued = LoginCode.request_for(email_address: email_address, **code_request_details)
+        redirect_to_code_page(issued, TypedInput.email_address(email_address))
+      end
+
+      # Apps with sign-up return the new user for a verified address, nil to
+      # send the visitor back to sign in, or redirect (to finish a signup form).
+      def create_account_for(email_address)
       end
 
       # reset_session drops any session id an attacker planted before sign-in.
@@ -124,6 +125,19 @@ module Studio
         assign_current_session(nil)
         ::Session.delete_cookie(cookies)
         reset_session
+      end
+
+      def code_request_details
+        {device_cookie: DeviceCookie.new(cookies), ip_address: request.remote_ip, user_agent: request.user_agent}
+      end
+
+      def redirect_to_code_page(issued, email_address)
+        if issued == :undeliverable || issued == :too_many_requests
+          return redirect_to(main_app.login_path, status: :see_other, alert: t("studio_auth.flash.#{issued}"))
+        end
+
+        PendingLoginCode.store_in_rails_session(session, issued, email_address: email_address)
+        redirect_to main_app.verify_path, status: :see_other
       end
 
       def native_app_request?

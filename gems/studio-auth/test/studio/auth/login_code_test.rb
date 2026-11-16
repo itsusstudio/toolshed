@@ -10,14 +10,21 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
     @device = Studio::Auth::DeviceCookie.new(ActionDispatch::TestRequest.create.cookie_jar)
   end
 
-  test "an unknown address gets a decoy that enqueues mail like a real one and never verifies" do
+  test "an address with no account gets a real code that verifies to no user" do
     issued = nil
     assert_enqueued_jobs 1 do
-      issued = request_sign_in("nobody@studio.com")
+      issued = request_sign_in("new@studio.com")
     end
 
-    assert LoginCode.find(issued.id).decoy?
-    assert_equal :invalid, verify(issued).status
+    result = verify(issued)
+    assert_equal :verified, result.status
+    assert_nil result.user
+    assert_equal "new@studio.com", result.email_address
+    assert_not User.exists?(email_address: "new@studio.com")
+  end
+
+  test "an address with an account verifies to that user" do
+    assert_equal @user, verify(request_sign_in("Cook@Studio.com")).user
   end
 
   test "the same browser asking again inside the cooldown gets its code back" do
@@ -29,13 +36,10 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
     assert_equal 1, LoginCode.count
   end
 
-  test "another browser inside the cooldown gets a decoy and cannot touch the first code" do
+  test "another browser inside the cooldown is turned away and cannot touch the first code" do
     victim = request_sign_in("cook@studio.com")
-    attacker = request_sign_in("cook@studio.com", device_cookie: stranger)
 
-    refute_equal victim.id, attacker.id
-    assert LoginCode.find(attacker.id).decoy?
-    Studio::Auth::LoginCode::MAX_ATTEMPTS.times { verify(attacker, code: "000000x") }
+    assert_equal :too_many_requests, request_sign_in("cook@studio.com", device_cookie: stranger)
     assert_equal :verified, verify(victim).status
   end
 
@@ -44,18 +48,17 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
     first = request_sign_in("cook@studio.com", device_cookie: Studio::Auth::DeviceCookie.new(ActionDispatch::TestRequest.create.cookie_jar))
     second = request_sign_in("cook@studio.com")
 
-    refute LoginCode.find(second.id).decoy?
     assert_equal :expired, verify(first).status
     assert_equal :verified, verify(second).status
   end
 
-  test "past the hourly mail budget an unknown device gets decoys" do
+  test "past the hourly mail budget an unknown device is turned away" do
     LoginCode::MAIL_BUDGET.times do
       request_sign_in("cook@studio.com", device_cookie: stranger)
       travel Studio::Auth::LoginCode::RESEND_INTERVAL + 1.second
     end
 
-    assert LoginCode.find(request_sign_in("cook@studio.com", device_cookie: stranger).id).decoy?
+    assert_equal :too_many_requests, request_sign_in("cook@studio.com", device_cookie: stranger)
   end
 
   test "a new code expires the previous one" do
@@ -79,8 +82,7 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
     assert @user.sign_in_locked?
 
     travel Studio::Auth::LoginCode::LOCKOUT_DURATION + 1.minute
-    issued = LoginCode.send(:issue, user: @user, known_device: false, device_cookie: stranger, ip_address: "6.6.6.6", user_agent: "attacker")
-    verify(issued, code: "000000x")
+    verify(issue_to("cook@studio.com"), code: "000000x")
 
     assert_equal 1, enqueued_jobs.count { |job| job["arguments"][1] == "locked" }
   end
@@ -90,17 +92,17 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
     travel Studio::Auth::LoginCode::LOCKOUT_DURATION + 1.minute
     refute @user.sign_in_locked?
 
-    issued = LoginCode.send(:issue, user: @user, known_device: false, device_cookie: stranger, ip_address: "6.6.6.6", user_agent: "attacker")
-    verify(issued, code: "000000x")
+    verify(issue_to("cook@studio.com"), code: "000000x")
     travel Studio::Auth::LoginCode::LOCKOUT_DURATION + 1.minute
     assert @user.sign_in_locked?, "the 11th failure should lock for two durations"
   end
 
-  test "a locked account gets a decoy from an unknown device" do
+  test "a locked address is turned away on an unknown device, with or without an account" do
     lock_account
+    lock_account("nobody@studio.com")
 
-    issued = request_sign_in("cook@studio.com")
-    assert LoginCode.find(issued.id).decoy?
+    assert_equal :too_many_requests, request_sign_in("cook@studio.com")
+    assert_equal :too_many_requests, request_sign_in("nobody@studio.com")
   end
 
   test "an app review account gets its fixed code" do
@@ -113,7 +115,7 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
     end
   end
 
-  test "wrong codes never lock an app review account or turn its requests into decoys" do
+  test "wrong codes never lock an app review account or turn its requests away" do
     with_app_review_accounts({"review@studio.com": "381904"}) do
       reviewer = User.create!(email_address: "review@studio.com")
       events = capture_event_names do
@@ -128,7 +130,6 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
       assert_includes events, "authentication.app_review_account_code_rejected"
       request_sign_in("review@studio.com", device_cookie: stranger)
       second_device = request_sign_in("review@studio.com", device_cookie: stranger)
-      refute LoginCode.find(second_device.id).decoy?
       assert_equal :verified, verify(second_device).status
     end
   end
@@ -150,8 +151,7 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
       Studio::Auth::LoginCode::MAX_ATTEMPTS.times { verify(issued, code: "000000x") }
     end
 
-    issued = request_sign_in("cook@studio.com")
-    assert LoginCode.find(issued.id).decoy?
+    assert_equal :too_many_requests, request_sign_in("cook@studio.com")
     assert_equal :verified, verify(request_sign_in("cook@studio.com", device_cookie: owner_laptop)).status
   end
 
@@ -161,18 +161,20 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
     unknown = count_queries { request_sign_in("nobody@studio.com", device_cookie: stranger) }
     assert_equal real, unknown
 
+    travel Studio::Auth::LoginCode::RESEND_INTERVAL + 1.second
     real_code = request_sign_in("cook@studio.com", device_cookie: stranger)
-    decoy = request_sign_in("nobody@studio.com", device_cookie: stranger)
-    assert_equal count_queries { verify(real_code, code: "000000x") }, count_queries { verify(decoy, code: "000000x") }
+    unknown_code = request_sign_in("nobody@studio.com", device_cookie: stranger)
+    assert_equal count_queries { verify(real_code, code: "000000x") }, count_queries { verify(unknown_code, code: "000000x") }
   end
 
-  test "an account the app says cannot sign in gets decoys, and its codes stop working" do
+  test "an account the app says cannot sign in gets no mail, and its codes stop working" do
     issued = request_sign_in("cook@studio.com")
     User.any_instance.stubs(:can_sign_in?).returns(false)
 
     assert_equal :invalid, verify(issued).status
     travel Studio::Auth::LoginCode::RESEND_INTERVAL + 1.second
-    assert LoginCode.find(request_sign_in("cook@studio.com").id).decoy?
+    perform_enqueued_jobs { request_sign_in("cook@studio.com") }
+    assert_empty ActionMailer::Base.deliveries
   end
 
   test "an app review account locks after its daily cap of wrong codes, with an event and no mail" do
@@ -190,7 +192,7 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
       assert reviewer.sign_in_locked?
       assert_includes events, "authentication.app_review_account_locked"
       assert_empty ActionMailer::Base.deliveries
-      assert LoginCode.find(request_sign_in("review@studio.com", device_cookie: stranger).id).decoy?
+      assert_equal :too_many_requests, request_sign_in("review@studio.com", device_cookie: stranger)
     end
   end
 
@@ -223,6 +225,10 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
     LoginCode.request_for(email_address: email_address, device_cookie: device_cookie, ip_address: "1.2.3.4", user_agent: "test")
   end
 
+  def issue_to(email_address)
+    LoginCode.send(:issue, email_address: email_address, known_device: false, device_cookie: stranger, ip_address: "6.6.6.6", user_agent: "attacker")
+  end
+
   def stranger
     Studio::Auth::DeviceCookie.new(ActionDispatch::TestRequest.create.cookie_jar)
   end
@@ -231,9 +237,9 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
     LoginCode.verify(id: issued.id, code: code)
   end
 
-  def lock_account
+  def lock_account(email_address = "cook@studio.com")
     (Studio::Auth::LoginCode::LOCKOUT_WRONG_CODES / Studio::Auth::LoginCode::MAX_ATTEMPTS).times do
-      issued = LoginCode.send(:issue, user: @user, known_device: false, device_cookie: stranger, ip_address: "6.6.6.6", user_agent: "attacker")
+      issued = issue_to(email_address)
       Studio::Auth::LoginCode::MAX_ATTEMPTS.times { verify(issued, code: "000000x") }
       travel Studio::Auth::LoginCode::RESEND_INTERVAL + 1.second
     end

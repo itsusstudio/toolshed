@@ -87,6 +87,7 @@ DummyApp.routes.draw do
   root to: "pages#show"
   get "/private", to: "pages#private"
   post "/signup", to: "signups#create"
+  post "/signup_code", to: "signups#code"
 end
 
 module ApplicationCable
@@ -97,6 +98,12 @@ end
 
 class ApplicationController < ActionController::Base
   include Studio::Auth::ForController
+
+  private
+
+  def create_account_for(email_address)
+    User.create!(email_address: email_address)
+  end
 end
 
 class PagesController < ApplicationController
@@ -117,6 +124,10 @@ class SignupsController < ApplicationController
   def create
     user = User.find_by(email_address: params[:email_address]) || User.create!(email_address: params[:email_address])
     start_sign_in_for(user)
+  end
+
+  def code
+    start_sign_up_for(params[:email_address])
   end
 end
 

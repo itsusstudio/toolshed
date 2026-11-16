@@ -4,7 +4,11 @@ module Studio
       USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15 Version/17.0 Safari/605.1.15"
 
       def login_code
-        SignInMailer.with(login_code: sample_login_code, encrypted_code: Secrets.encrypt("381904")).login_code
+        SignInMailer.with(login_code: sample_login_code, user: user, encrypted_code: Secrets.encrypt("381904")).login_code
+      end
+
+      def sign_up_code
+        SignInMailer.with(login_code: sample_login_code, user: nil, encrypted_code: Secrets.encrypt("381904")).login_code
       end
 
       def locked
@@ -18,7 +22,7 @@ module Studio
       end
 
       def sample_login_code
-        LoginCode.new(user: user, user_agent: USER_AGENT, ip_address: "203.0.113.7")
+        LoginCode.new(email_address: "preview@example.com", user_agent: USER_AGENT, ip_address: "203.0.113.7")
       end
     end
   end

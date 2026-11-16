@@ -64,7 +64,7 @@ class Studio::Auth::ForSessionTest < ActiveSupport::TestCase
   end
 
   test "PurgeExpiredJob deletes expired sessions and codes past the failure window" do
-    Studio::Auth::LoginCode.create!(code_digest: "d", expires_at: 1.minute.from_now)
+    Studio::Auth::LoginCode.create!(email_address: "cook@studio.com", code_digest: "d", expires_at: 1.minute.from_now)
 
     travel IDLE + 1.minute do
       fresh = @user.sessions.create!

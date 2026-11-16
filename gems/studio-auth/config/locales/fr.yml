@@ -50,6 +50,14 @@ fr: &fr
           one: "Ce code est valable %{count} minute."
           other: "Ce code est valable %{count} minutes."
         ignore: "Si vous n’avez pas essayé de vous connecter, ignorez ce courriel."
+      sign_up_code:
+        subject: "%{code} est votre code %{app_name}"
+        heading: "Votre code d’inscription"
+        intro: "Entrez ce code dans %{app_name} pour terminer la création de votre compte."
+        expires:
+          one: "Ce code est valable %{count} minute."
+          other: "Ce code est valable %{count} minutes."
+        ignore: "Si vous n’avez pas essayé de vous inscrire, ignorez ce courriel. Nous ne créerons pas de compte."
       locked:
         subject: "Connexion suspendue sur votre compte %{app_name}"
         heading: "Connexion suspendue"

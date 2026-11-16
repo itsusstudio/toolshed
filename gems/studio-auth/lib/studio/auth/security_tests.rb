@@ -19,7 +19,7 @@ module Studio
           assert_select "form[action=?] input[name=email_address]", login_path
         end
 
-        test "studio-auth: an unknown address gets the same answer and no mail" do
+        test "studio-auth: an unknown address gets the same answer as a known one" do
           create_authentication_user("known@studio.com")
 
           perform_enqueued_jobs { post login_path, params: {email_address: "nobody@studio.com"} }
@@ -27,7 +27,8 @@ module Studio
           follow_redirect!
           unknown_page = comparable_page("nobody@studio.com")
 
-          assert_empty ActionMailer::Base.deliveries
+          assert_equal (Auth.sign_up? ? 1 : 0), ActionMailer::Base.deliveries.size
+          ActionMailer::Base.deliveries.clear
           reset!
           perform_enqueued_jobs { post login_path, params: {email_address: "known@studio.com"} }
           assert_equal unknown_location, response.location

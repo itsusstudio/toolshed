@@ -1,7 +1,7 @@
 # studio-auth
 
-Passwordless sign-in for studio Rails apps: a 6-digit email code, expiring
-database sessions, the staff flag, and lockout mail.
+Passwordless sign-in and sign-up for studio Rails apps: a 6-digit email code,
+expiring database sessions, the staff flag, and lockout mail.
 
 ## Rules
 
@@ -9,8 +9,8 @@ database sessions, the staff flag, and lockout mail.
 | --- | --- |
 | Code | 6 digits, valid 10 minutes, single use, 5 attempts. One resend per 60 seconds |
 | Lockout | 10 wrong codes in 24 hours pause sign-in for 1 hour, plus 1 hour per further wrong code. A known device counts only its own wrong codes |
-| Limits | 10 code requests an hour per account (a known device has its own 10), 30 an hour per IP (per /64 for IPv6), also counted in the database |
-| Unknown address | Same response as a real one, no mail |
+| Limits | 10 code requests an hour per address (a known device has its own 10), 30 an hour per IP (per /64 for IPv6), also counted in the database |
+| Unknown address | Same response as a real one. With sign-up it gets a sign-up code; without, no mail |
 | Mail | The code and the lockout notice only, text and HTML, no links but support and legal. Sent on `less_than_five_seconds` |
 
 ## Install
@@ -73,6 +73,16 @@ module ApplicationCable
 end
 ```
 
+## Upgrading
+
+Login codes are keyed by email address. An app installed before that adds the
+column and drops `user_id` once the new code is deployed:
+
+```ruby
+add_column :studio_auth_login_codes, :email_address, :string
+add_index :studio_auth_login_codes, [:email_address, :created_at], algorithm: :concurrently
+```
+
 ## Sign-in pages and mail
 
 The gem owns the sign-in and code pages and the sign-in mail: markup, copy
@@ -104,7 +114,14 @@ locale files (`studio_auth.codes.new.title`, ...) only where a locale needs it.
 
 - `allow_unauthenticated_access only: [...]` opens actions to signed-out visitors.
 - `authenticated?` and `current_user` in controllers and views.
-- `start_sign_in_for(user)` after signup sends the first code.
+- Sign-up: an app that routes `signup_path` takes sign-ups. Its signup form
+  keeps what it collected (in the session, say) and calls
+  `start_sign_up_for(email_address)`, which creates nothing. When the code is
+  right the gem calls the app's `create_account_for(email_address)`, which
+  returns the new user, nil to send the visitor back to sign in, or redirects,
+  say to a signup form for an address that came from the sign-in page. An
+  address that already has an account just signs in.
+- `start_sign_in_for(user)` mails a code to an existing user.
 - `store_return_path(path)` returns a visitor to `path` after sign-in.
 - Override `after_sign_in(user)`, `after_authentication_path` (root by default)
   or `terminate_all_sessions` (call `super`).

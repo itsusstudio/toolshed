@@ -28,6 +28,10 @@ module Studio
       def config
         @config ||= Configuration.new
       end
+
+      def sign_up?
+        ::Rails.application.routes.url_helpers.respond_to?(:signup_path)
+      end
     end
   end
 end
