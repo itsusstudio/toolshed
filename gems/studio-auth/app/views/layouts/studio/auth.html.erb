@@ -3,7 +3,7 @@
 <% content_for :studio_auth_page do %>
   <div class="u-auth-shell">
     <header>
-      <%= link_to config.app_name, main_app.root_path, class: "u-wordmark u-wordmark-#{config.wordmark}" %>
+      <%= link_to config.app_name, main_app.root_path, class: "u-wordmark u-wordmark-lg u-wordmark-#{config.wordmark}" %>
       <% if I18n.exists?("studio_auth.blurb") %>
         <p class="u-text-article-title"><%= t("studio_auth.blurb") %></p>
       <% end %>
