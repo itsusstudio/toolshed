@@ -38,7 +38,7 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
 
   test "the same browser asking for a new code inside the cooldown gets one and the old one ends" do
     first = request_sign_in("cook@studio.com")
-    second = LoginCode.request_for(email_address: "cook@studio.com", device_cookie: @device,
+    second = Studio::Auth::RequestCode.call(email_address: "cook@studio.com", device_cookie: @device,
       ip_address: "1.2.3.4", user_agent: "test", resend: true)
 
     assert_equal :expired, verify(first).status
@@ -46,7 +46,7 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
   end
 
   test "an address with no account is turned away when the caller needs an account" do
-    result = LoginCode.request_for(email_address: "nobody@studio.com", device_cookie: @device,
+    result = Studio::Auth::RequestCode.call(email_address: "nobody@studio.com", device_cookie: @device,
       ip_address: "1.2.3.4", user_agent: "test", account_required: true)
 
     assert_equal :no_account, result
@@ -248,11 +248,13 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
   end
 
   def request_sign_in(email_address, device_cookie: @device)
-    LoginCode.request_for(email_address: email_address, device_cookie: device_cookie, ip_address: "1.2.3.4", user_agent: "test")
+    Studio::Auth::RequestCode.call(email_address: email_address, device_cookie: device_cookie,
+      ip_address: "1.2.3.4", user_agent: "test")
   end
 
   def issue_to(email_address)
-    LoginCode.send(:issue, email_address: email_address, known_device: false, device_cookie: stranger, ip_address: "6.6.6.6", user_agent: "attacker")
+    Studio::Auth::RequestCode.send(:issue, email_address: email_address, known_device: false,
+      device_cookie: stranger, ip_address: "6.6.6.6", user_agent: "attacker")
   end
 
   def stranger
@@ -260,7 +262,7 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
   end
 
   def verify(issued, code: issued.code)
-    LoginCode.verify(id: issued.id, code: code)
+    Studio::Auth::VerifyCode.call(id: issued.id, code: code)
   end
 
   def lock_account(email_address = "cook@studio.com")

@@ -23,7 +23,7 @@ module Studio
 
       def create
         resend = params[:resend].present? && pending_code_email_address?
-        issued = LoginCode.request_for(
+        issued = RequestCode.call(
           email_address: params[:email_address], device_cookie: device_cookie,
           ip_address: request.remote_ip, user_agent: request.user_agent,
           account_required: !resend, resend: resend

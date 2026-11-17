@@ -11,7 +11,7 @@ module Studio
       end
 
       def create
-        result = LoginCode.verify(id: @pending.id, code: submitted_code)
+        result = VerifyCode.call(id: @pending.id, code: submitted_code)
 
         status, user = result.status, result.user
         if status == :verified && user.nil?

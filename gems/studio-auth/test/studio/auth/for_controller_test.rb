@@ -335,13 +335,15 @@ class Studio::Auth::ForControllerTest < ActionDispatch::IntegrationTest
   test "sign out everywhere ends every session, forgets known devices and cancels codes waiting to be typed" do
     sign_in_with_code("cook@studio.com")
     User.first.sessions.create!
-    waiting = Studio::Auth::LoginCode.request_for(email_address: "cook@studio.com", device_cookie: Studio::Auth::DeviceCookie.new(ActionDispatch::TestRequest.create.cookie_jar), ip_address: "6.6.6.6", user_agent: "other")
+    other_browser = Studio::Auth::DeviceCookie.new(ActionDispatch::TestRequest.create.cookie_jar)
+    waiting = Studio::Auth::RequestCode.call(email_address: "cook@studio.com", device_cookie: other_browser,
+      ip_address: "6.6.6.6", user_agent: "other")
 
     delete logout_everywhere_path
 
     assert_equal 0, Session.count
     assert_equal 0, Studio::Auth::KnownDevice.count
-    assert_equal :expired, Studio::Auth::LoginCode.verify(id: waiting.id, code: waiting.code).status
+    assert_equal :expired, Studio::Auth::VerifyCode.call(id: waiting.id, code: waiting.code).status
   end
 
   test "signing out disconnects that session's sockets and leaves the user's other devices connected" do

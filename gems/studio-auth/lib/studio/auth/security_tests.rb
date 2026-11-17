@@ -46,7 +46,7 @@ module Studio
           refute_equal before, session.id
 
           login_code = LoginCode.order(:created_at).last
-          assert_equal :expired, LoginCode.verify(id: login_code.id, code: code).status
+          assert_equal :expired, VerifyCode.call(id: login_code.id, code: code).status
 
           delete logout_path
           assert_nil ::Session.find_by(user: ::User.find_by(email_address: "cook@studio.com"))
@@ -71,7 +71,7 @@ module Studio
 
           LoginCode::MAX_ATTEMPTS.times { post verify_path, params: {code: wrong_code(code)} }
           assert_response :redirect
-          assert_equal :too_many_attempts, LoginCode.verify(id: id, code: code).status
+          assert_equal :too_many_attempts, VerifyCode.call(id: id, code: code).status
         end
 
         test "studio-auth: a second browser cannot reach the first browser's code" do

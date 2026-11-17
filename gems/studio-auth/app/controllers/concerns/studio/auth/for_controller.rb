@@ -61,7 +61,7 @@ module Studio
       end
 
       def start_sign_up_for(email_address)
-        issued = LoginCode.request_for(email_address: email_address, **code_request_details)
+        issued = RequestCode.call(email_address: email_address, **code_request_details)
         redirect_to_code_page(issued, TypedInput.email_address(email_address))
       end
 
