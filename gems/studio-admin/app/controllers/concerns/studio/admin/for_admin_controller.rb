@@ -10,12 +10,10 @@ module Studio
 
       private
 
-      # A 404, not a 403, so signed-in users who aren't staff can't tell the
-      # admin area is there. Signed-out visitors are sent to sign in first.
       def require_staff
         if !current_user.staff?
           Rails.event.notify("admin.access_denied", actor_id: current_user.id, path: request.path)
-          raise ActionController::RoutingError, "Not Found"
+          return redirect_to(main_app.root_path, alert: "You don't have access to the admin area.")
         end
 
         if !current_session.signed_in_within?(Admin.config.sign_in_max_age(write: admin_write?))

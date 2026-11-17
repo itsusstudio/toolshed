@@ -50,12 +50,13 @@ end
   Control runs on `AdminBaseController`, without its HTTP basic auth.
 - Every other `/admin` path, and a tool whose staff check fails, goes through
   `AdminBaseController` to the staff checks: sign in, sign in again, or a
-  404.
+  redirect. An `/admin` path nothing matched sends staff to the admin root, so
+  the `studio_admin` block must draw `root`.
 - Call `studio_admin` last in `routes.rb`. Its catch-all answers every `/admin`
   path, so an admin route drawn after it never matches.
 
-- Everyone but staff gets a 404. Signed-out visitors are sent to sign in
-  first.
+- Signed-out visitors are sent to sign in. Signed-in users who aren't staff
+  are sent to the app's root with an alert.
 - Staff sign in again once their session is older than
   `read_sign_in_max_age` to view, or `write_sign_in_max_age` to change
   anything, and come back to the page.

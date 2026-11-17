@@ -19,12 +19,12 @@ class Studio::Admin::RoutesTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
-  test "the admin tools and pages are a 404 for everyone else" do
+  test "the admin tools and pages send everyone else to the app's root" do
     sign_in_as(User.create!(email_address: "cook@studio.com"))
 
-    ["/admin", "/admin/users", "/admin/flipper", "/admin/jobs", "/admin/pghero"].each do |path|
+    ["/admin", "/admin/users", "/admin/flipper", "/admin/jobs", "/admin/pghero", "/admin/nowhere"].each do |path|
       get path
-      assert_response :not_found, path
+      assert_redirected_to root_path, path
     end
   end
 
@@ -33,7 +33,7 @@ class Studio::Admin::RoutesTest < ActionDispatch::IntegrationTest
 
     get "/admin/unguarded"
 
-    assert_response :not_found
+    assert_redirected_to root_path
   end
 
   test "staff fresh enough to read a tool sign in again to change anything in it" do
@@ -56,12 +56,12 @@ class Studio::Admin::RoutesTest < ActionDispatch::IntegrationTest
     assert_redirected_to login_path
   end
 
-  test "an admin path nothing matched is a 404, for staff too" do
+  test "an admin path nothing matched sends staff to the admin dashboard" do
     sign_in_as(staff)
 
     get "/admin/nowhere"
 
-    assert_response :not_found
+    assert_redirected_to admin_root_path
   end
 
   test "Mission Control runs behind the app's AdminBaseController, without its HTTP basic auth" do
