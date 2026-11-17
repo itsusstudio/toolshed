@@ -1,6 +1,8 @@
 require "test_helper"
 
 class Studio::Admin::RoutesTest < ActionDispatch::IntegrationTest
+  include Studio::Admin::TestHelper
+
   test "the app's admin pages live under /admin, in Admin::" do
     sign_in_as(staff)
 
@@ -26,6 +28,10 @@ class Studio::Admin::RoutesTest < ActionDispatch::IntegrationTest
       get path
       assert_redirected_to root_path, path
     end
+  end
+
+  test "#assert_requires_staff checks signed-out visitors and users who aren't staff" do
+    assert_requires_staff(User.create!(email_address: "cook@studio.com")) { get admin_users_path }
   end
 
   test "an admin page whose controller skips the staff checks still opens only for staff" do

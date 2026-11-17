@@ -64,3 +64,10 @@ end
   `admin.action`, the audit trail; refused visits emit `admin.access_denied`.
 
 Who counts as staff is studio-auth's `users.staff`.
+
+## Tests
+
+`include Studio::Admin::TestHelper` in an integration test, then
+`assert_requires_staff(user) { get admin_users_path }` checks that a signed-out
+visitor is sent to sign in and that `user`, who isn't staff, is sent to the
+root. It signs in with the test's own `sign_in_as`.

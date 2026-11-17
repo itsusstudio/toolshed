@@ -6,6 +6,8 @@ require "pghero"
 
 module Studio
   module Admin
+    autoload :TestHelper, "studio/admin/test_helper"
+
     class << self
       def config
         @config ||= Configuration.new
