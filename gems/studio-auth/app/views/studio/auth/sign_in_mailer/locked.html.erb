@@ -1,5 +1,5 @@
 <% u = uniform_mail -%>
-<% hours = Studio::Auth::LoginCode::LOCKOUT_DURATION.in_hours.to_i -%>
+<% hours = Studio::Auth::SignInLimits::LOCKOUT_DURATION.in_hours.to_i -%>
 <% content_for :preheader, t("studio_auth.sign_in_mailer.locked.try_again", count: hours) -%>
 <%= u.heading t("studio_auth.sign_in_mailer.locked.heading") %>
 <%= u.paragraph t("studio_auth.sign_in_mailer.locked.intro") %>

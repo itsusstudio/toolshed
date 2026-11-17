@@ -12,29 +12,19 @@ module Studio
 
       TTL = 10.minutes
       MAX_ATTEMPTS = 5
-      RESEND_INTERVAL = 60.seconds
-      MAIL_BUDGET = 10
-      IP_HOURLY_LIMIT = 30
-
-      LOCKOUT_WINDOW = 24.hours
-      LOCKOUT_WRONG_CODES = 10
-      LOCKOUT_DURATION = 1.hour
-      APP_REVIEW_LOCKOUT_WRONG_CODES = 20
 
       validates :email_address, :code_digest, :expires_at, presence: true
 
       scope :live, -> { where(consumed_at: nil).where(arel_table[:expires_at].gt(Time.current)) }
-      scope :within_lockout_window, -> { where(created_at: LOCKOUT_WINDOW.ago..) }
-      scope :purgeable, -> { where(created_at: ...LOCKOUT_WINDOW.ago) }
+      scope :within_lockout_window, -> { where(created_at: SignInLimits::LOCKOUT_WINDOW.ago..) }
+      scope :purgeable, -> { where(created_at: ...SignInLimits::LOCKOUT_WINDOW.ago) }
 
       class << self
         def request_for(email_address:, device_cookie:, ip_address:, user_agent:,
           account_required: false, resend: false)
           email_address = TypedInput.email_address(email_address)
           return :undeliverable if Deliverability.undeliverable?(email_address)
-          # Backs up the cache-held rate limits, which turn off if the cache
-          # fails; this one counts in the primary database and fails closed.
-          return :too_many_requests if ip_over_hourly_limit?(ip_address)
+          return :too_many_requests if SignInLimits.ip_over_hourly_limit?(ip_address)
 
           user = ::User.find_by(email_address: email_address)
           return :no_account if account_required && user.nil?
@@ -51,14 +41,16 @@ module Studio
             # new one. Another browser inside the resend window must not: it
             # could burn the first browser's attempts. A known device takes
             # over instead.
-            recent = recent_login_code(email_address)
+            recent = SignInLimits.code_in_resend_window(email_address)
             if recent&.from?(device_cookie)
               next Issued.new(id: recent.id, code: nil) if !resend
             elsif recent && !known_device && !app_review
               next :too_many_requests
             end
-            next :too_many_requests if locked_out?(email_address, device_digest: device_digest)
-            next :too_many_requests if mail_count(email_address, device_digest) >= MAIL_BUDGET && !app_review
+            next :too_many_requests if SignInLimits.locked_out?(email_address, device_digest: device_digest)
+            if SignInLimits.mail_budget_spent?(email_address, device_digest: device_digest) && !app_review
+              next :too_many_requests
+            end
 
             issue(email_address: email_address, known_device: known_device, device_cookie: device_cookie,
               ip_address: ip_address, user_agent: user_agent)
@@ -77,7 +69,7 @@ module Studio
             next Verification.new(status: :too_many_attempts) if login_code.exhausted?
 
             user = ::User.find_by(email_address: login_code.email_address)
-            blocked = locked_out?(login_code.email_address, device_digest: login_code.lockout_scope) ||
+            blocked = SignInLimits.locked_out?(login_code.email_address, device_digest: login_code.lockout_scope) ||
               (user && !user.can_sign_in?)
             if login_code.code_matches?(code.to_s) && !blocked
               login_code.update!(consumed_at: Time.current)
@@ -88,25 +80,6 @@ module Studio
             record_failure(login_code, user)
             Verification.new(status: login_code.exhausted? ? :too_many_attempts : :invalid)
           end
-        end
-
-        # Counted across codes, so asking for a fresh code does not buy
-        # fresh guesses. Each failure past the limit lengthens the lock by
-        # another LOCKOUT_DURATION, so one guess an hour cannot keep it going.
-        #
-        # A known device counts only its own failures: strangers cannot lock
-        # the owner out of their laptop, and a stolen device cookie still
-        # locks after LOCKOUT_WRONG_CODES guesses of its own.
-        #
-        # Review accounts must not lock on a reviewer's typos, but their code
-        # never rotates, so they stop at a hard daily cap instead.
-        def locked_out?(email_address, device_digest: nil)
-          failures, last_failed_at = failure_stats(email_address, device_digest)
-          return false if last_failed_at.nil?
-          return failures >= APP_REVIEW_LOCKOUT_WRONG_CODES if AppReviewAccounts.include?(email_address)
-          return false if failures < LOCKOUT_WRONG_CODES
-
-          last_failed_at > (LOCKOUT_DURATION * (failures - LOCKOUT_WRONG_CODES + 1)).ago
         end
 
         def digest_code(code)
@@ -121,37 +94,6 @@ module Studio
           return if !connection.adapter_name.match?(/postg/i)
 
           connection.execute(sanitize_sql_array(["SELECT pg_advisory_xact_lock(hashtext(?))", "studio_auth_login_code:#{email_address}"]))
-        end
-
-        # True only for the failure that first reaches the limit, so the
-        # owner gets one lock email, not one per guess.
-        def just_locked?(email_address, device_digest: nil)
-          limit = AppReviewAccounts.include?(email_address) ? APP_REVIEW_LOCKOUT_WRONG_CODES : LOCKOUT_WRONG_CODES
-          failure_stats(email_address, device_digest).first == limit
-        end
-
-        def failure_stats(email_address, device_digest)
-          recent = where(email_address: email_address).within_lockout_window
-          recent = recent.where(device_token_digest: device_digest) if device_digest
-          [recent.sum(:failed_attempts), recent.maximum(:failed_at)]
-        end
-
-        def ip_over_hourly_limit?(ip_address)
-          where(ip_address: ip_address, created_at: 1.hour.ago..).count >= IP_HOURLY_LIMIT
-        end
-
-        # A known device has its own budget, so a stranger filling the
-        # owner's inbox can't stop the owner's own laptop from getting codes.
-        def mail_count(email_address, device_digest)
-          scope = where(email_address: email_address, created_at: 1.hour.ago..)
-          scope = scope.where(device_token_digest: device_digest) if device_digest
-          scope.count
-        end
-
-        def recent_login_code(email_address)
-          live.where(email_address: email_address)
-            .where(failed_attempts: ...MAX_ATTEMPTS)
-            .where(created_at: RESEND_INTERVAL.ago..).order(:created_at).last
         end
 
         def issue(email_address:, known_device:, device_cookie:, ip_address:, user_agent:)
@@ -172,7 +114,7 @@ module Studio
 
         def record_failure(login_code, user)
           login_code.update!(failed_attempts: login_code.failed_attempts + 1, failed_at: Time.current)
-          just_locked = just_locked?(login_code.email_address, device_digest: login_code.lockout_scope)
+          just_locked = SignInLimits.just_locked?(login_code.email_address, device_digest: login_code.lockout_scope)
           Rails.event.notify("authentication.login_code_rejected", actor_id: user&.id)
           return if user.nil?
 

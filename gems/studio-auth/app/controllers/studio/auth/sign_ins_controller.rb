@@ -9,7 +9,7 @@ module Studio
 
       rate_limit to: 10, within: 1.minute, only: :create, name: "ip",
         by: -> { rate_limit_key }, with: :too_many_requests
-      rate_limit to: LoginCode::IP_HOURLY_LIMIT, within: 1.hour, only: :create, name: "ip_hourly",
+      rate_limit to: SignInLimits::IP_HOURLY_LIMIT, within: 1.hour, only: :create, name: "ip_hourly",
         by: -> { rate_limit_key }, with: :too_many_requests
 
       def new

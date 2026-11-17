@@ -37,7 +37,7 @@ class Studio::Auth::UserTest < ActiveSupport::TestCase
     user = User.create!(email_address: "cook@studio.com")
     user.login_codes.create!(
       code_digest: "d", expires_at: 1.minute.from_now,
-      failed_attempts: Studio::Auth::LoginCode::LOCKOUT_WRONG_CODES, failed_at: Time.current
+      failed_attempts: Studio::Auth::SignInLimits::LOCKOUT_WRONG_CODES, failed_at: Time.current
     )
     assert user.sign_in_locked?
 

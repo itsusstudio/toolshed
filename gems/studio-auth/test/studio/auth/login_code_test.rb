@@ -70,9 +70,9 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
   end
 
   test "past the hourly mail budget an unknown device is turned away" do
-    LoginCode::MAIL_BUDGET.times do
+    Studio::Auth::SignInLimits::MAIL_BUDGET.times do
       request_sign_in("cook@studio.com", device_cookie: stranger)
-      travel Studio::Auth::LoginCode::RESEND_INTERVAL + 1.second
+      travel Studio::Auth::SignInLimits::RESEND_INTERVAL + 1.second
     end
 
     assert_equal :too_many_requests, request_sign_in("cook@studio.com", device_cookie: stranger)
@@ -80,7 +80,7 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
 
   test "a new code expires the previous one" do
     first = request_sign_in("cook@studio.com")
-    travel Studio::Auth::LoginCode::RESEND_INTERVAL + 1.second
+    travel Studio::Auth::SignInLimits::RESEND_INTERVAL + 1.second
     second = request_sign_in("cook@studio.com")
 
     assert_equal :expired, verify(first).status
@@ -105,7 +105,7 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
     lock_account
     assert @user.sign_in_locked?
 
-    travel Studio::Auth::LoginCode::LOCKOUT_DURATION + 1.minute
+    travel Studio::Auth::SignInLimits::LOCKOUT_DURATION + 1.minute
     verify(issue_to("cook@studio.com"), code: "000000x")
 
     assert_equal 1, enqueued_jobs.count { |job| job["arguments"][1] == "locked" }
@@ -113,11 +113,11 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
 
   test "each failure past the limit lengthens the lock" do
     lock_account
-    travel Studio::Auth::LoginCode::LOCKOUT_DURATION + 1.minute
+    travel Studio::Auth::SignInLimits::LOCKOUT_DURATION + 1.minute
     refute @user.sign_in_locked?
 
     verify(issue_to("cook@studio.com"), code: "000000x")
-    travel Studio::Auth::LoginCode::LOCKOUT_DURATION + 1.minute
+    travel Studio::Auth::SignInLimits::LOCKOUT_DURATION + 1.minute
     assert @user.sign_in_locked?, "the 11th failure should lock for two durations"
   end
 
@@ -146,7 +146,7 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
         3.times do
           issued = request_sign_in("review@studio.com", device_cookie: stranger)
           Studio::Auth::LoginCode::MAX_ATTEMPTS.times { verify(issued, code: "000000") }
-          travel Studio::Auth::LoginCode::RESEND_INTERVAL + 1.second
+          travel Studio::Auth::SignInLimits::RESEND_INTERVAL + 1.second
         end
       end
 
@@ -170,7 +170,7 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
     owner_laptop.trust_for(@user, user_agent: "laptop", ip_address: "1.2.3.4")
     @device.trust_for(@user, user_agent: "stolen", ip_address: "1.2.3.4")
 
-    (Studio::Auth::LoginCode::LOCKOUT_WRONG_CODES / Studio::Auth::LoginCode::MAX_ATTEMPTS).times do
+    (Studio::Auth::SignInLimits::LOCKOUT_WRONG_CODES / Studio::Auth::LoginCode::MAX_ATTEMPTS).times do
       issued = request_sign_in("cook@studio.com")
       Studio::Auth::LoginCode::MAX_ATTEMPTS.times { verify(issued, code: "000000x") }
     end
@@ -185,7 +185,7 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
     unknown = count_queries { request_sign_in("nobody@studio.com", device_cookie: stranger) }
     assert_equal real, unknown
 
-    travel Studio::Auth::LoginCode::RESEND_INTERVAL + 1.second
+    travel Studio::Auth::SignInLimits::RESEND_INTERVAL + 1.second
     real_code = request_sign_in("cook@studio.com", device_cookie: stranger)
     unknown_code = request_sign_in("nobody@studio.com", device_cookie: stranger)
     assert_equal count_queries { verify(real_code, code: "000000x") }, count_queries { verify(unknown_code, code: "000000x") }
@@ -196,7 +196,7 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
     User.any_instance.stubs(:can_sign_in?).returns(false)
 
     assert_equal :invalid, verify(issued).status
-    travel Studio::Auth::LoginCode::RESEND_INTERVAL + 1.second
+    travel Studio::Auth::SignInLimits::RESEND_INTERVAL + 1.second
     perform_enqueued_jobs { request_sign_in("cook@studio.com") }
     assert_empty ActionMailer::Base.deliveries
   end
@@ -206,7 +206,7 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
       reviewer = User.create!(email_address: "review@studio.com")
       events = capture_event_names do
         perform_enqueued_jobs do
-          (Studio::Auth::LoginCode::APP_REVIEW_LOCKOUT_WRONG_CODES / Studio::Auth::LoginCode::MAX_ATTEMPTS).times do
+          (Studio::Auth::SignInLimits::APP_REVIEW_LOCKOUT_WRONG_CODES / Studio::Auth::LoginCode::MAX_ATTEMPTS).times do
             issued = request_sign_in("review@studio.com", device_cookie: stranger)
             Studio::Auth::LoginCode::MAX_ATTEMPTS.times { verify(issued, code: "000000") }
           end
@@ -221,7 +221,9 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
   end
 
   test "the per-IP hourly limit is counted in the database" do
-    Studio::Auth::LoginCode::IP_HOURLY_LIMIT.times { |n| request_sign_in("visitor#{n}@studio.com", device_cookie: stranger) }
+    Studio::Auth::SignInLimits::IP_HOURLY_LIMIT.times do |n|
+      request_sign_in("visitor#{n}@studio.com", device_cookie: stranger)
+    end
 
     assert_equal :too_many_requests, request_sign_in("cook@studio.com")
   end
@@ -262,10 +264,10 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
   end
 
   def lock_account(email_address = "cook@studio.com")
-    (Studio::Auth::LoginCode::LOCKOUT_WRONG_CODES / Studio::Auth::LoginCode::MAX_ATTEMPTS).times do
+    (Studio::Auth::SignInLimits::LOCKOUT_WRONG_CODES / Studio::Auth::LoginCode::MAX_ATTEMPTS).times do
       issued = issue_to(email_address)
       Studio::Auth::LoginCode::MAX_ATTEMPTS.times { verify(issued, code: "000000x") }
-      travel Studio::Auth::LoginCode::RESEND_INTERVAL + 1.second
+      travel Studio::Auth::SignInLimits::RESEND_INTERVAL + 1.second
     end
   end
 

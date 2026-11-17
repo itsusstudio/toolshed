@@ -98,9 +98,9 @@ module Studio
           delete logout_path
 
           attacker = open_session
-          (LoginCode::LOCKOUT_WRONG_CODES / LoginCode::MAX_ATTEMPTS).times do
+          (SignInLimits::LOCKOUT_WRONG_CODES / LoginCode::MAX_ATTEMPTS).times do
             attacker.post login_path, params: {email_address: "cook@studio.com"}
-            travel LoginCode::RESEND_INTERVAL + 1.second
+            travel SignInLimits::RESEND_INTERVAL + 1.second
             LoginCode::MAX_ATTEMPTS.times { attacker.post verify_path, params: {code: "000000"} }
           end
           perform_enqueued_jobs

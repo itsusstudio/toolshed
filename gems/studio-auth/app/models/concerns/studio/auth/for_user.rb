@@ -54,7 +54,7 @@ module Studio
       end
 
       def sign_in_locked?
-        LoginCode.locked_out?(email_address)
+        SignInLimits.locked_out?(email_address)
       end
 
       # For support: lifts a lockout at once. Clearing the login codes resets
