@@ -12,7 +12,12 @@ nl: &nl
         email_label: "E-mailadres"
         submit: "Code versturen"
         no_account: "Heb je nog geen account?"
-        sign_up: "Account aanmaken"
+        sign_up: "Maak er een aan"
+      no_account:
+        title: "Nieuw bij %{app_name}?"
+        body: "Er is geen account voor %{email_address}."
+        create: "Account aanmaken"
+        change: "Ander e-mailadres gebruiken"
     codes:
       new:
         title: "Check je e-mail"
@@ -38,6 +43,7 @@ nl: &nl
       invitation_unavailable: "Deze uitnodigingslink is niet meer geldig. Vraag een nieuwe aan."
       too_many_requests: "Te veel pogingen. Probeer het over een paar minuten opnieuw."
       undeliverable: "Vul een geldig e-mailadres in."
+      no_account: "Er is geen account met dit e-mailadres."
       wrong_code: "Onjuiste code"
       expired: "Code verlopen. Vraag een nieuwe aan."
       too_many_attempts: "Te veel pogingen. Vraag een nieuwe code aan."

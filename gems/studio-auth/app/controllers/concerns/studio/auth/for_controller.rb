@@ -6,6 +6,7 @@ module Studio
       RETURN_TO_KEY = :studio_auth_return_to
       VERIFIED_EMAIL_KEY = :studio_auth_verified_email_address
       VERIFIED_EMAIL_TTL = 30.minutes
+      NEW_ACCOUNT_EMAIL_KEY = :studio_auth_new_account_email_address
 
       included do
         before_action :require_authentication
@@ -83,6 +84,16 @@ module Studio
         return if !verified.is_a?(Hash) || verified["verified_at"].to_i <= VERIFIED_EMAIL_TTL.ago.to_i
 
         verified["email_address"]
+      end
+
+      # The address typed on the sign-in page within the last
+      # VERIFIED_EMAIL_TTL that had no account, or nil. Unverified: a signup
+      # form may only prefill its email field from it.
+      def new_account_email_address
+        typed = session[NEW_ACCOUNT_EMAIL_KEY]
+        return if !typed.is_a?(Hash) || typed["typed_at"].to_i <= VERIFIED_EMAIL_TTL.ago.to_i
+
+        typed["email_address"]
       end
 
       # Whether +email_address+ is that verified address. A signup form checks

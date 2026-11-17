@@ -36,6 +36,23 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
     assert_equal 1, LoginCode.count
   end
 
+  test "the same browser asking for a new code inside the cooldown gets one and the old one ends" do
+    first = request_sign_in("cook@studio.com")
+    second = LoginCode.request_for(email_address: "cook@studio.com", device_cookie: @device,
+      ip_address: "1.2.3.4", user_agent: "test", resend: true)
+
+    assert_equal :expired, verify(first).status
+    assert_equal :verified, verify(second).status
+  end
+
+  test "an address with no account is turned away when the caller needs an account" do
+    result = LoginCode.request_for(email_address: "nobody@studio.com", device_cookie: @device,
+      ip_address: "1.2.3.4", user_agent: "test", account_required: true)
+
+    assert_equal :no_account, result
+    assert_equal 0, LoginCode.count
+  end
+
   test "another browser inside the cooldown is turned away and cannot touch the first code" do
     victim = request_sign_in("cook@studio.com")
 

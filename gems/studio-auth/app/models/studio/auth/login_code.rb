@@ -28,15 +28,18 @@ module Studio
       scope :purgeable, -> { where(created_at: ...LOCKOUT_WINDOW.ago) }
 
       class << self
-        def request_for(email_address:, device_cookie:, ip_address:, user_agent:)
+        def request_for(email_address:, device_cookie:, ip_address:, user_agent:,
+          account_required: false, resend: false)
           email_address = TypedInput.email_address(email_address)
           return :undeliverable if Deliverability.undeliverable?(email_address)
           # Backs up the cache-held rate limits, which turn off if the cache
           # fails; this one counts in the primary database and fails closed.
           return :too_many_requests if ip_over_hourly_limit?(ip_address)
 
-          device_cookie.ensure_device_token!
           user = ::User.find_by(email_address: email_address)
+          return :no_account if account_required && user.nil?
+
+          device_cookie.ensure_device_token!
           known_device = device_cookie.trusted_for?(user)
           device_digest = KnownDevice.digest(device_cookie.device_token) if known_device
           app_review = AppReviewAccounts.include?(email_address)
@@ -44,12 +47,16 @@ module Studio
           transaction do
             lock_address(email_address)
             # The same browser asking again (a double submit, or a retry after
-            # a lost response) gets its own code back. Another browser inside
-            # the resend window must not: it could burn the first browser's
-            # attempts. A known device takes over instead.
+            # a lost response) gets its own code back, unless it asked for a
+            # new one. Another browser inside the resend window must not: it
+            # could burn the first browser's attempts. A known device takes
+            # over instead.
             recent = recent_login_code(email_address)
-            next Issued.new(id: recent.id, code: nil) if recent&.from?(device_cookie)
-            next :too_many_requests if recent && !known_device && !app_review
+            if recent&.from?(device_cookie)
+              next Issued.new(id: recent.id, code: nil) if !resend
+            elsif recent && !known_device && !app_review
+              next :too_many_requests
+            end
             next :too_many_requests if locked_out?(email_address, device_digest: device_digest)
             next :too_many_requests if mail_count(email_address, device_digest) >= MAIL_BUDGET && !app_review
 

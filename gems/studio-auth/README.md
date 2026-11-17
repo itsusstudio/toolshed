@@ -7,10 +7,10 @@ expiring database sessions, the staff flag, and lockout mail.
 
 | | |
 | --- | --- |
-| Code | 6 digits, valid 10 minutes, single use, 5 attempts. One resend per 60 seconds |
+| Code | 6 digits, valid 10 minutes, single use, 5 attempts. Asking again from the same browser within 60 seconds returns the same code, except "Send a new code", which mails a fresh one and ends the old one |
 | Lockout | 10 wrong codes in 24 hours pause sign-in for 1 hour, plus 1 hour per further wrong code. A known device counts only its own wrong codes |
 | Limits | 10 code requests an hour per address (a known device has its own 10), 30 an hour per IP (per /64 for IPv6), also counted in the database |
-| Unknown address | Same response as a real one. With sign-up it gets a sign-up code; without, no mail |
+| Unknown address | No mail. With sign-up, a page says there's no account for that address and offers "Create an account" or "Use a different email address"; without, an error under the field. Sign-up codes come only from the app's signup form (`start_sign_up_for`) |
 | Mail | The code and the lockout notice only, text and HTML, no links but support and legal. Sent on `less_than_five_seconds` |
 
 ## Install
@@ -104,8 +104,8 @@ Every studio app shows the same pages and mail. The app supplies only:
   `<%= content_for?(:studio_auth_page) ? yield(:studio_auth_page) : yield %>`
   (the gem also sets `content_for :page_title`)
 
-The sign-in page links "Don't have an account? Sign up" to the app's
-`signup` route when it has one.
+The sign-in page shows "Don't have an account? Create one" under the email
+field, linked to the app's `signup` route when it has one.
 
 App pages can use the same frame with `layout "studio/auth"`.
 
@@ -129,6 +129,9 @@ locale files (`studio_auth.codes.new.title`, ...) only where a locale needs it.
   `verified_email_address`, and when `verified_email_address?(email_address)`
   holds on submit it creates the user and calls `start_new_session_for(user)`
   instead of mailing a second code.
+- `new_account_email_address` is the address typed on the sign-in page in the
+  last 30 minutes that had no account. It is unverified: a signup form only
+  prefills its email field from it.
 - `start_sign_in_for(user)` mails a code to an existing user.
 - `store_return_path(path)` returns a visitor to `path` after sign-in.
 - Override `after_sign_in(user)`, `after_authentication_path` (root by default)

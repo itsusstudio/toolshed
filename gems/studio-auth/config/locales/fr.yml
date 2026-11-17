@@ -12,7 +12,12 @@ fr: &fr
         email_label: "Adresse courriel"
         submit: "Envoyer le code"
         no_account: "Pas encore de compte ?"
-        sign_up: "S’inscrire"
+        sign_up: "En créer un"
+      no_account:
+        title: "Première visite sur %{app_name} ?"
+        body: "Aucun compte n’utilise l’adresse %{email_address}."
+        create: "Créer un compte"
+        change: "Utiliser une autre adresse courriel"
     codes:
       new:
         title: "Consultez vos courriels"
@@ -38,6 +43,7 @@ fr: &fr
       invitation_unavailable: "Ce lien d’invitation n’est plus valide. Demandez-en un nouveau."
       too_many_requests: "Trop de tentatives. Réessayez dans quelques minutes."
       undeliverable: "Saisissez une adresse courriel valide."
+      no_account: "Aucun compte n’utilise cette adresse courriel."
       wrong_code: "Code incorrect"
       expired: "Code expiré. Demandez-en un nouveau."
       too_many_attempts: "Trop d'essais. Demandez un nouveau code."

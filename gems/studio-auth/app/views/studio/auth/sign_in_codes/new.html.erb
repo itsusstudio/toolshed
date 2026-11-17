@@ -32,9 +32,9 @@
   <%= form.button t("studio_auth.codes.new.sign_in"), id: "studio-auth-code-submit", class: "u-btn u-btn-primary" %>
 <% end %>
 
-<%# Asking again inside LoginCode::RESEND_INTERVAL gets the same code back, not a new mail. %>
 <%= form_with url: main_app.login_path, id: "studio-auth-resend-form", class: "u-text-small" do |form| %>
   <%= form.hidden_field :email_address, value: @pending.email_address %>
+  <%= form.hidden_field :resend, value: "1" %>
   <%= t("studio_auth.codes.new.resend_prompt") %>
   <%= form.button t("studio_auth.codes.new.resend"), class: "u-link-btn" %>
 <% end %>

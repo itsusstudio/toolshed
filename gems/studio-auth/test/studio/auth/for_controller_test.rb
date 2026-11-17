@@ -114,22 +114,90 @@ class Studio::Auth::ForControllerTest < ActionDispatch::IntegrationTest
     assert_select "input.u-input[name=email_address][autocomplete=email]"
   end
 
-  test "the code page resends to the same address, and a new code arrives once the resend window passes" do
+  test "sending a new code from the code page mails a fresh one right away and ends the old one" do
     User.create!(email_address: "cook@studio.com")
-    post login_path, params: {email_address: "cook@studio.com"}
+    old_code = request_authentication_code("cook@studio.com")
     get verify_path
 
     assert_select "form#studio-auth-resend-form[action=?] input[name=email_address][value=?]", login_path, "cook@studio.com"
+    assert_select "form#studio-auth-resend-form input[name=resend]"
 
-    travel Studio::Auth::LoginCode::RESEND_INTERVAL + 1.second do
-      assert_difference -> { Studio::Auth::LoginCode.count }, 1 do
-        post login_path, params: {email_address: "cook@studio.com"}
-      end
-      assert_redirected_to verify_path
+    perform_enqueued_jobs { post login_path, params: {email_address: "cook@studio.com", resend: "1"} }
+    assert_redirected_to verify_path
+    new_code = ActionMailer::Base.deliveries.last.text_part.body.to_s[/\b\d{6}\b/]
+
+    post verify_path, params: {code: old_code}
+    assert_response :unprocessable_content
+    post verify_path, params: {code: new_code}
+    assert_redirected_to root_path
+  end
+
+  test "sending a new code works for an address that is signing up" do
+    post "/signup_code", params: {email_address: "new@studio.com"}
+
+    assert_difference -> { Studio::Auth::LoginCode.count }, 1 do
+      post login_path, params: {email_address: "new@studio.com", resend: "1"}
+    end
+    assert_redirected_to verify_path
+  end
+
+  test "the resend flag counts only for the address this browser is verifying" do
+    User.create!(email_address: "cook@studio.com")
+    post login_path, params: {email_address: "cook@studio.com"}
+
+    assert_no_difference -> { Studio::Auth::LoginCode.count } do
+      post login_path, params: {email_address: "stranger@studio.com", resend: "1"}
+    end
+    assert_redirected_to login_path
+  end
+
+  test "an address with no account gets the new-account page, which offers sign-up or another address" do
+    assert_no_difference -> { Studio::Auth::LoginCode.count } do
+      post login_path, params: {email_address: "Nobody@Studio.com"}
+    end
+    assert_redirected_to login_path
+    follow_redirect!
+
+    assert_select "#studio-auth-no-account-email", text: /nobody@studio\.com/
+    assert_select "a#studio-auth-no-account-create[href=?]", signup_path
+    assert_select "a#studio-auth-no-account-change[href=?]", login_path
+  end
+
+  test "using a different address from the new-account page prefills the typed one to fix" do
+    post login_path, params: {email_address: "nobody@studio.com"}
+    follow_redirect!
+
+    get login_path
+
+    assert_select "input[name=email_address][value=?]", "nobody@studio.com"
+    assert_select ".u-field #studio-auth-sign-up a[href=?]", signup_path
+  end
+
+  test "the signup form can prefill the address typed on the sign-in page, for a while" do
+    post login_path, params: {email_address: "nobody@studio.com"}
+
+    get "/signup_typed"
+    assert_equal "nobody@studio.com", response.body
+
+    travel Studio::Auth::ForController::VERIFIED_EMAIL_TTL + 1.second do
+      get "/signup_typed"
+      assert_equal "", response.body
     end
   end
 
+  test "without sign-up an address with no account gets an error under the field" do
+    Studio::Auth.stubs(:sign_up?).returns(false)
+
+    post login_path, params: {email_address: "nobody@studio.com"}
+
+    assert_response :unprocessable_content
+    assert_select "input[name=email_address][value=?][aria-invalid=true]", "nobody@studio.com"
+    assert_select "#studio-auth-email-error", text: I18n.t("studio_auth.flash.no_account")
+    assert_select "#studio-auth-sign-up", count: 0
+  end
+
   test "going back to change the address prefills it without putting it in the URL" do
+    User.create!(email_address: "cook@studio.com")
     post login_path, params: {email_address: "cook@studio.com"}
     get verify_path
     assert_select "a#studio-auth-start-over[href=?]", login_path
@@ -320,6 +388,7 @@ class Studio::Auth::ForControllerTest < ActionDispatch::IntegrationTest
     assert_select "#studio-auth-dev-code", false
 
     Studio::Auth::PendingLoginCode.stubs(:include_dev_code?).returns(true)
+    User.create!(email_address: "other@studio.com")
     post login_path, params: {email_address: "other@studio.com"}
     follow_redirect!
     assert_select "#studio-auth-dev-code"

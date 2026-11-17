@@ -13,18 +13,30 @@ module Studio
         by: -> { rate_limit_key }, with: :too_many_requests
 
       def new
-        @pending_email_address = flash[:studio_auth_email_address] || PendingLoginCode.from_rails_session(session)&.email_address
+        @new_account_email_address = new_account_email_address
+        return render(:no_account) if flash[:studio_auth_no_account] && @new_account_email_address
+
+        @pending_email_address = flash[:studio_auth_email_address] || @new_account_email_address ||
+          PendingLoginCode.from_rails_session(session)&.email_address
         @field_error = flash[:studio_auth_field_error]
       end
 
       def create
+        resend = params[:resend].present? && pending_code_email_address?
         issued = LoginCode.request_for(
           email_address: params[:email_address], device_cookie: device_cookie,
-          ip_address: request.remote_ip, user_agent: request.user_agent
+          ip_address: request.remote_ip, user_agent: request.user_agent,
+          account_required: !resend, resend: resend
         )
 
-        if issued == :undeliverable
-          @field_error = t("studio_auth.flash.undeliverable")
+        if issued == :no_account && Studio::Auth.sign_up?
+          typed = {"email_address" => TypedInput.email_address(params[:email_address]), "typed_at" => Time.current.to_i}
+          session[NEW_ACCOUNT_EMAIL_KEY] = typed
+          flash[:studio_auth_no_account] = true
+          return redirect_to(main_app.login_path, status: :see_other)
+        end
+        if [:undeliverable, :no_account].include?(issued)
+          @field_error = t("studio_auth.flash.#{issued}")
           return render(:new, status: :unprocessable_content)
         end
         return too_many_requests if issued == :too_many_requests
@@ -45,6 +57,13 @@ module Studio
       end
 
       private
+
+      # A resend only counts for the address this browser is already
+      # verifying, so the flag can't skip the account check for any address.
+      def pending_code_email_address?
+        pending = PendingLoginCode.from_rails_session(session)
+        pending.present? && pending.email_address == TypedInput.email_address(params[:email_address])
+      end
 
       def redirect_signed_in
         redirect_to main_app.root_path if authenticated?

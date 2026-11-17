@@ -19,22 +19,20 @@ module Studio
           assert_select "form[action=?] input[name=email_address]", login_path
         end
 
-        test "studio-auth: an unknown address gets the same answer as a known one" do
-          create_authentication_user("known@studio.com")
+        test "studio-auth: an address with no account is told so and gets no mail" do
+          assert_no_difference -> { LoginCode.count } do
+            perform_enqueued_jobs { post login_path, params: {email_address: "nobody@studio.com"} }
+          end
 
-          perform_enqueued_jobs { post login_path, params: {email_address: "nobody@studio.com"} }
-          unknown_location = response.location
-          follow_redirect!
-          unknown_page = comparable_page("nobody@studio.com")
-
-          assert_equal (Auth.sign_up? ? 1 : 0), ActionMailer::Base.deliveries.size
-          ActionMailer::Base.deliveries.clear
-          reset!
-          perform_enqueued_jobs { post login_path, params: {email_address: "known@studio.com"} }
-          assert_equal unknown_location, response.location
-          follow_redirect!
-          assert_equal unknown_page, comparable_page("known@studio.com")
-          assert_equal 1, ActionMailer::Base.deliveries.size
+          if Auth.sign_up?
+            assert_redirected_to login_path
+            follow_redirect!
+            assert_select "#studio-auth-no-account-email"
+          else
+            assert_response :unprocessable_content
+            assert_select "#studio-auth-email-error"
+          end
+          assert_empty ActionMailer::Base.deliveries
         end
 
         test "studio-auth: a code signs in once and resets the Rails session" do
@@ -160,10 +158,6 @@ module Studio
         def assert_signed_in
           assert_response :see_other
           refute_includes [login_url, verify_url], response.location
-        end
-
-        def comparable_page(email_address)
-          response.body.gsub(email_address, "EMAIL").gsub(/name="authenticity_token" value="[^"]*"/, "")
         end
 
         def wrong_code(code)
