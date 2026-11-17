@@ -67,10 +67,6 @@ module Studio
         pending = PendingLoginCode.from_rails_session(session)
         pending.present? && pending.email_address == TypedInput.email_address(params[:email_address])
       end
-
-      def redirect_signed_in
-        redirect_to main_app.root_path if authenticated?
-      end
     end
   end
 end

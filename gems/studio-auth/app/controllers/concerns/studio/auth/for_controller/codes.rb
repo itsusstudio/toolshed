@@ -8,12 +8,8 @@ module Studio
         private
 
         def start_sign_in_for(user)
-          start_sign_up_for(user.email_address)
-        end
-
-        def start_sign_up_for(email_address)
-          issued = RequestCode.call(email_address: email_address, **code_request_details)
-          redirect_to_code_page(issued, TypedInput.email_address(email_address))
+          issued = RequestCode.call(email_address: user.email_address, **code_request_details)
+          redirect_to_code_page(issued, TypedInput.email_address(user.email_address))
         end
 
         def code_request_details

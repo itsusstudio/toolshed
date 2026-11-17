@@ -18,6 +18,14 @@ fr: &fr
         body: "Aucun compte n’utilise l’adresse %{email_address}."
         create: "Créer un compte"
         change: "Utiliser une autre adresse courriel"
+    sign_ups:
+      new:
+        title: "Créez votre compte %{app_name}"
+        full_name_label: "Nom complet"
+        email_label: "Adresse courriel"
+        submit: "Continuer"
+        have_account: "Vous avez déjà un compte ?"
+        sign_in: "Se connecter"
     codes:
       new:
         title: "Consultez vos courriels"
@@ -45,6 +53,8 @@ fr: &fr
       resend_too_soon: "Patientez quelques secondes avant de demander un autre code."
       undeliverable: "Saisissez une adresse courriel valide."
       no_account: "Aucun compte n’utilise cette adresse courriel."
+      full_name_missing: "Saisissez votre nom complet."
+      full_name_too_long: "Utilisez %{count} caractères au maximum."
       wrong_code: "Code incorrect"
       expired: "Code expiré. Demandez-en un nouveau."
       too_many_attempts: "Trop d'essais. Demandez un nouveau code."

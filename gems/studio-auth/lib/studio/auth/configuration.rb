@@ -21,6 +21,12 @@ module Studio
       # render inside; wordmark is the app name's voice, "serif" or "sans".
       attr_writer :page_layout, :wordmark
 
+      # sign_up false turns new accounts off: the signup page sends people to
+      # sign in, and an address with no account gets an error there.
+      attr_writer :sign_up
+
+      def sign_up = @sign_up != false
+
       def page_layout = @page_layout || "application"
 
       def wordmark = @wordmark || "serif"

@@ -18,6 +18,14 @@ en: &en
         body: "There’s no account for %{email_address}."
         create: "Create an account"
         change: "Use a different email address"
+    sign_ups:
+      new:
+        title: "Create your %{app_name} account"
+        full_name_label: "Full name"
+        email_label: "Email address"
+        submit: "Continue"
+        have_account: "Already have an account?"
+        sign_in: "Sign in"
     codes:
       new:
         title: "Check your email"
@@ -45,6 +53,8 @@ en: &en
       resend_too_soon: "Wait a few seconds before asking for another code."
       undeliverable: "Enter a valid email address."
       no_account: "There’s no account with this email address."
+      full_name_missing: "Enter your full name."
+      full_name_too_long: "Use %{count} characters or fewer."
       wrong_code: "Incorrect code"
       expired: "That code expired. Send a new one."
       too_many_attempts: "Too many incorrect codes. Send a new one."

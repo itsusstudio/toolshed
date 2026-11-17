@@ -35,6 +35,16 @@ module Studio
           assert_empty ActionMailer::Base.deliveries
         end
 
+        test "studio-auth: signing up writes no user before its code checks out" do
+          skip "sign-up is off" if !Auth.sign_up?
+
+          assert_no_difference -> { ::User.count } do
+            params = {full_name: "New Person", email_address: "new@studio.com"}
+            perform_enqueued_jobs { post signup_path, params: params }
+          end
+          assert_redirected_to verify_path
+        end
+
         test "studio-auth: a code signs in once and resets the Rails session" do
           create_authentication_user("cook@studio.com")
           get login_path

@@ -1,0 +1,47 @@
+<% content_for :page_title, t("studio_auth.sign_ups.new.title", app_name: Studio::Auth.config.app_name) %>
+
+<h1 id="studio-auth-sign-up-title" class="u-text-page-title">
+  <%= t("studio_auth.sign_ups.new.title", app_name: Studio::Auth.config.app_name) %>
+</h1>
+
+<%# novalidate: browsers reject addresses typed with Arabic or Thai digits or invisible marks and block the submit silently; the server normalizes them. %>
+<%= form_with url: main_app.signup_path, id: "studio-auth-sign-up-form", class: "u-form",
+      html: {novalidate: true} do |form| %>
+  <div class="u-field">
+    <%= form.label :full_name, t("studio_auth.sign_ups.new.full_name_label") %>
+    <%= form.text_field :full_name,
+          value: @full_name,
+          class: "u-input",
+          placeholder: " ",
+          required: true,
+          autofocus: true,
+          autocomplete: "name",
+          aria: {
+            invalid: @full_name_error.present?,
+            describedby: ("studio-auth-full-name-error" if @full_name_error)
+          } %>
+    <% if @full_name_error %>
+      <p id="studio-auth-full-name-error" class="u-error" role="alert"><%= @full_name_error %></p>
+    <% end %>
+  </div>
+  <div class="u-field">
+    <%= form.label :email_address, t("studio_auth.sign_ups.new.email_label") %>
+    <%= form.email_field :email_address,
+          value: @email_address,
+          class: "u-input",
+          placeholder: " ",
+          required: true,
+          autocomplete: "email",
+          aria: {invalid: @field_error.present?, describedby: ("studio-auth-email-error" if @field_error)} %>
+    <% if @field_error %>
+      <p id="studio-auth-email-error" class="u-error" role="alert"><%= @field_error %></p>
+    <% end %>
+    <small id="studio-auth-sign-in">
+      <%= t("studio_auth.sign_ups.new.have_account") %>
+      <%= link_to t("studio_auth.sign_ups.new.sign_in"), main_app.login_path %>
+    </small>
+  </div>
+  <u-time-zone><%= form.hidden_field :time_zone, value: params[:time_zone] %></u-time-zone>
+  <%= form.button t("studio_auth.sign_ups.new.submit"), id: "studio-auth-sign-up-submit",
+        class: "u-btn u-btn-primary" %>
+<% end %>

@@ -27,7 +27,7 @@ module Studio
       end
 
       def sign_up?
-        ::Rails.application.routes.url_helpers.respond_to?(:signup_path)
+        config.sign_up
       end
     end
   end

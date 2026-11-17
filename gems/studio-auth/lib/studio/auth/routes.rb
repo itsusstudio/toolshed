@@ -7,6 +7,8 @@ module Studio
         scope module: "studio/auth" do
           get "login", to: "sign_ins#new", as: :login
           post "login", to: "sign_ins#create"
+          get "signup", to: "sign_ups#new", as: :signup
+          post "signup", to: "sign_ups#create"
           get "verify", to: "sign_in_codes#new", as: :verify
           post "verify", to: "sign_in_codes#create"
           delete "logout", to: "sign_ins#destroy", as: :logout

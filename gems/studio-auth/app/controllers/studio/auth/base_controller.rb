@@ -25,6 +25,10 @@ module Studio
         TypedInput.code(params[:code])
       end
 
+      def redirect_signed_in
+        redirect_to main_app.root_path if authenticated?
+      end
+
       def device_cookie
         DeviceCookie.new(cookies)
       end

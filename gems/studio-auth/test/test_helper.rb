@@ -54,6 +54,7 @@ ActiveRecord::Migration.verbose = false
 ActiveRecord::Schema.define do
   create_table :users do |t|
     t.string :email_address, index: {unique: true}
+    t.string :full_name
     t.string :locale
     t.timestamps
   end
@@ -86,10 +87,9 @@ DummyApp.routes.draw do
   studio_auth
   root to: "pages#show"
   get "/private", to: "pages#private"
-  post "/signup", to: "signups#create"
-  post "/signup_code", to: "signups#code"
-  get "/signup_verified", to: "signups#verified"
-  get "/signup_typed", to: "signups#typed"
+  post "/start_sign_in", to: "starts#create"
+  get "/setup", to: "setups#show"
+  post "/setup", to: "setups#create"
 end
 
 module ApplicationCable
@@ -100,12 +100,6 @@ end
 
 class ApplicationController < ActionController::Base
   include Studio::Auth::ForController
-
-  private
-
-  def create_account_for(email_address)
-    User.create!(email_address: email_address)
-  end
 end
 
 class PagesController < ApplicationController
@@ -120,24 +114,26 @@ class PagesController < ApplicationController
   end
 end
 
-class SignupsController < ApplicationController
+class StartsController < ApplicationController
   allow_unauthenticated_access
 
   def create
-    user = User.find_by(email_address: params[:email_address]) || User.create!(email_address: params[:email_address])
-    start_sign_in_for(user)
+    start_sign_in_for(User.find_by!(email_address: params[:email_address]))
+  end
+end
+
+class SetupsController < ApplicationController
+  allow_unauthenticated_access
+
+  def show
+    pending = pending_sign_up
+    render plain: pending ? [pending.email_address, pending.full_name, pending.time_zone].join(" ") : "none"
   end
 
-  def code
-    start_sign_up_for(params[:email_address])
-  end
-
-  def verified
-    render plain: [verified_email_address?(params[:email_address]), verified_email_address].join(" ")
-  end
-
-  def typed
-    render plain: new_account_email_address.to_s
+  def create
+    user = User.create!(email_address: pending_sign_up.email_address, full_name: pending_sign_up.full_name)
+    finish_sign_up(user)
+    redirect_to after_sign_up(user), status: :see_other
   end
 end
 

@@ -15,9 +15,8 @@ module Studio
 
         status, user = result.status, result.user
         if status == :verified && user.nil?
-          user = create_account_for(result.email_address)
-          return clear_pending_login_code if performed?
-          status = :expired if user.nil?
+          clear_pending_login_code
+          return continue_sign_up(result.email_address)
         end
 
         case status

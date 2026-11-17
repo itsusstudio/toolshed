@@ -4,9 +4,9 @@ module Studio
       extend ActiveSupport::Concern
 
       RETURN_TO_KEY = :studio_auth_return_to
-      VERIFIED_EMAIL_KEY = :studio_auth_verified_email_address
-      VERIFIED_EMAIL_TTL = 30.minutes
       NEW_ACCOUNT_EMAIL_KEY = :studio_auth_new_account_email_address
+      NEW_ACCOUNT_EMAIL_TTL = 30.minutes
+      SIGN_UP_DETAILS_KEY = :studio_auth_sign_up_details
 
       include Authentication
       include Sessions

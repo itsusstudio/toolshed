@@ -147,7 +147,7 @@ class Studio::Auth::ForControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "sending a new code works for an address that is signing up" do
-    post "/signup_code", params: {email_address: "new@studio.com"}
+    post signup_path, params: {full_name: "New Cook", email_address: "new@studio.com"}
     travel Studio::Auth::SignInLimits::RESEND_COOLDOWN + 1.second
 
     assert_difference -> { Studio::Auth::LoginCode.count }, 1 do
@@ -188,15 +188,15 @@ class Studio::Auth::ForControllerTest < ActionDispatch::IntegrationTest
     assert_select ".u-field #studio-auth-sign-up a[href=?]", signup_path
   end
 
-  test "the signup form can prefill the address typed on the sign-in page, for a while" do
+  test "the signup form prefills the address typed on the sign-in page, for a while" do
     post login_path, params: {email_address: "nobody@studio.com"}
 
-    get "/signup_typed"
-    assert_equal "nobody@studio.com", response.body
+    get signup_path
+    assert_select "input[name=email_address][value=?]", "nobody@studio.com"
 
-    travel Studio::Auth::ForController::VERIFIED_EMAIL_TTL + 1.second do
-      get "/signup_typed"
-      assert_equal "", response.body
+    travel Studio::Auth::ForController::NEW_ACCOUNT_EMAIL_TTL + 1.second do
+      get signup_path
+      assert_select "input[name=email_address][value]", count: 0
     end
   end
 
@@ -265,86 +265,10 @@ class Studio::Auth::ForControllerTest < ActionDispatch::IntegrationTest
 
   test "start_sign_in_for sends an old undeliverable address back to login instead of crashing" do
     User.new(email_address: "old@example.com").save!(validate: false)
-    post "/signup", params: {email_address: "old@example.com"}
+    post "/start_sign_in", params: {email_address: "old@example.com"}
 
     assert_redirected_to login_path
     assert_equal I18n.t("studio_auth.flash.undeliverable"), flash[:alert]
-  end
-
-  test "start_sign_up_for mails a code and creates the account only once the code is right" do
-    perform_enqueued_jobs { post "/signup_code", params: {email_address: " New@Studio.com "} }
-
-    assert_redirected_to verify_path
-    assert_not User.exists?(email_address: "new@studio.com")
-    code = ActionMailer::Base.deliveries.last.text_part.body.to_s[/\b\d{6}\b/]
-
-    post verify_path, params: {code: code}
-
-    assert_response :see_other
-    assert_equal 1, User.find_by!(email_address: "new@studio.com").sessions.count
-  end
-
-  test "a right sign-up code with nothing to create sends the visitor back to login" do
-    ApplicationController.any_instance.stubs(:create_account_for).returns(nil)
-    perform_enqueued_jobs { post "/signup_code", params: {email_address: "new@studio.com"} }
-    code = ActionMailer::Base.deliveries.last.text_part.body.to_s[/\b\d{6}\b/]
-
-    post verify_path, params: {code: code}
-
-    assert_redirected_to login_path
-    assert_equal 0, Session.count
-  end
-
-  test "create_account_for can redirect instead, and the code is spent" do
-    ApplicationController.class_eval { def create_account_for(email_address) = redirect_to("/finish") }
-    perform_enqueued_jobs { post "/signup_code", params: {email_address: "new@studio.com"} }
-    code = ActionMailer::Base.deliveries.last.text_part.body.to_s[/\b\d{6}\b/]
-
-    post verify_path, params: {code: code}
-
-    assert_redirected_to "/finish"
-    assert_equal 0, Session.count
-  ensure
-    ApplicationController.class_eval { def create_account_for(email_address) = User.create!(email_address: email_address) }
-  end
-
-  test "#create_account_for sends a verified sign-up to the signup form, keeping the address out of the URL" do
-    ApplicationController.class_eval { remove_method :create_account_for }
-    perform_enqueued_jobs { post "/signup_code", params: {email_address: "new@studio.com"} }
-    code = ActionMailer::Base.deliveries.last.text_part.body.to_s[/\b\d{6}\b/]
-
-    post verify_path, params: {code: code}
-
-    assert_redirected_to signup_path
-    assert_equal 0, Session.count
-  ensure
-    ApplicationController.class_eval { def create_account_for(email_address) = User.create!(email_address: email_address) }
-  end
-
-  test "#verified_email_address holds the address a sign-up code proved, for 30 minutes" do
-    ApplicationController.class_eval { remove_method :create_account_for }
-    perform_enqueued_jobs { post "/signup_code", params: {email_address: "new@studio.com"} }
-    code = ActionMailer::Base.deliveries.last.text_part.body.to_s[/\b\d{6}\b/]
-    post verify_path, params: {code: code}
-
-    get "/signup_verified", params: {email_address: " New@Studio.com "}
-    assert_equal "true new@studio.com", response.body
-
-    get "/signup_verified", params: {email_address: "other@studio.com"}
-    assert_equal "false new@studio.com", response.body
-
-    travel 31.minutes do
-      get "/signup_verified", params: {email_address: "new@studio.com"}
-      assert_equal "false ", response.body
-    end
-  ensure
-    ApplicationController.class_eval { def create_account_for(email_address) = User.create!(email_address: email_address) }
-  end
-
-  test "#verified_email_address? is false for a browser that never entered a sign-up code" do
-    get "/signup_verified", params: {email_address: "new@studio.com"}
-
-    assert_equal "false ", response.body
   end
 
   test "sign out everywhere ends every session, forgets known devices and cancels codes waiting to be typed" do

@@ -18,6 +18,14 @@ nl: &nl
         body: "Er is geen account voor %{email_address}."
         create: "Account aanmaken"
         change: "Ander e-mailadres gebruiken"
+    sign_ups:
+      new:
+        title: "Maak je %{app_name}-account aan"
+        full_name_label: "Volledige naam"
+        email_label: "E-mailadres"
+        submit: "Doorgaan"
+        have_account: "Heb je al een account?"
+        sign_in: "Inloggen"
     codes:
       new:
         title: "Check je e-mail"
@@ -45,6 +53,8 @@ nl: &nl
       resend_too_soon: "Wacht een paar seconden voordat je een nieuwe code vraagt."
       undeliverable: "Vul een geldig e-mailadres in."
       no_account: "Er is geen account met dit e-mailadres."
+      full_name_missing: "Vul je volledige naam in."
+      full_name_too_long: "Gebruik maximaal %{count} tekens."
       wrong_code: "Onjuiste code"
       expired: "Code verlopen. Vraag een nieuwe aan."
       too_many_attempts: "Te veel pogingen. Vraag een nieuwe code aan."

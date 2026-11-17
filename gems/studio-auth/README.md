@@ -10,7 +10,7 @@ expiring database sessions, the staff flag, and lockout mail.
 | Code | 6 digits, valid 10 minutes, single use, 5 attempts. Asking again from the same browser within 60 seconds returns the same code, except "Send a new code", which mails a fresh one and ends the old one, at most once every 30 seconds |
 | Lockout | 10 wrong codes in 24 hours pause sign-in for 1 hour, plus 1 hour per further wrong code. A known device counts only its own wrong codes |
 | Limits | 5 code requests an hour per address (a known device has its own 5), 30 an hour per IP (per /64 for IPv6), also counted in the database |
-| Unknown address | No mail. With sign-up, a page says there's no account for that address and offers "Create an account" or "Use a different email address"; without, an error under the field. Sign-up codes come only from the app's signup form (`start_sign_up_for`) |
+| Unknown address | No mail. With sign-up, a page says there's no account for that address and offers "Create an account" or "Use a different email address"; without, an error under the field. Sign-up codes come only from the signup page |
 | Mail | The code and the lockout notice only, text and HTML, no links but support and legal. Sent on `less_than_five_seconds` |
 
 ## Install
@@ -106,7 +106,7 @@ Every studio app shows the same pages and mail. The app supplies only:
   (the gem also sets `content_for :page_title`)
 
 The sign-in page shows "Don't have an account? Create one" under the email
-field, linked to the app's `signup` route when it has one.
+field, linked to the gem's signup page, unless sign-up is off.
 
 App pages can use the same frame with `layout "studio/auth"`.
 
@@ -118,21 +118,22 @@ locale files (`studio_auth.codes.new.title`, ...) only where a locale needs it.
 
 - `allow_unauthenticated_access only: [...]` opens actions to signed-out visitors.
 - `authenticated?` and `current_user` in controllers and views.
-- Sign-up: an app that routes `signup_path` takes sign-ups. Its signup form
-  keeps what it collected (in the session, say) and calls
-  `start_sign_up_for(email_address)`, which creates nothing. When the code is
-  right the gem calls the app's `create_account_for(email_address)`, which
-  returns the new user, nil to send the visitor back to sign in, or redirects.
-  An address that already has an account just signs in.
-- By default `create_account_for` remembers, for 30 minutes, that this browser
-  proved the address, and redirects to `signup_path`. The address stays in the
-  session, never the URL. The signup form fills its email field from
-  `verified_email_address`, and when `verified_email_address?(email_address)`
-  holds on submit it creates the user and calls `start_new_session_for(user)`
-  instead of mailing a second code.
-- `new_account_email_address` is the address typed on the sign-in page in the
-  last 30 minutes that had no account. It is unverified: a signup form only
-  prefills its email field from it.
+- Sign-up is the gem's: `/signup` asks for a full name and an email address,
+  carries the browser's time zone, and mails a code. Nothing is written to
+  `users` before the code checks out. An address that already has an account
+  just signs in. `c.sign_up = false` turns new accounts off.
+- Once the code checks out, the sign-up waits in `studio_auth_pending_sign_ups`
+  for 30 days, and the browser gets a signed cookie for it. Typing the address
+  on the sign-in page again, on any browser, mails a code and carries on.
+- An app that needs a tenant or settings before the user exists overrides
+  `sign_up_setup_path`. Its setup screen reads `pending_sign_up`
+  (`email_address`, `full_name`, `time_zone`), creates the user and tenant
+  together and calls `finish_sign_up(user)`, which signs them in.
+- An app with no setup leaves it nil. The gem then creates the user with
+  `email_address` and `full_name` and calls `prepare_new_user(user)` before
+  the save, for the app's defaults. The `users` table needs `full_name`.
+- Override `after_sign_up(user)` for where a new user goes next
+  (`after_authentication_path` by default).
 - `start_sign_in_for(user)` mails a code to an existing user.
 - `store_return_path(path)` returns a visitor to `path` after sign-in.
 - Override `after_sign_in(user)`, `after_authentication_path` (root by default)
