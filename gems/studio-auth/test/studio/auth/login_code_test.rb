@@ -38,6 +38,7 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
 
   test "the same browser asking for a new code inside the cooldown gets one and the old one ends" do
     first = request_sign_in("cook@studio.com")
+    travel Studio::Auth::SignInLimits::RESEND_COOLDOWN + 1.second
     second = Studio::Auth::RequestCode.call(email_address: "cook@studio.com", device_cookie: @device,
       ip_address: "1.2.3.4", user_agent: "test", resend: true)
 

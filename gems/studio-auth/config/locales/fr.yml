@@ -42,6 +42,7 @@ fr: &fr
     flash:
       invitation_unavailable: "Ce lien d’invitation n’est plus valide. Demandez-en un nouveau."
       too_many_requests: "Trop de tentatives. Réessayez dans quelques minutes."
+      resend_too_soon: "Patientez quelques secondes avant de demander un autre code."
       undeliverable: "Saisissez une adresse courriel valide."
       no_account: "Aucun compte n’utilise cette adresse courriel."
       wrong_code: "Code incorrect"

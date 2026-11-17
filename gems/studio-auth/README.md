@@ -7,9 +7,9 @@ expiring database sessions, the staff flag, and lockout mail.
 
 | | |
 | --- | --- |
-| Code | 6 digits, valid 10 minutes, single use, 5 attempts. Asking again from the same browser within 60 seconds returns the same code, except "Send a new code", which mails a fresh one and ends the old one |
+| Code | 6 digits, valid 10 minutes, single use, 5 attempts. Asking again from the same browser within 60 seconds returns the same code, except "Send a new code", which mails a fresh one and ends the old one, at most once every 30 seconds |
 | Lockout | 10 wrong codes in 24 hours pause sign-in for 1 hour, plus 1 hour per further wrong code. A known device counts only its own wrong codes |
-| Limits | 10 code requests an hour per address (a known device has its own 10), 30 an hour per IP (per /64 for IPv6), also counted in the database |
+| Limits | 5 code requests an hour per address (a known device has its own 5), 30 an hour per IP (per /64 for IPv6), also counted in the database |
 | Unknown address | No mail. With sign-up, a page says there's no account for that address and offers "Create an account" or "Use a different email address"; without, an error under the field. Sign-up codes come only from the app's signup form (`start_sign_up_for`) |
 | Mail | The code and the lockout notice only, text and HTML, no links but support and legal. Sent on `less_than_five_seconds` |
 

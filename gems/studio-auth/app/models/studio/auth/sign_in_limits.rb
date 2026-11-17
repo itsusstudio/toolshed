@@ -4,7 +4,8 @@ module Studio
     # questions only; LoginCode requests and verifications act on them.
     module SignInLimits
       RESEND_INTERVAL = 60.seconds
-      MAIL_BUDGET = 10
+      RESEND_COOLDOWN = 30.seconds
+      MAIL_BUDGET = 5
       IP_HOURLY_LIMIT = 30
 
       LOCKOUT_WINDOW = 24.hours
@@ -51,6 +52,12 @@ module Studio
           scope = LoginCode.where(email_address: email_address, created_at: 1.hour.ago..)
           scope = scope.where(device_token_digest: device_digest) if device_digest
           scope.count >= MAIL_BUDGET
+        end
+
+        # A fresh code on "Send a new code" waits this long after the last
+        # one, so a run of clicks can't spend the mail budget in seconds.
+        def resend_too_soon?(login_code)
+          login_code.created_at > RESEND_COOLDOWN.ago
         end
 
         # The code still inside the resend window, which a second request

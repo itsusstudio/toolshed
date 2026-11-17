@@ -42,6 +42,7 @@ nl: &nl
     flash:
       invitation_unavailable: "Deze uitnodigingslink is niet meer geldig. Vraag een nieuwe aan."
       too_many_requests: "Te veel pogingen. Probeer het over een paar minuten opnieuw."
+      resend_too_soon: "Wacht een paar seconden voordat je een nieuwe code vraagt."
       undeliverable: "Vul een geldig e-mailadres in."
       no_account: "Er is geen account met dit e-mailadres."
       wrong_code: "Onjuiste code"

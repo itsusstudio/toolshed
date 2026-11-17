@@ -1,7 +1,8 @@
 module Studio
   module Auth
     # Mails a sign-in code for an email address, or says why not. Returns an
-    # Issued, or :undeliverable, :no_account or :too_many_requests.
+    # Issued, or :undeliverable, :no_account, :resend_too_soon or
+    # :too_many_requests.
     module RequestCode
       Issued = Data.define(:id, :code)
 
@@ -29,6 +30,7 @@ module Studio
             recent = SignInLimits.code_in_resend_window(email_address)
             if recent&.from?(device_cookie)
               next Issued.new(id: recent.id, code: nil) if !resend
+              next :resend_too_soon if SignInLimits.resend_too_soon?(recent)
             elsif recent && !known_device && !app_review
               next :too_many_requests
             end

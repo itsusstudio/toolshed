@@ -40,6 +40,9 @@ module Studio
           return render(:new, status: :unprocessable_content)
         end
         return too_many_requests if issued == :too_many_requests
+        if issued == :resend_too_soon
+          return redirect_to(main_app.verify_path, status: :see_other, alert: t("studio_auth.flash.resend_too_soon"))
+        end
 
         email_address = TypedInput.email_address(params[:email_address])
         PendingLoginCode.store_in_rails_session(session, issued, email_address: email_address)

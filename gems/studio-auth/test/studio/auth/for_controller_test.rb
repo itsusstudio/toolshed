@@ -122,6 +122,7 @@ class Studio::Auth::ForControllerTest < ActionDispatch::IntegrationTest
     assert_select "form#studio-auth-resend-form[action=?] input[name=email_address][value=?]", login_path, "cook@studio.com"
     assert_select "form#studio-auth-resend-form input[name=resend]"
 
+    travel Studio::Auth::SignInLimits::RESEND_COOLDOWN + 1.second
     perform_enqueued_jobs { post login_path, params: {email_address: "cook@studio.com", resend: "1"} }
     assert_redirected_to verify_path
     new_code = ActionMailer::Base.deliveries.last.text_part.body.to_s[/\b\d{6}\b/]
@@ -132,8 +133,22 @@ class Studio::Auth::ForControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to root_path
   end
 
+  test "sending a new code right after the last one waits, and mails nothing" do
+    User.create!(email_address: "cook@studio.com")
+    request_authentication_code("cook@studio.com")
+
+    assert_no_difference -> { ActionMailer::Base.deliveries.size } do
+      perform_enqueued_jobs { post login_path, params: {email_address: "cook@studio.com", resend: "1"} }
+    end
+
+    assert_redirected_to verify_path
+    follow_redirect!
+    assert_select "[role=alert]", text: I18n.t("studio_auth.flash.resend_too_soon")
+  end
+
   test "sending a new code works for an address that is signing up" do
     post "/signup_code", params: {email_address: "new@studio.com"}
+    travel Studio::Auth::SignInLimits::RESEND_COOLDOWN + 1.second
 
     assert_difference -> { Studio::Auth::LoginCode.count }, 1 do
       post login_path, params: {email_address: "new@studio.com", resend: "1"}
