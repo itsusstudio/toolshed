@@ -42,6 +42,16 @@ class CreateStudioAuth < ActiveRecord::Migration[<%= ActiveRecord::Migration.cur
         name: "index_studio_auth_invitations_on_open_user"
     end
 
+    create_table :studio_auth_pending_sign_ups do |t|
+      t.string :email_address, null: false
+      t.string :full_name, null: false
+      t.string :time_zone
+      t.datetime :expires_at, null: false
+      t.timestamps
+      t.index :email_address, unique: true
+      t.index :expires_at
+    end
+
     create_table :studio_auth_known_devices do |t|
       t.references :user, null: false, foreign_key: true, index: false
       t.string :device_token_digest, null: false

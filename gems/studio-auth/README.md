@@ -83,8 +83,9 @@ add_column :studio_auth_login_codes, :email_address, :string
 add_index :studio_auth_login_codes, [:email_address, :created_at], algorithm: :concurrently
 ```
 
-Invitations need the `studio_auth_invitations` table; copy its `create_table`
-from the install template into a migration.
+Invitations need the `studio_auth_invitations` table, and pending sign-ups the
+`studio_auth_pending_sign_ups` table. Copy each `create_table` from the install
+template into a migration.
 
 ## Sign-in pages and mail
 

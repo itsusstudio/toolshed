@@ -41,10 +41,13 @@ module Studio
         end
       end
 
+      # Ends any pending sign-up for the address too, so the app's setup can't
+      # later create a second user for it.
       def accept!
         transaction do
           user.update!(email_address: email_address)
           update!(accepted_at: Time.current)
+          PendingSignUp.where(email_address: email_address).delete_all
         end
       end
 

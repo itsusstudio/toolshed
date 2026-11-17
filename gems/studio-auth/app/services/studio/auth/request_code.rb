@@ -13,7 +13,9 @@ module Studio
           return :too_many_requests if SignInLimits.ip_over_hourly_limit?(ip_address)
 
           user = ::User.find_by(email_address: email_address)
-          return :no_account if account_required && user.nil?
+          if account_required && user.nil? && !PendingSignUp.live.exists?(email_address: email_address)
+            return :no_account
+          end
 
           device_cookie.ensure_device_token!
           known_device = device_cookie.trusted_for?(user)
