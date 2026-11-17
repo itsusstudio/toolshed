@@ -121,9 +121,14 @@ locale files (`studio_auth.codes.new.title`, ...) only where a locale needs it.
   keeps what it collected (in the session, say) and calls
   `start_sign_up_for(email_address)`, which creates nothing. When the code is
   right the gem calls the app's `create_account_for(email_address)`, which
-  returns the new user, nil to send the visitor back to sign in, or redirects,
-  say to a signup form for an address that came from the sign-in page. An
-  address that already has an account just signs in.
+  returns the new user, nil to send the visitor back to sign in, or redirects.
+  An address that already has an account just signs in.
+- By default `create_account_for` remembers, for 30 minutes, that this browser
+  proved the address, and redirects to `signup_path`. The address stays in the
+  session, never the URL. The signup form fills its email field from
+  `verified_email_address`, and when `verified_email_address?(email_address)`
+  holds on submit it creates the user and calls `start_new_session_for(user)`
+  instead of mailing a second code.
 - `start_sign_in_for(user)` mails a code to an existing user.
 - `store_return_path(path)` returns a visitor to `path` after sign-in.
 - Override `after_sign_in(user)`, `after_authentication_path` (root by default)

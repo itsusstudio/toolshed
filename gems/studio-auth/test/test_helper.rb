@@ -88,6 +88,7 @@ DummyApp.routes.draw do
   get "/private", to: "pages#private"
   post "/signup", to: "signups#create"
   post "/signup_code", to: "signups#code"
+  get "/signup_verified", to: "signups#verified"
 end
 
 module ApplicationCable
@@ -128,6 +129,10 @@ class SignupsController < ApplicationController
 
   def code
     start_sign_up_for(params[:email_address])
+  end
+
+  def verified
+    render plain: [verified_email_address?(params[:email_address]), verified_email_address].join(" ")
   end
 end
 
