@@ -13,6 +13,9 @@ module Studio
 
       validates :email_address, presence: true, format: {with: URI::MailTo::EMAIL_REGEXP}
       validates :token_digest, :expires_at, presence: true
+      validates :token_digest, uniqueness: true
+      validates :user_id, uniqueness: {conditions: -> { where(accepted_at: nil, revoked_at: nil) }},
+        if: -> { accepted_at.nil? && revoked_at.nil? }
       validate :email_address_unused, on: :create
 
       scope :open, -> { where(accepted_at: nil, revoked_at: nil) }
