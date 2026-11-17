@@ -25,14 +25,15 @@ class Studio::Auth::PendingSignUpTest < ActionDispatch::IntegrationTest
     assert_nil pending.time_zone
   end
 
-  test ".from_cookie finds a live sign-up and ignores an expired one" do
+  test ".from_cookie finds the sign-up for an hour, though the row lives on" do
     pending = PendingSignUp.record!(email_address: "cook@studio.com", full_name: "Cook")
     jar = ActionDispatch::TestRequest.create.cookie_jar
     pending.write_cookie(jar)
 
     assert_equal pending, PendingSignUp.from_cookie(jar)
-    travel PendingSignUp::TTL + 1.second do
+    travel PendingSignUp::COOKIE_LIFETIME + 1.second do
       assert_nil PendingSignUp.from_cookie(jar)
+      assert PendingSignUp.live.exists?(pending.id)
     end
   end
 

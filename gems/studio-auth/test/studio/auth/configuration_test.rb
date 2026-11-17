@@ -9,6 +9,16 @@ class Studio::Auth::ConfigurationTest < ActiveSupport::TestCase
     assert_match "set c.app_name, c.mail_from, c.mail_address, c.terms_url, c.privacy_url, c.session_idle_timeout, c.session_absolute_timeout in config/initializers/studio_auth.rb", error.message
   end
 
+  test "sign-up has no default: the app sets it to true or false" do
+    config = valid_config
+    config.sign_up = nil
+
+    error = assert_raises(Configuration::Error) { config.validate_config! }
+    assert_match "set c.sign_up to true or false", error.message
+    config.sign_up = false
+    assert_nil config.validate_config!
+  end
+
   test "the wordmark is serif or sans" do
     config = valid_config
     config.wordmark = "script"
@@ -64,6 +74,7 @@ class Studio::Auth::ConfigurationTest < ActiveSupport::TestCase
       config.privacy_url = "https://dummy.app/privacy"
       config.session_idle_timeout = 30.days
       config.session_absolute_timeout = 90.days
+      config.sign_up = true
     end
   end
 

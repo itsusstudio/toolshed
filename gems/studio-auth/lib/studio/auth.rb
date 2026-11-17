@@ -27,7 +27,7 @@ module Studio
       end
 
       def sign_up?
-        config.sign_up
+        config.sign_up == true
       end
     end
   end

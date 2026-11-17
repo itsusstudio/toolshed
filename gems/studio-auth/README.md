@@ -121,10 +121,13 @@ locale files (`studio_auth.codes.new.title`, ...) only where a locale needs it.
 - Sign-up is the gem's: `/signup` asks for a full name and an email address,
   carries the browser's time zone, and mails a code. Nothing is written to
   `users` before the code checks out. An address that already has an account
-  just signs in. `c.sign_up = false` turns new accounts off.
+  just signs in. Every app sets `c.sign_up`: `true` takes new accounts,
+  `false` is invite-only. There's no default.
 - Once the code checks out, the sign-up waits in `studio_auth_pending_sign_ups`
-  for 30 days, and the browser gets a signed cookie for it. Typing the address
-  on the sign-in page again, on any browser, mails a code and carries on.
+  for 30 days. The browser that verified gets a signed cookie for it that
+  lasts 1 hour and ends on sign-in or sign-out, because finishing setup signs
+  the person in. After that, typing the address on the sign-in page again, on
+  any browser, mails a code and carries on.
 - An app that needs a tenant or settings before the user exists overrides
   `sign_up_setup_path`. Its setup screen reads `pending_sign_up`
   (`email_address`, `full_name`, `time_zone`), creates the user and tenant

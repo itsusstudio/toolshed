@@ -15,6 +15,7 @@ module Studio
           return_to = session[RETURN_TO_KEY]
           reset_session
           session[RETURN_TO_KEY] = return_to if return_to
+          PendingSignUp.delete_cookie(cookies)
 
           new_session = user.sessions.create!(**request_details)
           new_session.write_cookie(cookies)
@@ -67,6 +68,7 @@ module Studio
         def forget_session
           assign_current_session(nil)
           ::Session.delete_cookie(cookies)
+          PendingSignUp.delete_cookie(cookies)
           reset_session
         end
 

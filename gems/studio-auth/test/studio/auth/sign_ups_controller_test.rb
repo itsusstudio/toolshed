@@ -68,6 +68,33 @@ class Studio::Auth::SignUpsControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
+  test "a browser left on setup loses the sign-up after an hour, and a fresh code brings it back" do
+    with_setup do
+      post verify_path, params: {code: sign_up_code(full_name: "New Cook", email_address: "new@studio.com")}
+
+      travel Studio::Auth::PendingSignUp::COOKIE_LIFETIME + 1.second
+      get "/setup"
+      assert_equal "none", response.body
+
+      perform_enqueued_jobs { post login_path, params: {email_address: "new@studio.com"} }
+      post verify_path, params: {code: mailed_code}
+      get "/setup"
+      assert_equal "new@studio.com New Cook ", response.body
+    end
+  end
+
+  test "signing in to another account clears a pending sign-up from the browser" do
+    User.create!(email_address: "cook@studio.com")
+    with_setup do
+      post verify_path, params: {code: sign_up_code(full_name: "New Cook", email_address: "new@studio.com")}
+      perform_enqueued_jobs { post login_path, params: {email_address: "cook@studio.com"} }
+      post verify_path, params: {code: mailed_code}
+
+      get "/setup"
+      assert_equal "none", response.body
+    end
+  end
+
   test "a missing full name re-renders with the error under the field" do
     assert_no_difference -> { Studio::Auth::LoginCode.count } do
       post signup_path, params: {full_name: "  ", email_address: "new@studio.com"}

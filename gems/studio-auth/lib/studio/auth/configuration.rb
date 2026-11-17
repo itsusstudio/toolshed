@@ -21,11 +21,10 @@ module Studio
       # render inside; wordmark is the app name's voice, "serif" or "sans".
       attr_writer :page_layout, :wordmark
 
-      # sign_up false turns new accounts off: the signup page sends people to
-      # sign in, and an address with no account gets an error there.
-      attr_writer :sign_up
-
-      def sign_up = @sign_up != false
+      # true takes new accounts at /signup; false is invite-only, and an
+      # address with no account gets an error on the sign-in page. No
+      # default: an app has to choose.
+      attr_accessor :sign_up
 
       def page_layout = @page_layout || "application"
 
@@ -38,6 +37,10 @@ module Studio
           settings = missing.map { "c.#{it}" }.join(", ")
           raise Error, "studio-auth: set #{settings} in config/initializers/studio_auth.rb " \
             "(session limits take a duration, e.g. 30.days)"
+        end
+
+        if ![true, false].include?(sign_up)
+          raise Error, "studio-auth: set c.sign_up to true or false in config/initializers/studio_auth.rb"
         end
 
         if !["serif", "sans"].include?(wordmark.to_s)
