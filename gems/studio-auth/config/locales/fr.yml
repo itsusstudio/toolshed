@@ -38,6 +38,7 @@ fr: &fr
         sign_in: "Se connecter"
         resend_prompt: "Vous ne l’avez pas reçu ?"
         resend: "Renvoyer un code"
+        resend_wait: "Nouveau code dans {time}"
         dev_code: "Code de dev : %{code}"
         copy: "Copier"
     terms: "Conditions"

@@ -121,6 +121,7 @@ class Studio::Auth::ForControllerTest < ActionDispatch::IntegrationTest
 
     assert_select "form#studio-auth-resend-form[action=?] input[name=email_address][value=?]", login_path, "cook@studio.com"
     assert_select "form#studio-auth-resend-form input[name=resend]"
+    assert_select "form#studio-auth-resend-form u-countdown[seconds]"
 
     travel Studio::Auth::SignInLimits::RESEND_COOLDOWN + 1.second
     perform_enqueued_jobs { post login_path, params: {email_address: "cook@studio.com", resend: "1"} }

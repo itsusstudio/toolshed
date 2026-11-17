@@ -38,6 +38,7 @@ en: &en
         sign_in: "Sign in"
         resend_prompt: "Didn’t get it?"
         resend: "Send a new code"
+        resend_wait: "Send a new code in {time}"
         dev_code: "Dev code: %{code}"
         copy: "Copy"
     terms: "Terms"

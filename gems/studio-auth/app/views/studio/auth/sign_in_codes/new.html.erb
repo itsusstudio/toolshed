@@ -36,7 +36,9 @@
   <%= form.hidden_field :email_address, value: @pending.email_address %>
   <%= form.hidden_field :resend, value: "1" %>
   <%= t("studio_auth.codes.new.resend_prompt") %>
-  <%= form.button t("studio_auth.codes.new.resend"), class: "u-link-btn" %>
+  <u-countdown seconds="<%= @resend_wait %>" data-waiting="<%= t("studio_auth.codes.new.resend_wait") %>">
+    <%= form.button t("studio_auth.codes.new.resend"), class: "u-link-btn" %>
+  </u-countdown>
 <% end %>
 
 <% if @pending.dev_code %>

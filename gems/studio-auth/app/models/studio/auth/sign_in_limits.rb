@@ -60,6 +60,14 @@ module Studio
           login_code.created_at > RESEND_COOLDOWN.ago
         end
 
+        # Whole seconds until "Send a new code" may mail another code, for the
+        # countdown on the code page.
+        def seconds_until_resend(login_code)
+          return 0 if login_code.nil?
+
+          [(login_code.created_at + RESEND_COOLDOWN - Time.current).ceil, 0].max
+        end
+
         # The code still inside the resend window, which a second request
         # from the same browser gets back instead of a new one.
         def code_in_resend_window(email_address)

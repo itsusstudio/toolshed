@@ -38,6 +38,7 @@ nl: &nl
         sign_in: "Inloggen"
         resend_prompt: "Niet ontvangen?"
         resend: "Nieuwe code versturen"
+        resend_wait: "Nieuwe code over {time}"
         dev_code: "Dev-code: %{code}"
         copy: "Kopiëren"
     terms: "Voorwaarden"

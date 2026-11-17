@@ -8,6 +8,7 @@ module Studio
         by: -> { rate_limit_key }, with: :too_many_requests
 
       def new
+        @resend_wait = SignInLimits.seconds_until_resend(LoginCode.find_by(id: @pending.id))
       end
 
       def create

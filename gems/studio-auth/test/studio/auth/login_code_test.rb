@@ -46,6 +46,20 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
     assert_equal :verified, verify(second).status
   end
 
+  test "the resend countdown counts from when the code went out" do
+    freeze_time
+    issued = request_sign_in("cook@studio.com")
+    login_code = LoginCode.find(issued.id)
+
+    assert_equal 30, Studio::Auth::SignInLimits.seconds_until_resend(login_code)
+    travel 20.seconds do
+      assert_equal 10, Studio::Auth::SignInLimits.seconds_until_resend(login_code)
+    end
+    travel 1.minute do
+      assert_equal 0, Studio::Auth::SignInLimits.seconds_until_resend(login_code)
+    end
+  end
+
   test "an address with no account is turned away when the caller needs an account" do
     result = Studio::Auth::RequestCode.call(email_address: "nobody@studio.com", device_cookie: @device,
       ip_address: "1.2.3.4", user_agent: "test", account_required: true)
