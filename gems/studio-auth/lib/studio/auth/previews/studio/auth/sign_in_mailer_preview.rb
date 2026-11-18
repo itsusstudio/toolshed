@@ -17,6 +17,21 @@ module Studio
         SignInMailer.with(invitation: invitation, encrypted_token: Secrets.encrypt("x7Kq2mP9")).invite
       end
 
+      def email_address_change_code
+        SignInMailer.with(login_code: sample_login_code, user: user, purpose: "email_address_change",
+          encrypted_code: Secrets.encrypt("381904")).login_code
+      end
+
+      def new_email_address_code
+        SignInMailer.with(login_code: LoginCode.new(email_address: "new@example.com"), user: user,
+          purpose: "new_email_address", encrypted_code: Secrets.encrypt("381904")).login_code
+      end
+
+      def email_address_changed
+        SignInMailer.with(user: ::User.new(email_address: "new@example.com"), old_email_address: "preview@example.com",
+          user_agent: USER_AGENT, changed_at: Time.current).email_address_changed
+      end
+
       def locked
         SignInMailer.with(user: user).locked
       end

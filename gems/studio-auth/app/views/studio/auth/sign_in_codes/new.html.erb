@@ -3,42 +3,26 @@
 <hgroup>
   <h1 id="studio-auth-code-title" class="u-text-page-title"><%= t("studio_auth.codes.new.title") %></h1>
   <p id="studio-auth-code-sent-to" class="u-text-small">
-    <%= t("studio_auth.codes.new.sent_to", email_address: @pending.email_address) %>
-    <%= link_to t("studio_auth.codes.new.change"), main_app.login_path, id: "studio-auth-start-over" %>
+    <%= t("studio_auth.codes.new.sent_to_html", email_address: tag.strong(@pending.email_address, class: "u-text-strong")) %>
   </p>
 </hgroup>
 
-<%= form_with url: main_app.verify_path, id: "studio-auth-code-form", class: "u-stack u-gap-6", html: {novalidate: true} do |form| %>
-  <div class="u-field">
-    <%= form.label :code, t("studio_auth.codes.new.code_label") %>
-    <u-input-code submit>
-      <%= form.text_field :code,
-            class: "u-input",
-            placeholder: " ",
-            required: true,
-            autofocus: true,
-            autocomplete: "one-time-code",
-            inputmode: "numeric",
-            pattern: "[0-9]{6}",
-            maxlength: 6,
-            aria: {invalid: @field_error.present?, describedby: (@field_error ? "studio-auth-code-error" : "studio-auth-code-hint")} %>
-    </u-input-code>
-    <% if @field_error %>
-      <p id="studio-auth-code-error" class="u-error" role="alert"><%= @field_error %></p>
-    <% else %>
-      <small id="studio-auth-code-hint"><%= t("studio_auth.codes.new.hint", count: Studio::Auth::LoginCode::TTL.in_minutes.to_i) %></small>
-    <% end %>
-  </div>
+<%= uniform_form_with url: main_app.verify_path, id: "studio-auth-code-form", html: {novalidate: true} do |form| %>
+  <%= form.code_field :code,
+        label: t("studio_auth.codes.new.code_label"),
+        value: params[:code],
+        error: with_line_breaks(@field_error),
+        submit: true,
+        required: true,
+        autofocus: true %>
   <%= form.button t("studio_auth.codes.new.sign_in"), id: "studio-auth-code-submit", class: "u-btn u-btn-primary" %>
 <% end %>
 
 <%= form_with url: main_app.login_path, id: "studio-auth-resend-form", class: "u-text-small" do |form| %>
-  <%= form.hidden_field :email_address, value: @pending.email_address %>
-  <%= form.hidden_field :resend, value: "1" %>
+  <%= hidden_field_tag :email_address, @pending.email_address %>
+  <%= hidden_field_tag :resend, "1" %>
   <%= t("studio_auth.codes.new.resend_prompt") %>
-  <u-countdown seconds="<%= @resend_wait %>" data-waiting="<%= t("studio_auth.codes.new.resend_wait") %>">
-    <%= form.button t("studio_auth.codes.new.resend"), class: "u-link-btn" %>
-  </u-countdown>
+  <%= form.button t("studio_auth.codes.new.resend"), class: "u-link-btn" %>
 <% end %>
 
 <% if @pending.dev_code %>

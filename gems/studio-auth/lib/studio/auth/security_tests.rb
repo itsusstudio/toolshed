@@ -24,20 +24,13 @@ module Studio
             perform_enqueued_jobs { post login_path, params: {email_address: "nobody@studio.com"} }
           end
 
-          if Auth.sign_up?
-            assert_redirected_to login_path
-            follow_redirect!
-            assert_select "#studio-auth-no-account-email"
-          else
-            assert_response :unprocessable_content
-            assert_select "#studio-auth-email-error"
-          end
+          assert_redirected_to signup_path
+          follow_redirect!
+          assert_select "#studio-auth-sign-up-no-account"
           assert_empty ActionMailer::Base.deliveries
         end
 
         test "studio-auth: signing up writes no user before its code checks out" do
-          skip "sign-up is off" if !Auth.sign_up?
-
           assert_no_difference -> { ::User.count } do
             params = {full_name: "New Person", email_address: "new@studio.com"}
             perform_enqueued_jobs { post signup_path, params: params }

@@ -36,28 +36,13 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
     assert_equal 1, LoginCode.count
   end
 
-  test "the same browser asking for a new code inside the cooldown gets one and the old one ends" do
+  test "the same browser asking for a new code gets one right away and the old one ends" do
     first = request_sign_in("cook@studio.com")
-    travel Studio::Auth::SignInLimits::RESEND_COOLDOWN + 1.second
     second = Studio::Auth::RequestCode.call(email_address: "cook@studio.com", device_cookie: @device,
       ip_address: "1.2.3.4", user_agent: "test", resend: true)
 
     assert_equal :expired, verify(first).status
     assert_equal :verified, verify(second).status
-  end
-
-  test "the resend countdown counts from when the code went out" do
-    freeze_time
-    issued = request_sign_in("cook@studio.com")
-    login_code = LoginCode.find(issued.id)
-
-    assert_equal 30, Studio::Auth::SignInLimits.seconds_until_resend(login_code)
-    travel 20.seconds do
-      assert_equal 10, Studio::Auth::SignInLimits.seconds_until_resend(login_code)
-    end
-    travel 1.minute do
-      assert_equal 0, Studio::Auth::SignInLimits.seconds_until_resend(login_code)
-    end
   end
 
   test "an address with no account is turned away when the caller needs an account" do
@@ -90,7 +75,7 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
       travel Studio::Auth::SignInLimits::RESEND_INTERVAL + 1.second
     end
 
-    assert_equal :too_many_requests, request_sign_in("cook@studio.com", device_cookie: stranger)
+    assert_equal :too_many_codes, request_sign_in("cook@studio.com", device_cookie: stranger)
   end
 
   test "a new code expires the previous one" do
@@ -140,8 +125,8 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
     lock_account
     lock_account("nobody@studio.com")
 
-    assert_equal :too_many_requests, request_sign_in("cook@studio.com")
-    assert_equal :too_many_requests, request_sign_in("nobody@studio.com")
+    assert_equal :too_many_codes, request_sign_in("cook@studio.com")
+    assert_equal :too_many_codes, request_sign_in("nobody@studio.com")
   end
 
   test "an app review account gets its fixed code" do
@@ -190,7 +175,7 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
       Studio::Auth::LoginCode::MAX_ATTEMPTS.times { verify(issued, code: "000000x") }
     end
 
-    assert_equal :too_many_requests, request_sign_in("cook@studio.com")
+    assert_equal :too_many_codes, request_sign_in("cook@studio.com")
     assert_equal :verified, verify(request_sign_in("cook@studio.com", device_cookie: owner_laptop)).status
   end
 
@@ -231,7 +216,7 @@ class Studio::Auth::LoginCodeTest < ActiveSupport::TestCase
       assert reviewer.sign_in_locked?
       assert_includes events, "authentication.app_review_account_locked"
       assert_empty ActionMailer::Base.deliveries
-      assert_equal :too_many_requests, request_sign_in("review@studio.com", device_cookie: stranger)
+      assert_equal :too_many_codes, request_sign_in("review@studio.com", device_cookie: stranger)
     end
   end
 

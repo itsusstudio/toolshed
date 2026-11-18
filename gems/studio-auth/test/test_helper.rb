@@ -16,12 +16,12 @@ DUMMY_ROOT = File.expand_path("dummy", __dir__)
 FileUtils.mkdir_p(File.join(DUMMY_ROOT, "log"))
 FileUtils.mkdir_p(File.join(DUMMY_ROOT, "tmp"))
 
-# The gem's auth layout renders inside the app's Uniform document layout,
-# which yields the gem's page block.
 FileUtils.rm_rf(File.join(DUMMY_ROOT, "app/views"))
 FileUtils.mkdir_p(File.join(DUMMY_ROOT, "app/views/layouts"))
-File.write(File.join(DUMMY_ROOT, "app/views/layouts/application.html.erb"),
-  "<html><head><%= yield :head %></head><body><%= content_for?(:studio_auth_page) ? yield(:studio_auth_page) : yield %></body></html>")
+["application", "uniform"].each do |layout|
+  File.write(File.join(DUMMY_ROOT, "app/views/layouts/#{layout}.html.erb"),
+    "<html><head><%= yield :head %></head><body><%= content_for?(:studio_auth_page) ? yield(:studio_auth_page) : yield %></body></html>")
+end
 
 class DummyApp < Rails::Application
   config.root = DUMMY_ROOT
@@ -40,10 +40,6 @@ end
 Studio::Auth.configure do |c|
   c.app_name = "Dummy"
   c.mail_from = "Dummy <hello@dummy.app>"
-  c.mail_address = ["Dummy", "1 Main Street", "Toronto ON"]
-  c.terms_url = "https://dummy.app/terms"
-  c.privacy_url = "https://dummy.app/privacy"
-  c.sign_up = true
   c.session_idle_timeout = 30.days
   c.session_absolute_timeout = 90.days
 end
@@ -61,7 +57,6 @@ ActiveRecord::Schema.define do
   end
 end
 
-# Runs the migration the install generator writes, so the tests cover it.
 template = File.expand_path("../lib/generators/studio/auth/templates/create_studio_auth.rb.tt", __dir__)
 rendered = File.join(DUMMY_ROOT, "tmp/create_studio_auth.rb")
 File.write(rendered, ERB.new(File.read(template)).result)
@@ -89,7 +84,7 @@ DummyApp.routes.draw do
   root to: "pages#show"
   get "/private", to: "pages#private"
   post "/start_sign_in", to: "starts#create"
-  get "/setup", to: "setups#show"
+  get "/setup", to: "setups#show", as: :setup
   post "/setup", to: "setups#create"
 end
 

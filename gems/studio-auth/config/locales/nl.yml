@@ -5,6 +5,22 @@ nl: &nl
       studio_email_only: "vereist een @%{domain}-e-mailadres"
       app_review_account: "kan niet aan een app-reviewaccount worden gegeven"
   studio_auth:
+    email_address_changes:
+      new:
+        title: "Je e-mailadres wijzigen"
+        current: "Je logt in met %{email_address}."
+        email_label: "Nieuw e-mailadres"
+        submit: "Code sturen"
+    email_address_change_codes:
+      new:
+        current:
+          title: "Bevestig dat jij het bent"
+          sent_to_html: "Vul de code in die we naar %{email_address} hebben gestuurd om je e-mailadres te wijzigen."
+          submit: "Doorgaan"
+        new:
+          title: "Check je nieuwe inbox"
+          sent_to_html: "We hebben een code van zes cijfers naar %{email_address} gestuurd."
+          submit: "E-mailadres wijzigen"
     sign_ins:
       new:
         title: "Inloggen bij %{app_name}"
@@ -13,14 +29,11 @@ nl: &nl
         submit: "Code versturen"
         no_account: "Heb je nog geen account?"
         sign_up: "Maak er een aan"
-      no_account:
-        title: "Nieuw bij %{app_name}?"
-        body: "Er is geen account voor %{email_address}."
-        create: "Account aanmaken"
-        change: "Ander e-mailadres gebruiken"
     sign_ups:
       new:
         title: "Maak je %{app_name}-account aan"
+        heading: "Maak je account aan"
+        no_account: "Er is nog geen account voor %{email_address}."
         full_name_label: "Volledige naam"
         email_label: "E-mailadres"
         submit: "Doorgaan"
@@ -29,38 +42,47 @@ nl: &nl
     codes:
       new:
         title: "Check je e-mail"
-        sent_to: "We hebben een code van zes cijfers gestuurd naar %{email_address}."
-        change: "Wijzigen"
+        sent_to_html: "We hebben een code van zes cijfers gestuurd naar %{email_address}."
         code_label: "Code"
-        hint:
-          one: "De code werkt %{count} minuut."
-          other: "De code werkt %{count} minuten."
         sign_in: "Inloggen"
         resend_prompt: "Niet ontvangen?"
         resend: "Nieuwe code versturen"
-        resend_wait: "Nieuwe code over {time}"
         dev_code: "Dev-code: %{code}"
         copy: "Kopiëren"
+    back_to_settings: "Terug naar instellingen"
     terms: "Voorwaarden"
     privacy: "Privacy"
     invitations:
       show:
         title: "Word lid van %{place}"
-        signs_in_as: "Je logt in bij %{app_name} als %{email_address}."
+        signs_in_as_html: "Je logt in bij %{app_name} als %{email_address}."
         join: "Word lid van %{place}"
+    errors:
+      email_address:
+        undeliverable: "Vul een geldig e-mailadres in."
+        too_many_requests: "Te veel pogingen. Probeer het over een paar minuten opnieuw."
+        too_many_codes: "Te veel codes voor dit e-mailadres.\nProbeer het over een uur opnieuw."
+        unchanged: "Dat is al je e-mailadres."
+        taken: "Een ander account gebruikt dit e-mailadres."
+        staff_email_only: "Personeelsaccounts hebben een @%{domain}-adres nodig."
+        app_review_account: "Het e-mailadres van dit account kan niet worden gewijzigd."
+      full_name:
+        blank: "Vul je volledige naam in."
+        too_long: "Gebruik maximaal %{max} tekens."
+      code:
+        invalid: "Die code klopt niet. Gebruik de code uit je laatste e-mail."
+        expired: "Code verlopen. Vraag een nieuwe aan."
+        too_many_attempts: "Te veel pogingen. Vraag een nieuwe code aan."
     flash:
-      invitation_unavailable: "Deze uitnodigingslink is niet meer geldig. Vraag een nieuwe aan."
-      too_many_requests: "Te veel pogingen. Probeer het over een paar minuten opnieuw."
-      resend_too_soon: "Wacht een paar seconden voordat je een nieuwe code vraagt."
-      undeliverable: "Vul een geldig e-mailadres in."
-      no_account: "Er is geen account met dit e-mailadres."
-      full_name_missing: "Vul je volledige naam in."
-      full_name_too_long: "Gebruik maximaal %{count} tekens."
-      wrong_code: "Onjuiste code"
+      too_many_codes: "Te veel codes voor dit e-mailadres.\nProbeer het over een uur opnieuw."
       expired: "Code verlopen. Vraag een nieuwe aan."
       too_many_attempts: "Te veel pogingen. Vraag een nieuwe code aan."
+      invitation_unavailable: "Deze uitnodigingslink is niet meer geldig. Vraag een nieuwe aan."
+      too_many_requests: "Te veel pogingen. Probeer het over een paar minuten opnieuw."
+      undeliverable: "Vul een geldig e-mailadres in."
       signed_out_everywhere: "Je bent op alle apparaten uitgelogd."
       signed_out_device: "Je bent op dat apparaat uitgelogd."
+      email_address_changed: "Je e-mailadres is nu %{email_address}."
     session_device:
       app_for: "%{app_name} voor %{platform}"
       browser_on: "%{browser} op %{os}"
@@ -99,5 +121,30 @@ nl: &nl
           one: "Je kunt het over %{count} uur opnieuw proberen."
           other: "Je kunt het over %{count} uur opnieuw proberen."
         known_devices: "Apparaten waarmee je eerder bent ingelogd, kunnen nog steeds inloggen."
+      email_address_change_code:
+        subject: "%{code} is je code om je %{app_name}-e-mailadres te wijzigen"
+        heading: "Bevestig dat jij het bent"
+        intro: "Vul deze code in %{app_name} in om het e-mailadres van je account te wijzigen."
+        expires:
+          one: "Deze code werkt %{count} minuut."
+          other: "Deze code werkt %{count} minuten."
+        ignore: "Heb je niet gevraagd om je e-mailadres te wijzigen? Negeer dan deze e-mail. Er verandert niets."
+      new_email_address_code:
+        subject: "%{code} bevestigt je nieuwe %{app_name}-e-mailadres"
+        heading: "Bevestig je nieuwe e-mailadres"
+        intro: "Vul deze code in %{app_name} in om voortaan met dit e-mailadres in te loggen."
+        expires:
+          one: "Deze code werkt %{count} minuut."
+          other: "Deze code werkt %{count} minuten."
+        ignore: "Heb je hier niet om gevraagd? Negeer dan deze e-mail. Er verandert niets."
+      email_address_changed:
+        subject: "Je %{app_name}-e-mailadres is gewijzigd"
+        heading: "Je e-mailadres is gewijzigd"
+        intro: "Je logt nu in bij %{app_name} met %{email_address}."
+        device: "Apparaat"
+        when: "Wanneer"
+        if_you: "Was jij dit? Dan hoef je niets te doen."
+        if_not: "Was jij dit niet? Neem dan meteen contact op met %{app_name}-support."
+        if_not_support: "Was jij dit niet? Schrijf dan meteen naar %{email_address}, dan helpen we je je account terug te krijgen."
 nl-NL: *nl
 nl-BE: *nl

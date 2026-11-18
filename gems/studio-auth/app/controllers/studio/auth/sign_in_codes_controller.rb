@@ -8,7 +8,6 @@ module Studio
         by: -> { rate_limit_key }, with: :too_many_requests
 
       def new
-        @resend_wait = SignInLimits.seconds_until_resend(LoginCode.find_by(id: @pending.id))
       end
 
       def create
@@ -26,10 +25,10 @@ module Studio
           start_new_session_for(user)
           redirect_to after_authentication_path, status: :see_other
         when :invalid
-          @field_error = t("studio_auth.flash.wrong_code")
+          @field_error = t("studio_auth.errors.code.invalid")
           render :new, status: :unprocessable_content
         else
-          flash[:studio_auth_field_error] = t("studio_auth.flash.#{status}")
+          flash[:alert] = t("studio_auth.flash.#{status}")
           flash[:studio_auth_email_address] = @pending.email_address
           clear_pending_login_code
           redirect_to main_app.login_path, status: :see_other

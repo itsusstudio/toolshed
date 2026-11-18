@@ -6,7 +6,7 @@
     <%= t("studio_auth.invitations.show.title", place: place) %>
   </h1>
   <p class="u-text-small">
-    <%= t("studio_auth.invitations.show.signs_in_as", email_address: @invitation.email_address, app_name: Studio::Auth.config.app_name) %>
+    <%= t("studio_auth.invitations.show.signs_in_as_html", email_address: tag.strong(@invitation.email_address, class: "u-text-strong"), app_name: Studio::Auth.config.app_name) %>
   </p>
 </hgroup>
 

@@ -21,21 +21,21 @@ class Studio::Auth::SignInMailerTest < ActionMailer::TestCase
       assert_includes part.body.to_s, "123456"
       assert_includes part.body.to_s, "ignore this email"
     end
-    assert_equal ["https://dummy.app/terms", "https://dummy.app/privacy"], mail.html_part.body.to_s.scan(/href="([^"]+)"/).flatten.uniq
+    assert_equal [Studio::Uniform::TERMS_URL, Studio::Uniform::PRIVACY_URL], mail.html_part.body.to_s.scan(/href="([^"]+)"/).flatten.uniq
   end
 
-  test "the footer links the app's legal pages" do
+  test "the footer links the studio's legal pages" do
     body = login_code_mail.deliver_now.html_part.body.to_s
 
-    assert_includes body, %(href="https://dummy.app/terms")
-    assert_includes body, %(href="https://dummy.app/privacy")
+    assert_includes body, %(href="#{Studio::Uniform::TERMS_URL}")
+    assert_includes body, %(href="#{Studio::Uniform::PRIVACY_URL}")
   end
 
   test "the app's name heads the mail and its address closes it, with nothing attached" do
     mail = login_code_mail.deliver_now
 
     assert_match %r{>Dummy</td>}, mail.html_part.body.to_s
-    assert_includes mail.text_part.body.to_s, "Dummy\n1 Main Street\nToronto ON"
+    assert_includes mail.text_part.body.to_s, Studio::Uniform::STUDIO_ADDRESS.join("\n")
     assert_empty mail.attachments
   end
 
@@ -53,13 +53,7 @@ class Studio::Auth::SignInMailerTest < ActionMailer::TestCase
     assert_includes mail.text_part.body.to_s, I18n.t("studio_auth.sign_in_mailer.sign_up_code.heading", locale: :fr)
   end
 
-  test "login_code sends nothing for an unknown address without sign-up, an app review account or a code that expired in the queue" do
-    @login_code.update!(email_address: "new@studio.com")
-    Studio::Auth.stubs(:sign_up?).returns(false)
-    assert_nil login_code_mail.deliver_now
-    Studio::Auth.unstub(:sign_up?)
-
-    @login_code.update!(email_address: "cook@studio.com")
+  test "login_code sends nothing for an app review account or a code that expired in the queue" do
     Studio::Auth::AppReviewAccounts.stubs(:include?).returns(true)
     assert_nil login_code_mail.deliver_now
 
@@ -78,7 +72,8 @@ class Studio::Auth::SignInMailerTest < ActionMailer::TestCase
     preview = ActionMailer::Preview.find("studio/auth/sign_in_mailer")
     users_before = User.count
 
-    assert_equal ["invite", "locked", "login_code", "sign_up_code"], preview.emails.sort
+    assert_equal ["email_address_change_code", "email_address_changed", "invite", "locked", "login_code",
+      "new_email_address_code", "sign_up_code"], preview.emails.sort
     preview.emails.each do |email|
       mail = preview.call(email)
       assert_includes mail.subject, "Dummy", "#{email} preview did not render"
@@ -89,17 +84,17 @@ class Studio::Auth::SignInMailerTest < ActionMailer::TestCase
 
   test "a regional locale gets the gem's strings even when the app doesn't offer the bare language" do
     with_locales([:en, :"fr-CA"]) do
-      assert_equal "Code incorrect", I18n.t("studio_auth.flash.wrong_code", locale: :"fr-CA")
+      assert_equal "Code expiré. Demandez-en un nouveau.", I18n.t("studio_auth.errors.code.expired", locale: :"fr-CA")
     end
   end
 
   test "the app's own strings win over the gem's" do
     override = File.join(DUMMY_ROOT, "tmp/override.fr-CA.yml")
-    File.write(override, {"fr-CA" => {"studio_auth" => {"flash" => {"wrong_code" => "Mauvais code."}}}}.to_yaml)
+    File.write(override, {"fr-CA" => {"studio_auth" => {"errors" => {"code" => {"expired" => "Mauvais code."}}}}}.to_yaml)
     I18n.load_path << override
 
     with_locales([:en, :"fr-CA"]) do
-      assert_equal "Mauvais code.", I18n.t("studio_auth.flash.wrong_code", locale: :"fr-CA")
+      assert_equal "Mauvais code.", I18n.t("studio_auth.errors.code.expired", locale: :"fr-CA")
     end
   ensure
     I18n.load_path.delete(override)

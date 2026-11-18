@@ -6,28 +6,21 @@ class Studio::Auth::ConfigurationTest < ActiveSupport::TestCase
   test "validate_config! requires every setting, including both session limits" do
     error = assert_raises(Configuration::Error) { Configuration.new.validate_config! }
 
-    assert_match "set c.app_name, c.mail_from, c.mail_address, c.terms_url, c.privacy_url, c.session_idle_timeout, c.session_absolute_timeout in config/initializers/studio_auth.rb", error.message
+    assert_match "set c.app_name, c.mail_from, c.session_idle_timeout, c.session_absolute_timeout in config/initializers/studio_auth.rb", error.message
   end
 
-  test "sign-up has no default: the app sets it to true or false" do
+  test "the setup page names a path helper" do
     config = valid_config
-    config.sign_up = nil
+    config.finish_sign_up_path = "/setup"
 
-    error = assert_raises(Configuration::Error) { config.validate_config! }
-    assert_match "set c.sign_up to true or false", error.message
-    config.sign_up = false
-    assert_nil config.validate_config!
+    assert_match "c.finish_sign_up_path names a path helper like :setup_path", assert_raises(Configuration::Error) { config.validate_config! }.message
   end
 
   test "the wordmark is serif or sans" do
     config = valid_config
-    config.wordmark = "script"
+    config.wordmark_style = "script"
 
-    assert_match "c.wordmark is \"serif\" or \"sans\"", assert_raises(Configuration::Error) { config.validate_config! }.message
-  end
-
-  test "the page layout defaults to the app's application layout" do
-    assert_equal "application", Configuration.new.page_layout
+    assert_match "c.wordmark_style is \"serif\" or \"sans\"", assert_raises(Configuration::Error) { config.validate_config! }.message
   end
 
   test "a session limit must be a duration" do
@@ -69,12 +62,8 @@ class Studio::Auth::ConfigurationTest < ActiveSupport::TestCase
     Configuration.new.tap do |config|
       config.app_name = "Dummy"
       config.mail_from = "hello@dummy.app"
-      config.mail_address = ["Dummy", "1 Main Street", "Toronto ON"]
-      config.terms_url = "https://dummy.app/terms"
-      config.privacy_url = "https://dummy.app/privacy"
       config.session_idle_timeout = 30.days
       config.session_absolute_timeout = 90.days
-      config.sign_up = true
     end
   end
 

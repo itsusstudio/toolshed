@@ -1,11 +1,19 @@
 module Studio
   module Auth
     module ForController
-      # Where to send someone once they sign in.
       module ReturnPath
         extend ActiveSupport::Concern
 
+        included do
+          helper_method :account_settings_path
+        end
+
         private
+
+        def account_settings_path
+          path = Auth.config.account_settings_path
+          path ? main_app.public_send(path) : main_app.root_path
+        end
 
         def after_authentication_path
           session.delete(RETURN_TO_KEY) || main_app.root_path

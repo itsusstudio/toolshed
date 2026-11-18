@@ -1,0 +1,8 @@
+<% u = uniform_mail -%>
+<% minutes = Studio::Auth::LoginCode::TTL.in_minutes.to_i -%>
+<% content_for :preheader, t("studio_auth.sign_in_mailer.new_email_address_code.expires", count: minutes) -%>
+<%= u.heading t("studio_auth.sign_in_mailer.new_email_address_code.heading") %>
+<%= u.paragraph t("studio_auth.sign_in_mailer.new_email_address_code.intro", app_name: app_name) %>
+<%= u.code @code %>
+<%= u.paragraph t("studio_auth.sign_in_mailer.new_email_address_code.expires", count: minutes) %>
+<%= u.paragraph t("studio_auth.sign_in_mailer.new_email_address_code.ignore") %>

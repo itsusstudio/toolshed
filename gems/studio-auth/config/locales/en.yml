@@ -5,6 +5,22 @@ en: &en
       studio_email_only: "needs an @%{domain} email address"
       app_review_account: "can't be given to an app review account"
   studio_auth:
+    email_address_changes:
+      new:
+        title: "Change your email address"
+        current: "You sign in with %{email_address}."
+        email_label: "New email address"
+        submit: "Send code"
+    email_address_change_codes:
+      new:
+        current:
+          title: "Confirm it’s you"
+          sent_to_html: "To change your email address, enter the code we sent to %{email_address}."
+          submit: "Continue"
+        new:
+          title: "Check your new inbox"
+          sent_to_html: "We sent a six-digit code to %{email_address}."
+          submit: "Change email address"
     sign_ins:
       new:
         title: "Sign in to %{app_name}"
@@ -13,14 +29,11 @@ en: &en
         submit: "Send code"
         no_account: "Don’t have an account?"
         sign_up: "Create one"
-      no_account:
-        title: "Looks like you’re new to %{app_name}"
-        body: "There’s no account for %{email_address}."
-        create: "Create an account"
-        change: "Use a different email address"
     sign_ups:
       new:
         title: "Create your %{app_name} account"
+        heading: "Create your account"
+        no_account: "There’s no account for %{email_address} yet."
         full_name_label: "Full name"
         email_label: "Email address"
         submit: "Continue"
@@ -29,38 +42,47 @@ en: &en
     codes:
       new:
         title: "Check your email"
-        sent_to: "We sent a six-digit code to %{email_address}."
-        change: "Change"
+        sent_to_html: "We sent a six-digit code to %{email_address}."
         code_label: "Code"
-        hint:
-          one: "The code works for %{count} minute."
-          other: "The code works for %{count} minutes."
         sign_in: "Sign in"
         resend_prompt: "Didn’t get it?"
         resend: "Send a new code"
-        resend_wait: "Send a new code in {time}"
         dev_code: "Dev code: %{code}"
         copy: "Copy"
+    back_to_settings: "Back to settings"
     terms: "Terms"
     privacy: "Privacy"
     invitations:
       show:
         title: "Join %{place}"
-        signs_in_as: "You’ll sign in to %{app_name} as %{email_address}."
+        signs_in_as_html: "You’ll sign in to %{app_name} as %{email_address}."
         join: "Join %{place}"
+    errors:
+      email_address:
+        undeliverable: "Enter a valid email address."
+        too_many_requests: "Too many attempts. Try again in a few minutes."
+        too_many_codes: "Too many codes for this email address.\nTry again in an hour."
+        unchanged: "That’s already your email address."
+        taken: "Another account uses this email address."
+        staff_email_only: "Staff accounts need an @%{domain} email address."
+        app_review_account: "This account’s email address can’t be changed."
+      full_name:
+        blank: "Enter your full name."
+        too_long: "Use %{max} characters or fewer."
+      code:
+        invalid: "That code doesn’t match. Use the code from your latest email."
+        expired: "That code expired. Send a new one."
+        too_many_attempts: "Too many incorrect codes. Send a new one."
     flash:
-      invitation_unavailable: "That invite link is no longer valid. Ask for a new one."
-      too_many_requests: "Too many attempts. Try again in a few minutes."
-      resend_too_soon: "Wait a few seconds before asking for another code."
-      undeliverable: "Enter a valid email address."
-      no_account: "There’s no account with this email address."
-      full_name_missing: "Enter your full name."
-      full_name_too_long: "Use %{count} characters or fewer."
-      wrong_code: "Incorrect code"
+      too_many_codes: "Too many codes for this email address.\nTry again in an hour."
       expired: "That code expired. Send a new one."
       too_many_attempts: "Too many incorrect codes. Send a new one."
+      invitation_unavailable: "That invite link is no longer valid. Ask for a new one."
+      too_many_requests: "Too many attempts. Try again in a few minutes."
+      undeliverable: "Enter a valid email address."
       signed_out_everywhere: "Signed out on all devices."
       signed_out_device: "Signed out on that device."
+      email_address_changed: "Your email address is now %{email_address}."
     session_device:
       app_for: "%{app_name} for %{platform}"
       browser_on: "%{browser} on %{os}"
@@ -99,6 +121,31 @@ en: &en
           one: "You can try again in %{count} hour."
           other: "You can try again in %{count} hours."
         known_devices: "Devices you’ve signed in on before can still sign in."
+      email_address_change_code:
+        subject: "%{code} is your code to change your %{app_name} email address"
+        heading: "Confirm it’s you"
+        intro: "Enter this code in %{app_name} to change the email address on your account."
+        expires:
+          one: "This code works for %{count} minute."
+          other: "This code works for %{count} minutes."
+        ignore: "If you didn’t ask to change your email address, ignore this email. Nothing changes."
+      new_email_address_code:
+        subject: "%{code} confirms your new %{app_name} email address"
+        heading: "Confirm your new email address"
+        intro: "Enter this code in %{app_name} to sign in with this email address from now on."
+        expires:
+          one: "This code works for %{count} minute."
+          other: "This code works for %{count} minutes."
+        ignore: "If you didn’t ask for this, ignore this email. Nothing changes."
+      email_address_changed:
+        subject: "Your %{app_name} email address changed"
+        heading: "Your email address changed"
+        intro: "You now sign in to %{app_name} with %{email_address}."
+        device: "Device"
+        when: "When"
+        if_you: "If this was you, there’s nothing to do."
+        if_not: "If it wasn’t you, contact %{app_name} support right away."
+        if_not_support: "If it wasn’t you, write to %{email_address} right away and we’ll help you get your account back."
 en-US: *en
 en-GB: *en
 en-CA: *en

@@ -7,10 +7,10 @@ expiring database sessions, the staff flag, and lockout mail.
 
 | | |
 | --- | --- |
-| Code | 6 digits, valid 10 minutes, single use, 5 attempts. Asking again from the same browser within 60 seconds returns the same code, except "Send a new code", which mails a fresh one and ends the old one, at most once every 30 seconds |
+| Code | 6 digits, valid 10 minutes, single use, 5 attempts. Asking again from the same browser within 60 seconds returns the same code, except "Send a new code", which mails a fresh one and ends the old one. The mail budget is the only brake on it |
 | Lockout | 10 wrong codes in 24 hours pause sign-in for 1 hour, plus 1 hour per further wrong code. A known device counts only its own wrong codes |
 | Limits | 5 code requests an hour per address (a known device has its own 5), 30 an hour per IP (per /64 for IPv6), also counted in the database |
-| Unknown address | No mail. With sign-up, a page says there's no account for that address and offers "Create an account" or "Use a different email address"; without, an error under the field. Sign-up codes come only from the signup page |
+| Unknown address | No mail. The signup page opens with the address filled in and a line saying there's no account for it yet, so a typo shows. Sign-up codes come only from the signup page |
 | Mail | The code and the lockout notice only, text and HTML, no links but support and legal. Sent on `less_than_five_seconds` |
 
 ## Install
@@ -39,11 +39,7 @@ Rate limits need a cache store every process shares, such as Solid Cache.
 Studio::Auth.configure do |c|
   c.app_name = "Belly"
   c.mail_from = "Belly <hello@usebelly.app>"
-  c.mail_address = ["it's us studio", "216-4035 rue Saint-Ambroise", "Montréal QC H4C 2E1"]
-  c.page_layout = "uniform" # the app's Uniform document layout
-  c.wordmark = "sans" # the app name's voice: "serif" or "sans"
-  c.terms_url = "https://itsusstudio.com/terms"
-  c.privacy_url = "https://itsusstudio.com/privacy"
+  c.wordmark_style = "sans" # the app name's voice: "serif" or "sans"
   c.session_idle_timeout = 20.years # 20.years keeps a session until sign-out
   c.session_absolute_timeout = 20.years
 end
@@ -96,11 +92,11 @@ sit in `u-auth-shell`, the code field is `<u-input-code submit>`, and the mail
 uses Uniform's layout and blocks. The gem ships no CSS, JavaScript or logo.
 Every studio app shows the same pages and mail. The app supplies only:
 
-- its name, set as a Uniform wordmark in the voice `c.wordmark` names
+- its name, set as a Uniform wordmark in the voice `c.wordmark_style` names
 - a blurb under the name, as `studio_auth.blurb` in its own locale files
   (optional)
-- `c.mail_address`, the sender's name, street and city at the foot of each mail
-- a Uniform document layout, named by `c.page_layout`, that links Uniform's
+- a Uniform document layout at `app/views/layouts/uniform.html.erb`, the
+  studio's name for it, that links Uniform's
   stylesheets and renders the gem's page block in its body:
   `<%= content_for?(:studio_auth_page) ? yield(:studio_auth_page) : yield %>`
   (the gem also sets `content_for :page_title`)
@@ -121,15 +117,15 @@ locale files (`studio_auth.codes.new.title`, ...) only where a locale needs it.
 - Sign-up is the gem's: `/signup` asks for a full name and an email address,
   carries the browser's time zone, and mails a code. Nothing is written to
   `users` before the code checks out. An address that already has an account
-  just signs in. Every app sets `c.sign_up`: `true` takes new accounts,
-  `false` is invite-only. There's no default.
+  just signs in.
 - Once the code checks out, the sign-up waits in `studio_auth_pending_sign_ups`
   for 30 days. The browser that verified gets a signed cookie for it that
   lasts 1 hour and ends on sign-in or sign-out, because finishing setup signs
   the person in. After that, typing the address on the sign-in page again, on
   any browser, mails a code and carries on.
-- An app that needs a tenant or settings before the user exists overrides
-  `sign_up_setup_path`. Its setup screen reads `pending_sign_up`
+- An app that needs a tenant or settings before the user exists names its
+  setup page in the initializer: `c.finish_sign_up_path = :setup_path`. Its
+  setup screen reads `pending_sign_up`
   (`email_address`, `full_name`, `time_zone`), creates the user and tenant
   together and calls `finish_sign_up(user)`, which signs them in.
 - An app with no setup leaves it nil. The gem then creates the user with
@@ -155,6 +151,29 @@ locale files (`studio_auth.codes.new.title`, ...) only where a locale needs it.
 - Mail follows the user's `locale`. The gem owns the mail and flash copy (en,
   fr, nl). Restyle the mail at `layouts/studio/auth/sign_in_mailer`, and preview
   it at `/rails/mailers`.
+
+## Changing an email address
+
+The gem owns the whole change, with codes like sign-in, never links. Link to
+`change_email_address_path` from the app's account settings and set
+`c.account_settings_path` (a path helper, like `:settings_profile_path`) so the
+flow returns there. Nil returns to the root.
+
+1. The person types the new address. It's refused before any mail if it's the
+   same address, another account's, undeliverable, or not on the studio domain
+   for staff.
+2. A browser that signed in, or proved itself, in the last 10 minutes goes
+   straight to step 3. Any other first gets a code at the current address,
+   because sessions last for years and a shared counter device stays signed in.
+3. A code goes to the new address. When it checks out, the address changes,
+   the old address's live codes end, any pending sign-up for the new address
+   is deleted, and the old address gets a security alert naming the new one,
+   the device and the time.
+
+Sessions stay signed in. The alert names `c.support_email_address`, and sets
+it as Reply-To, when the app sets one. Codes share the sign-in limits for each
+address, so the change can't be used to mail an inbox more than sign-in can.
+App review accounts can't change their address.
 
 ## Invitations
 

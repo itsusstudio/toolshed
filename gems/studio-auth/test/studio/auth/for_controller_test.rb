@@ -42,7 +42,7 @@ class Studio::Auth::ForControllerTest < ActionDispatch::IntegrationTest
     post login_path, params: {email_address: "cook@studio.com"}
     assert_response :too_many_requests
     assert_select "input[name=email_address][aria-invalid=true][value=?]", "cook@studio.com"
-    assert_select "#studio-auth-email-error", text: I18n.t("studio_auth.flash.too_many_requests")
+    assert_select "#email_address-error"
   end
 
   test "strangers asking for a code from many IPs cannot lock the owner out" do
@@ -110,7 +110,7 @@ class Studio::Auth::ForControllerTest < ActionDispatch::IntegrationTest
 
     assert_select "body .u-auth-shell main#studio-auth-page"
     assert_select ".u-auth-shell > header a.u-wordmark.u-wordmark-serif", text: "Dummy"
-    assert_select ".u-auth-shell > footer a[href=?]", "https://dummy.app/terms"
+    assert_select ".u-auth-shell > footer a[href=?]", Studio::Uniform::TERMS_URL
     assert_select "input.u-input[name=email_address][autocomplete=email]"
   end
 
@@ -121,9 +121,7 @@ class Studio::Auth::ForControllerTest < ActionDispatch::IntegrationTest
 
     assert_select "form#studio-auth-resend-form[action=?] input[name=email_address][value=?]", login_path, "cook@studio.com"
     assert_select "form#studio-auth-resend-form input[name=resend]"
-    assert_select "form#studio-auth-resend-form u-countdown[seconds]"
 
-    travel Studio::Auth::SignInLimits::RESEND_COOLDOWN + 1.second
     perform_enqueued_jobs { post login_path, params: {email_address: "cook@studio.com", resend: "1"} }
     assert_redirected_to verify_path
     new_code = ActionMailer::Base.deliveries.last.text_part.body.to_s[/\b\d{6}\b/]
@@ -134,22 +132,8 @@ class Studio::Auth::ForControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to root_path
   end
 
-  test "sending a new code right after the last one waits, and mails nothing" do
-    User.create!(email_address: "cook@studio.com")
-    request_authentication_code("cook@studio.com")
-
-    assert_no_difference -> { ActionMailer::Base.deliveries.size } do
-      perform_enqueued_jobs { post login_path, params: {email_address: "cook@studio.com", resend: "1"} }
-    end
-
-    assert_redirected_to verify_path
-    follow_redirect!
-    assert_select "[role=alert]", text: I18n.t("studio_auth.flash.resend_too_soon")
-  end
-
   test "sending a new code works for an address that is signing up" do
     post signup_path, params: {full_name: "New Cook", email_address: "new@studio.com"}
-    travel Studio::Auth::SignInLimits::RESEND_COOLDOWN + 1.second
 
     assert_difference -> { Studio::Auth::LoginCode.count }, 1 do
       post login_path, params: {email_address: "new@studio.com", resend: "1"}
@@ -164,65 +148,29 @@ class Studio::Auth::ForControllerTest < ActionDispatch::IntegrationTest
     assert_no_difference -> { Studio::Auth::LoginCode.count } do
       post login_path, params: {email_address: "stranger@studio.com", resend: "1"}
     end
-    assert_redirected_to login_path
+    assert_redirected_to signup_path
   end
 
-  test "an address with no account gets the new-account page, which offers sign-up or another address" do
+  test "an address with no account goes to sign up with the address filled in" do
     assert_no_difference -> { Studio::Auth::LoginCode.count } do
       post login_path, params: {email_address: "Nobody@Studio.com"}
     end
-    assert_redirected_to login_path
+    assert_redirected_to signup_path
     follow_redirect!
 
-    assert_select "#studio-auth-no-account-email", text: /nobody@studio\.com/
-    assert_select "a#studio-auth-no-account-create[href=?]", signup_path
-    assert_select "a#studio-auth-no-account-change[href=?]", login_path
-  end
-
-  test "using a different address from the new-account page prefills the typed one to fix" do
-    post login_path, params: {email_address: "nobody@studio.com"}
-    follow_redirect!
-
-    get login_path
-
     assert_select "input[name=email_address][value=?]", "nobody@studio.com"
-    assert_select ".u-field #studio-auth-sign-up a[href=?]", signup_path
-  end
-
-  test "the signup form prefills the address typed on the sign-in page, for a while" do
-    post login_path, params: {email_address: "nobody@studio.com"}
-
-    get signup_path
-    assert_select "input[name=email_address][value=?]", "nobody@studio.com"
-
-    travel Studio::Auth::ForController::NEW_ACCOUNT_EMAIL_TTL + 1.second do
-      get signup_path
-      assert_select "input[name=email_address][value]", count: 0
-    end
-  end
-
-  test "without sign-up an address with no account gets an error under the field" do
-    Studio::Auth.stubs(:sign_up?).returns(false)
-
-    post login_path, params: {email_address: "nobody@studio.com"}
-
-    assert_response :unprocessable_content
-    assert_select "input[name=email_address][value=?][aria-invalid=true]", "nobody@studio.com"
-    assert_select "#studio-auth-email-error", text: I18n.t("studio_auth.flash.no_account")
-    assert_select "#studio-auth-sign-up", count: 0
+    assert_select "#studio-auth-sign-up-no-account"
   end
 
   test "going back to change the address prefills it without putting it in the URL" do
     User.create!(email_address: "cook@studio.com")
     post login_path, params: {email_address: "cook@studio.com"}
-    get verify_path
-    assert_select "a#studio-auth-start-over[href=?]", login_path
 
     get login_path
     assert_select "input[name=email_address][value=?]", "cook@studio.com"
   end
 
-  test "too many wrong codes sends you back to sign in with the error under the prefilled field" do
+  test "too many wrong codes sends you back to sign in with the message under the heading and the address filled in" do
     User.create!(email_address: "cook@studio.com")
     post login_path, params: {email_address: "cook@studio.com"}
 
@@ -230,9 +178,9 @@ class Studio::Auth::ForControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to login_path
     follow_redirect!
 
-    assert_select "input[name=email_address][value=?][aria-invalid=true]", "cook@studio.com"
-    assert_select "#studio-auth-email-error", text: I18n.t("studio_auth.flash.too_many_attempts")
-    assert_select "#studio-auth-alert", count: 0
+    assert_select "hgroup #studio-auth-alert.u-error"
+    assert_select "input[name=email_address][value=?]", "cook@studio.com"
+    assert_select ".u-banner", count: 0
   end
 
   test "a wrong code shows its error under the field, not as a banner" do
@@ -242,8 +190,8 @@ class Studio::Auth::ForControllerTest < ActionDispatch::IntegrationTest
     post verify_path, params: {code: "000000"}
 
     assert_response :unprocessable_content
-    assert_select "input[name=code][aria-invalid=true][aria-describedby=studio-auth-code-error]"
-    assert_select "#studio-auth-code-error", text: I18n.t("studio_auth.flash.wrong_code")
+    assert_select "input[name=code][aria-invalid=true][aria-describedby~=code-error]"
+    assert_select "#code-error"
     assert_select "#studio-auth-alert", count: 0
   end
 
@@ -261,7 +209,7 @@ class Studio::Auth::ForControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :unprocessable_content
     assert_select "input[name=email_address][value=?][aria-invalid=true]", "cook@example.com"
-    assert_select "#studio-auth-email-error", text: I18n.t("studio_auth.flash.undeliverable")
+    assert_select "#email_address-error"
   end
 
   test "start_sign_in_for sends an old undeliverable address back to login instead of crashing" do

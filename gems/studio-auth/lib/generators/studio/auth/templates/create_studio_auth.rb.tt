@@ -8,8 +8,14 @@ class CreateStudioAuth < ActiveRecord::Migration[<%= ActiveRecord::Migration.cur
         t.timestamps
       end
     end
-    add_column :sessions, :last_seen_at, :datetime if !column_exists?(:sessions, :last_seen_at)
-    add_column :users, :staff, :boolean, null: false, default: false if !column_exists?(:users, :staff)
+
+    if !column_exists?(:sessions, :last_seen_at)
+      add_column :sessions, :last_seen_at, :datetime
+    end
+
+    if !column_exists?(:users, :staff)
+      add_column :users, :staff, :boolean, null: false, default: false
+    end
 
     create_table :studio_auth_login_codes do |t|
       t.string :email_address, null: false

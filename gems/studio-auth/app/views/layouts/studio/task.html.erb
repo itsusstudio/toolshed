@@ -1,0 +1,16 @@
+<% config = Studio::Auth.config %>
+
+<% content_for :studio_auth_page do %>
+  <div class="u-task-shell">
+    <header>
+      <%= link_to config.app_name, main_app.root_path, class: "u-wordmark u-wordmark-#{config.wordmark_style}" %>
+      <%= link_to t("studio_auth.back_to_settings"), account_settings_path, id: "studio-auth-back-to-settings" %>
+    </header>
+
+    <main id="studio-auth-page">
+      <%= yield %>
+    </main>
+  </div>
+<% end %>
+
+<%= render template: "layouts/uniform" %>

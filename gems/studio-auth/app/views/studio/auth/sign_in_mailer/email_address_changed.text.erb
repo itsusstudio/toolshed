@@ -1,0 +1,10 @@
+<% u = uniform_mail -%>
+<% scope = "studio_auth.sign_in_mailer.email_address_changed" -%>
+<% content_for :preheader, t("#{scope}.intro", app_name: app_name, email_address: @new_email_address) -%>
+<%= u.heading t("#{scope}.heading") %>
+<%= u.paragraph t("#{scope}.intro", app_name: app_name, email_address: @new_email_address) %>
+<%= u.rows [
+      [t("#{scope}.device"), @device],
+      [t("#{scope}.when"), "#{l(@changed_at.in_time_zone, format: :long)} #{@changed_at.in_time_zone.zone}", :mono]
+    ] %>
+<%= u.notes t("#{scope}.if_you"), (@support_email_address ? t("#{scope}.if_not_support", email_address: @support_email_address) : t("#{scope}.if_not")) %>

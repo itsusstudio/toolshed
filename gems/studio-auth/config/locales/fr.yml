@@ -5,6 +5,22 @@ fr: &fr
       studio_email_only: "exige une adresse courriel @%{domain}"
       app_review_account: "ne peut pas être donné à un compte de révision d'app"
   studio_auth:
+    email_address_changes:
+      new:
+        title: "Changer votre adresse courriel"
+        current: "Vous vous connectez avec %{email_address}."
+        email_label: "Nouvelle adresse courriel"
+        submit: "Envoyer le code"
+    email_address_change_codes:
+      new:
+        current:
+          title: "Confirmez que c’est vous"
+          sent_to_html: "Pour changer votre adresse courriel, entrez le code envoyé à %{email_address}."
+          submit: "Continuer"
+        new:
+          title: "Vérifiez votre nouvelle boîte de réception"
+          sent_to_html: "Nous avons envoyé un code à six chiffres à %{email_address}."
+          submit: "Changer l’adresse courriel"
     sign_ins:
       new:
         title: "Se connecter à %{app_name}"
@@ -13,14 +29,11 @@ fr: &fr
         submit: "Envoyer le code"
         no_account: "Pas encore de compte ?"
         sign_up: "En créer un"
-      no_account:
-        title: "Première visite sur %{app_name} ?"
-        body: "Aucun compte n’utilise l’adresse %{email_address}."
-        create: "Créer un compte"
-        change: "Utiliser une autre adresse courriel"
     sign_ups:
       new:
         title: "Créez votre compte %{app_name}"
+        heading: "Créez votre compte"
+        no_account: "Il n’y a pas encore de compte pour %{email_address}."
         full_name_label: "Nom complet"
         email_label: "Adresse courriel"
         submit: "Continuer"
@@ -29,38 +42,47 @@ fr: &fr
     codes:
       new:
         title: "Consultez vos courriels"
-        sent_to: "Nous avons envoyé un code à six chiffres à %{email_address}."
-        change: "Modifier"
+        sent_to_html: "Nous avons envoyé un code à six chiffres à %{email_address}."
         code_label: "Code"
-        hint:
-          one: "Le code est valable %{count} minute."
-          other: "Le code est valable %{count} minutes."
         sign_in: "Se connecter"
         resend_prompt: "Vous ne l’avez pas reçu ?"
         resend: "Renvoyer un code"
-        resend_wait: "Nouveau code dans {time}"
         dev_code: "Code de dev : %{code}"
         copy: "Copier"
+    back_to_settings: "Retour aux paramètres"
     terms: "Conditions"
     privacy: "Confidentialité"
     invitations:
       show:
         title: "Rejoindre %{place}"
-        signs_in_as: "Vous vous connecterez à %{app_name} avec %{email_address}."
+        signs_in_as_html: "Vous vous connecterez à %{app_name} avec %{email_address}."
         join: "Rejoindre %{place}"
+    errors:
+      email_address:
+        undeliverable: "Saisissez une adresse courriel valide."
+        too_many_requests: "Trop de tentatives. Réessayez dans quelques minutes."
+        too_many_codes: "Trop de codes pour cette adresse courriel.\nRéessayez dans une heure."
+        unchanged: "C’est déjà votre adresse courriel."
+        taken: "Un autre compte utilise cette adresse courriel."
+        staff_email_only: "Les comptes du personnel ont besoin d’une adresse @%{domain}."
+        app_review_account: "L’adresse courriel de ce compte ne peut pas être changée."
+      full_name:
+        blank: "Saisissez votre nom complet."
+        too_long: "Utilisez %{max} caractères au maximum."
+      code:
+        invalid: "Ce code ne correspond pas. Utilisez le code de votre dernier courriel."
+        expired: "Code expiré. Demandez-en un nouveau."
+        too_many_attempts: "Trop d'essais. Demandez un nouveau code."
     flash:
-      invitation_unavailable: "Ce lien d’invitation n’est plus valide. Demandez-en un nouveau."
-      too_many_requests: "Trop de tentatives. Réessayez dans quelques minutes."
-      resend_too_soon: "Patientez quelques secondes avant de demander un autre code."
-      undeliverable: "Saisissez une adresse courriel valide."
-      no_account: "Aucun compte n’utilise cette adresse courriel."
-      full_name_missing: "Saisissez votre nom complet."
-      full_name_too_long: "Utilisez %{count} caractères au maximum."
-      wrong_code: "Code incorrect"
+      too_many_codes: "Trop de codes pour cette adresse courriel.\nRéessayez dans une heure."
       expired: "Code expiré. Demandez-en un nouveau."
       too_many_attempts: "Trop d'essais. Demandez un nouveau code."
+      invitation_unavailable: "Ce lien d’invitation n’est plus valide. Demandez-en un nouveau."
+      too_many_requests: "Trop de tentatives. Réessayez dans quelques minutes."
+      undeliverable: "Saisissez une adresse courriel valide."
       signed_out_everywhere: "Sessions fermées sur tous les appareils."
       signed_out_device: "Session fermée sur cet appareil."
+      email_address_changed: "Votre adresse courriel est maintenant %{email_address}."
     session_device:
       app_for: "%{app_name} pour %{platform}"
       browser_on: "%{browser} sur %{os}"
@@ -99,6 +121,31 @@ fr: &fr
           one: "Vous pourrez réessayer dans %{count} heure."
           other: "Vous pourrez réessayer dans %{count} heures."
         known_devices: "Les appareils sur lesquels vous vous êtes déjà connecté peuvent toujours se connecter."
+      email_address_change_code:
+        subject: "%{code} est votre code pour changer votre adresse courriel %{app_name}"
+        heading: "Confirmez que c’est vous"
+        intro: "Entrez ce code dans %{app_name} pour changer l’adresse courriel de votre compte."
+        expires:
+          one: "Ce code est valide pendant %{count} minute."
+          other: "Ce code est valide pendant %{count} minutes."
+        ignore: "Si vous n’avez pas demandé à changer votre adresse courriel, ignorez ce courriel. Rien ne change."
+      new_email_address_code:
+        subject: "%{code} confirme votre nouvelle adresse courriel %{app_name}"
+        heading: "Confirmez votre nouvelle adresse courriel"
+        intro: "Entrez ce code dans %{app_name} pour vous connecter désormais avec cette adresse courriel."
+        expires:
+          one: "Ce code est valide pendant %{count} minute."
+          other: "Ce code est valide pendant %{count} minutes."
+        ignore: "Si vous n’avez rien demandé, ignorez ce courriel. Rien ne change."
+      email_address_changed:
+        subject: "Votre adresse courriel %{app_name} a changé"
+        heading: "Votre adresse courriel a changé"
+        intro: "Vous vous connectez maintenant à %{app_name} avec %{email_address}."
+        device: "Appareil"
+        when: "Quand"
+        if_you: "Si c’était vous, vous n’avez rien à faire."
+        if_not: "Si ce n’était pas vous, contactez le soutien %{app_name} sans attendre."
+        if_not_support: "Si ce n’était pas vous, écrivez à %{email_address} sans attendre et nous vous aiderons à récupérer votre compte."
 fr-CA: *fr
 fr-FR: *fr
 fr-BE: *fr

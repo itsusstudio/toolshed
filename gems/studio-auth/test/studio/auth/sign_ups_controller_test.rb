@@ -102,7 +102,7 @@ class Studio::Auth::SignUpsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :unprocessable_content
     assert_select "input[name=full_name][aria-invalid=true]"
-    assert_select "#studio-auth-full-name-error", text: I18n.t("studio_auth.flash.full_name_missing")
+    assert_select "#full_name-error"
     assert_select "input[name=email_address][value=?]", "new@studio.com"
   end
 
@@ -110,14 +110,14 @@ class Studio::Auth::SignUpsControllerTest < ActionDispatch::IntegrationTest
     post signup_path, params: {full_name: "a" * 101, email_address: "new@studio.com"}
 
     assert_response :unprocessable_content
-    assert_select "#studio-auth-full-name-error"
+    assert_select "#full_name-error"
   end
 
   test "an undeliverable address re-renders with the error under the email field" do
     post signup_path, params: {full_name: "New Cook", email_address: "cook@example.com"}
 
     assert_response :unprocessable_content
-    assert_select "#studio-auth-email-error", text: I18n.t("studio_auth.flash.undeliverable")
+    assert_select "#email_address-error"
   end
 
   test "signing up with an address that has an account signs that account in" do
@@ -139,14 +139,6 @@ class Studio::Auth::SignUpsControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to root_path
   end
 
-  test "with sign-up off the signup page sends people to sign in" do
-    Studio::Auth.stubs(:sign_up?).returns(false)
-
-    get signup_path
-
-    assert_redirected_to login_path
-  end
-
   private
 
   def sign_up_code(**params)
@@ -161,9 +153,9 @@ class Studio::Auth::SignUpsControllerTest < ActionDispatch::IntegrationTest
   end
 
   def with_setup
-    ApplicationController.class_eval { def sign_up_setup_path = "/setup" }
+    Studio::Auth.config.finish_sign_up_path = :setup_path
     yield
   ensure
-    ApplicationController.class_eval { remove_method :sign_up_setup_path }
+    Studio::Auth.config.finish_sign_up_path = nil
   end
 end

@@ -1,7 +1,6 @@
 module Studio
   module Auth
     module ForController
-      # Asking for a code and showing the code page.
       module Codes
         extend ActiveSupport::Concern
 
@@ -17,12 +16,16 @@ module Studio
         end
 
         def redirect_to_code_page(issued, email_address)
-          if issued == :undeliverable || issued == :too_many_requests
-            return redirect_to(main_app.login_path, status: :see_other, alert: t("studio_auth.flash.#{issued}"))
+          if issued.is_a?(Symbol)
+            return redirect_to(main_app.login_path, status: :see_other, alert: code_request_problem(issued))
           end
 
           PendingLoginCode.store_in_rails_session(session, issued, email_address: email_address)
           redirect_to main_app.verify_path, status: :see_other
+        end
+
+        def code_request_problem(issued)
+          (issued == :undeliverable) ? t("studio_auth.errors.email_address.undeliverable") : t("studio_auth.flash.#{issued}")
         end
       end
     end

@@ -1,0 +1,18 @@
+<% content_for :page_title, t("studio_auth.email_address_changes.new.title") %>
+
+<hgroup>
+  <h1 id="studio-auth-email-change-title" class="u-text-page-title"><%= t("studio_auth.email_address_changes.new.title") %></h1>
+  <p id="studio-auth-email-change-current" class="u-text-small"><%= t("studio_auth.email_address_changes.new.current", email_address: current_user.email_address) %></p>
+</hgroup>
+
+<%# novalidate: browsers reject addresses typed with Arabic or Thai digits or invisible marks and block the submit silently; the server normalizes them. %>
+<%= uniform_form_with url: main_app.change_email_address_path, id: "studio-auth-email-change-form", html: {novalidate: true} do |form| %>
+  <%= form.email_field :email_address,
+        label: t("studio_auth.email_address_changes.new.email_label"),
+        value: @form&.email_address,
+        error: with_line_breaks(@field_error || field_error(@form, :email_address, domain: Studio::Auth::ForUser::STAFF_EMAIL_DOMAIN)),
+        required: true,
+        autofocus: true,
+        autocomplete: "email" %>
+  <%= form.button t("studio_auth.email_address_changes.new.submit"), id: "studio-auth-email-change-submit", class: "u-btn u-btn-primary" %>
+<% end %>

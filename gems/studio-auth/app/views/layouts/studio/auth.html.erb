@@ -3,29 +3,22 @@
 <% content_for :studio_auth_page do %>
   <div class="u-auth-shell">
     <header>
-      <%= link_to config.app_name, main_app.root_path, class: "u-wordmark u-wordmark-lg u-wordmark-#{config.wordmark}" %>
+      <%= link_to config.app_name, main_app.root_path, class: "u-wordmark u-wordmark-lg u-wordmark-#{config.wordmark_style}" %>
       <% if I18n.exists?("studio_auth.blurb") %>
-        <p class="u-text-article-title"><%= t("studio_auth.blurb") %></p>
+        <p class="u-text-section-title"><%= t("studio_auth.blurb") %></p>
       <% end %>
     </header>
 
     <main id="studio-auth-page">
-      <% if flash[:alert] %>
-        <div class="u-banner u-banner-danger" role="alert"><p><%= flash[:alert] %></p></div>
-      <% end %>
-      <% if flash[:notice] %>
-        <div class="u-banner u-banner-info" role="status"><p><%= flash[:notice] %></p></div>
-      <% end %>
       <%= yield %>
     </main>
 
     <footer>
       <p>
-        <%= link_to t("studio_auth.terms"), config.terms_url, target: "_blank", rel: "noopener" %>&nbsp;&nbsp;<%=
-          link_to t("studio_auth.privacy"), config.privacy_url, target: "_blank", rel: "noopener" %>
+        <%= link_to t("studio_auth.terms"), Studio::Uniform::TERMS_URL, target: "_blank", rel: "noopener" %> — <%= link_to t("studio_auth.privacy"), Studio::Uniform::PRIVACY_URL, target: "_blank", rel: "noopener" %>
       </p>
     </footer>
   </div>
 <% end %>
 
-<%= render template: "layouts/#{config.page_layout}" %>
+<%= render template: "layouts/uniform" %>

@@ -1,17 +1,18 @@
 Studio::Auth.configure do |c|
+  # The product's name, on every auth page and email. "Workbench"
   c.app_name = ""
+  # Who the emails come from. "Workbench <hello@useworkbench.co>"
   c.mail_from = ""
-  # The sender's name, street and city, one line each, at the foot of mail.
-  c.mail_address = ["", "", ""]
-  # The app's Uniform document layout, and its name's wordmark voice.
-  c.page_layout = "application"
-  c.wordmark = "serif"
-  c.terms_url = ""
-  c.privacy_url = ""
-  # true takes new accounts at /signup; false is invite-only.
-  c.sign_up = true
-  # 20.years keeps sessions until sign-out; shorter, e.g. 30.days idle and
-  # 90.days absolute, for apps holding sensitive data.
+  # The wordmark voice: "serif" or "sans".
+  c.wordmark_style = "serif"
+  # The page a new account finishes setting up on after its code. :setup_path
+  c.finish_sign_up_path = nil
+  # Where "Back to settings" goes from the email address change. :settings_profile_path
+  c.account_settings_path = nil
+  # Named in the "email address changed" alert. "support@useworkbench.co"
+  c.support_email_address = nil
+  # Sign out after this long without a visit. 30.days
   c.session_idle_timeout = 20.years
+  # Sign out after this long no matter what. 90.days
   c.session_absolute_timeout = 20.years
 end
