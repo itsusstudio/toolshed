@@ -114,6 +114,17 @@ class Studio::Auth::ForControllerTest < ActionDispatch::IntegrationTest
     assert_select "input.u-input[name=email_address][autocomplete=email]"
   end
 
+  test "the sign-in page offers each language in its own words and reloads itself in the one picked" do
+    get login_path
+
+    assert_select "form#studio-auth-language.u-auth-shell-language[method=get][action=?]", login_path do
+      assert_select "select.u-language-select[name=locale][aria-label]"
+      assert_select "option[value=en][selected]", text: "English"
+      assert_select "option[value=fr]", text: "Français"
+      assert_select "option[value=nl]", text: "Nederlands"
+    end
+  end
+
   test "sending a new code from the code page mails a fresh one right away and ends the old one" do
     User.create!(email_address: "cook@studio.com")
     old_code = request_authentication_code("cook@studio.com")

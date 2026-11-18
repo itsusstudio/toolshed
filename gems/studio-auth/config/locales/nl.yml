@@ -50,6 +50,8 @@ nl: &nl
         dev_code: "Dev-code: %{code}"
         copy: "Kopiëren"
     back_to_settings: "Terug naar instellingen"
+    language: "Taal"
+    language_name: "Nederlands"
     terms: "Voorwaarden"
     privacy: "Privacy"
     invitations:

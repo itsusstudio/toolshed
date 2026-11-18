@@ -1,7 +1,13 @@
 <% config = Studio::Auth.config %>
+<% languages = I18n.available_locales.map { |code| [t("studio_auth.language_name", locale: code, default: code.to_s.upcase), code] } %>
 
 <% content_for :studio_auth_page do %>
   <div class="u-auth-shell">
+    <% if languages.many? %>
+      <%= form_with url: request.path, method: :get, id: "studio-auth-language", class: "u-auth-shell-language" do %>
+        <%= select_tag :locale, options_for_select(languages, I18n.locale), class: "u-input u-language-select", aria: {label: t("studio_auth.language")} %>
+      <% end %>
+    <% end %>
     <header>
       <%= link_to config.app_name, main_app.root_path, class: "u-wordmark u-wordmark-lg u-wordmark-#{config.wordmark_style}" %>
       <% if I18n.exists?("studio_auth.blurb") %>

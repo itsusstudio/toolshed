@@ -50,6 +50,8 @@ fr: &fr
         dev_code: "Code de dev : %{code}"
         copy: "Copier"
     back_to_settings: "Retour aux paramètres"
+    language: "Langue"
+    language_name: "Français"
     terms: "Conditions"
     privacy: "Confidentialité"
     invitations:

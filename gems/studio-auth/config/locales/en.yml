@@ -50,6 +50,8 @@ en: &en
         dev_code: "Dev code: %{code}"
         copy: "Copy"
     back_to_settings: "Back to settings"
+    language: "Language"
+    language_name: "English"
     terms: "Terms"
     privacy: "Privacy"
     invitations:
