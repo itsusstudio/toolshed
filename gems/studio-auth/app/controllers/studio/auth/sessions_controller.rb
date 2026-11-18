@@ -1,8 +1,6 @@
 module Studio
   module Auth
     class SessionsController < BaseController
-      # The current session leaves through logout_path, so its id here is
-      # treated like one that is already gone.
       def destroy
         other_sessions = current_user.sessions.where.not(id: current_session.id)
         if other_sessions.exists?(id: params[:id])

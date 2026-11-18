@@ -1,15 +1,11 @@
 module Studio
   module Auth
     module ForController
-      # Starting and ending sessions, and the hooks around sign-in.
       module Sessions
         extend ActiveSupport::Concern
 
         private
 
-        # reset_session drops any session id an attacker planted before sign-in.
-        # The browser's previous session row ends too, so a copy of its old
-        # cookie stops working.
         def start_new_session_for(user)
           current_session&.destroy
           return_to = session[RETURN_TO_KEY]
@@ -57,8 +53,6 @@ module Studio
           disconnect_cable(ended)
         end
 
-        # An open socket outlives its cookie and would keep receiving
-        # broadcasts. ForCableConnection identifies sockets by session.
         def disconnect_cable(sessions)
           return if !defined?(::ActionCable)
 

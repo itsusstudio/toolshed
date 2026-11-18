@@ -12,8 +12,6 @@ module Studio
         ::Rails.error.report(error, handled: true, context: {mailer_action: job.arguments.second})
       end
 
-      # A refused request fails the same way on every retry. A string, so
-      # apps without Resend never load it.
       discard_on "Resend::Error::InvalidRequestError" do |job, _error|
         Rails.event.notify("authentication.mail_rejected", mailer_action: job.arguments.second)
       end

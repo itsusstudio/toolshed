@@ -19,7 +19,6 @@ module Studio
           new(id: stored["id"], email_address: stored["email_address"], dev_code: stored["dev_code"])
         end
 
-        # Separate from Rails.env so a test can turn on just the dev code.
         def include_dev_code?
           ::Rails.env.development?
         end

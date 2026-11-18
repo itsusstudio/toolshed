@@ -1,7 +1,6 @@
 module Studio
   module Auth
     module ForController
-      # Who is signed in, and sending everyone else to sign in.
       module Authentication
         extend ActiveSupport::Concern
 
@@ -22,8 +21,6 @@ module Studio
           current_session.present?
         end
 
-        # ||= alone would query again on every call when the cookie names no
-        # live session.
         def current_session
           return ::Current.session if ::Current.session || @studio_session_resumed
 
@@ -40,8 +37,6 @@ module Studio
         end
 
         def request_authentication
-          # On a 401 the Hotwire Native shells swap their tabs for a sign-in
-          # screen. A redirect would load /login inside the tab that asked.
           return head(:unauthorized) if native_app_request?
 
           store_return_path(request.fullpath) if request.get? || request.head?

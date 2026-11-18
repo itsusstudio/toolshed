@@ -5,7 +5,6 @@ module Studio
       LIMIT = 2
 
       class << self
-        # credentials: studio_auth: app_review_accounts: {email => "123456"}
         def all
           accounts = ::Rails.application.credentials.dig(:studio_auth, :app_review_accounts) || {}
           accounts.to_h do |email_address, code|

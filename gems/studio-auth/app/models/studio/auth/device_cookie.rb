@@ -12,8 +12,6 @@ module Studio
       end
 
       def trusted_for?(user)
-        # The same query runs with or without an account, so timing doesn't
-        # reveal which addresses have one. No user has id 0.
         user_id = user&.id || 0
         known_device = KnownDevice.trusted.exists?(user_id: user_id, device_token_digest: digest)
         known_device && user.present? && device_token.present?
@@ -23,8 +21,6 @@ module Studio
         assign_device_token if device_token.blank?
       end
 
-      # A device signing in for the first time gets a fresh device token, so a
-      # cookie planted before sign-in never becomes a known device.
       def trust_for(user, user_agent:, ip_address:)
         latest_visit = {user_agent: user_agent, ip_address: ip_address, last_seen_at: Time.current}
 

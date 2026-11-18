@@ -3,8 +3,6 @@ module Studio
     class Engine < ::Rails::Engine
       FILTER_PARAMETERS = [/\Acode\z/].freeze
 
-      # rate_limit counts in the controller cache store. A null store turns
-      # every limit off; a memory store gives each process its own count.
       config.after_initialize do
         unshared = [ActiveSupport::Cache::NullStore, ActiveSupport::Cache::MemoryStore]
         if ::Rails.env.production? && unshared.any? { ActionController::Base.cache_store.is_a?(it) }
@@ -17,8 +15,6 @@ module Studio
         ActionDispatch::Routing::Mapper.include Routes
       end
 
-      # Rails' default filter list misses "code", and review account codes
-      # never rotate.
       initializer "studio_auth.filter_parameters" do |app|
         app.config.filter_parameters += FILTER_PARAMETERS
       end

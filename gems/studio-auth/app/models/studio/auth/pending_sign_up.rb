@@ -1,11 +1,5 @@
 module Studio
   module Auth
-    # A sign-up whose code checked out but whose account the app hasn't
-    # created yet, so users never hold half-made accounts. The browser that
-    # verified carries a signed cookie naming the row for COOKIE_LIFETIME
-    # only: finishing setup signs the person in, so a browser left behind
-    # must not hold that for the row's whole TTL. Coming back later takes a
-    # fresh code from the sign-in page.
     class PendingSignUp < ActiveRecord::Base # standard:disable Rails/ApplicationRecord -- a gem has no ApplicationRecord
       TTL = 30.days
       COOKIE_LIFETIME = 1.hour
@@ -21,8 +15,6 @@ module Studio
       scope :expired, -> { where(expires_at: ..Time.current) }
 
       class << self
-        # One row per address: verifying again refreshes the name, time zone
-        # and expiry instead of adding a second sign-up.
         def record!(email_address:, full_name:, time_zone: nil)
           pending = find_by(email_address: TypedInput.email_address(email_address)) || new(email_address: email_address)
           pending.update!(full_name: full_name, time_zone: time_zone, expires_at: TTL.from_now)

@@ -1,7 +1,5 @@
 module Studio
   module Auth
-    # Keyed on the email address, not the user, so a sign-up code exists
-    # before its account does. RequestCode and VerifyCode act on it.
     class LoginCode < ActiveRecord::Base # standard:disable Rails/ApplicationRecord -- a gem has no ApplicationRecord
       self.ignored_columns += ["user_id"]
 
@@ -19,9 +17,6 @@ module Studio
           Secrets.digest("login_code", code)
         end
 
-        # Serializes requests and guesses for one address, so two at once
-        # can't both slip under the resend window, mail budget or lockout.
-        # Call inside a transaction.
         def lock_address(email_address)
           return if !connection.adapter_name.match?(/postg/i)
 

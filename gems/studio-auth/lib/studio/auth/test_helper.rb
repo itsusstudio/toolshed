@@ -1,7 +1,5 @@
 module Studio
   module Auth
-    # For integration tests: signs in without the email code, so tests that
-    # aren't about sign-in skip the mail round trip.
     module TestHelper
       def sign_in_as(user)
         session = user.sessions.create!(user_agent: "Rails Testing", ip_address: "127.0.0.1")

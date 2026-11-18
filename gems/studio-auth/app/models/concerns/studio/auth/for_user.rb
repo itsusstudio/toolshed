@@ -3,8 +3,6 @@ module Studio
     module ForUser
       extend ActiveSupport::Concern
 
-      # Staff sign in with codes mailed to studio Workspace inboxes, which have
-      # enforced 2FA and are suspended when someone leaves.
       STAFF_EMAIL_DOMAIN = "itsusstudio.com"
 
       included do
@@ -30,9 +28,6 @@ module Studio
         }
       end
 
-      # Checked on every staff request, so a flag set from the console or by a
-      # bug on any other address opens nothing. App review accounts are
-      # refused too: their fixed code is shared with the store reviewers.
       def staff?
         super && email_address.to_s.end_with?("@#{STAFF_EMAIL_DOMAIN}") && !app_review_account?
       end
@@ -41,14 +36,10 @@ module Studio
         email_address.present?
       end
 
-      # A user who never signs in, like a team member without a login, may
-      # have no email address. Apps override this to say which users those are.
       def requires_email_address?
         true
       end
 
-      # Only users without a login can be invited; apps can narrow it further,
-      # e.g. not while archived.
       def can_be_invited?
         email_address.blank?
       end
@@ -57,9 +48,6 @@ module Studio
         SignInLimits.locked_out?(email_address)
       end
 
-      # For support: lifts a lockout at once. Clearing the login codes resets
-      # the wrong-code count and the hourly mail budget, and cancels any code
-      # still waiting to be typed. Sessions and known devices stay.
       def unlock_sign_in!
         login_codes.delete_all
         Rails.event.notify("authentication.sign_in_unlocked", actor_id: id)
@@ -79,9 +67,6 @@ module Studio
         end
       end
 
-      # Saving must refuse what sign-in would: start_sign_in_for has no answer
-      # for an address the gem won't mail. Skipped for accounts that can't sign
-      # in, whose address an app may park somewhere undeliverable.
       def email_address_deliverable
         return if !can_sign_in? || errors.include?(:email_address)
         deliverable = !Deliverability.undeliverable?(email_address) &&

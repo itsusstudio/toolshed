@@ -4,9 +4,6 @@ module Studio
       KEY_PURPOSE = "studio-auth"
 
       class << self
-        # A keyed hash, not bcrypt: six digits are a million guesses, which a
-        # slow hash only delays offline. Without secret_key_base a leaked
-        # digest cannot be checked at all.
         def digest(purpose, value)
           OpenSSL::HMAC.hexdigest("SHA256", hmac_key, "#{purpose}:#{value}")
         end
@@ -15,8 +12,6 @@ module Studio
           digest.present? && ActiveSupport::SecurityUtils.secure_compare(digest, digest(purpose, value))
         end
 
-        # Codes travel to the mail job encrypted, so they never sit in plain
-        # text in the job table or in Active Job's argument logs.
         def encrypt(value)
           encryptor.encrypt_and_sign(value, expires_in: LoginCode::TTL)
         end

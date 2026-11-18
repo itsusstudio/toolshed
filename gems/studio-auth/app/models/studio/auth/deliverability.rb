@@ -1,7 +1,6 @@
 module Studio
   module Auth
     module Deliverability
-      # RFC 2606 and RFC 6761 reserve these; mail to them never arrives.
       RESERVED_DOMAINS = ["example.com", "example.net", "example.org"].freeze
       RESERVED_TLDS = ["test", "example", "invalid", "localhost"].freeze
       DNS_TIMEOUT = 2
@@ -12,9 +11,6 @@ module Studio
           !address.valid? || reserved?(email_address) || address.disposable_domain?
         end
 
-        # For an address being saved, never at sign-in: a DNS timeout reads
-        # the same as a dead domain. Production only, since development and
-        # test addresses often have no mail servers and tests stay offline.
         def domain_cannot_receive_mail?(email_address)
           return false if !::Rails.env.production?
 

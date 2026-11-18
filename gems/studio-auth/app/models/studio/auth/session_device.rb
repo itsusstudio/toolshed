@@ -1,8 +1,5 @@
 module Studio
   module Auth
-    # A readable name for the device behind a session, from its user agent.
-    # Match order matters: Edge and Chrome UAs both say "Safari", and Edge
-    # also says "Chrome".
     class SessionDevice
       BROWSERS = [
         ["Edge", /Edg(e|A|iOS)?\//],
@@ -28,7 +25,6 @@ module Studio
           user_agent = user_agent.to_s
 
           if user_agent.include?("Hotwire Native iOS")
-            # WKWebView on an iPad asks for desktop pages, so its UA says Macintosh.
             tablet = user_agent.match?(/iPad|Macintosh/)
             return new(kind: tablet ? :tablet : :phone,
               name: native_app_name(tablet ? "iPad" : "iPhone"))

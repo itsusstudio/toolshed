@@ -1,8 +1,5 @@
 module Studio
   module Auth
-    # Gives an existing user a login. The link carries a random token and only
-    # its digest is stored; opening the link proves the inbox, so accepting
-    # sets the user's address and signs them in.
     class Invitation < ActiveRecord::Base # standard:disable Rails/ApplicationRecord -- a gem has no ApplicationRecord
       TTL = 7.days
 
@@ -22,7 +19,6 @@ module Studio
       scope :pending, -> { open.where(arel_table[:expires_at].gt(Time.current)) }
 
       class << self
-        # Replaces any open invitation for the user and mails the new one.
         def invite!(user:, email_address:, invited_by:)
           token = Secrets.generate_token
           invitation = transaction do
@@ -41,8 +37,6 @@ module Studio
         end
       end
 
-      # Ends any pending sign-up for the address too, so the app's setup can't
-      # later create a second user for it.
       def accept!
         transaction do
           user.update!(email_address: email_address)

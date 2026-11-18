@@ -13,8 +13,6 @@ module Studio
           self.last_seen_at ||= Time.current
         end
 
-        # A NULL last_seen_at is a session from before this gem; it stays
-        # active until its first request records one.
         scope :active, -> {
           not_idle = where(last_seen_at: nil).or(where(last_seen_at: Auth.config.session_idle_timeout.ago..))
           where(created_at: Auth.config.session_absolute_timeout.ago..).merge(not_idle)

@@ -1,7 +1,5 @@
 module Studio
   module Auth
-    # Checks a typed code against a pending login code. Returns a Result
-    # whose status is :verified, :invalid, :expired or :too_many_attempts.
     module VerifyCode
       Result = Data.define(:status, :email_address, :user) do
         def initialize(status:, email_address: nil, user: nil) = super
@@ -15,7 +13,6 @@ module Studio
           LoginCode.transaction do
             LoginCode.lock_address(found.email_address)
             login_code = LoginCode.lock.find(found.id)
-            # Codes issued before codes were keyed by address have none.
             next Result.new(status: :expired) if login_code.finished? || login_code.email_address.blank?
             next Result.new(status: :too_many_attempts) if login_code.exhausted?
 
