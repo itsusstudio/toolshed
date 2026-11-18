@@ -33,9 +33,6 @@ end
 Studio::Auth.configure do |c|
   c.app_name = "Dummy"
   c.mail_from = "Dummy <hello@dummy.app>"
-  c.mail_address = ["Dummy", "1 Main Street", "Toronto ON"]
-  c.terms_url = "https://dummy.app/terms"
-  c.privacy_url = "https://dummy.app/privacy"
   c.session_idle_timeout = 20.years
   c.session_absolute_timeout = 20.years
 end
