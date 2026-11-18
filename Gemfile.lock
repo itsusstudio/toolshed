@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/itsusstudio/uniform.git
-  revision: 639f359934fd7421aa2c7cd205e076b56e02ed10
+  revision: 5c3817182bab36ec83b03c3f7cb83dc61e4b10d6
   branch: main
   glob: uniform/*.gemspec
   specs:
