@@ -20,7 +20,7 @@ module Studio
         if flash[:alert].present?
           tag.p(with_line_breaks(flash[:alert]), id: "studio-auth-alert", class: "u-error", role: "alert")
         elsif flash[:notice].present?
-          tag.p(with_line_breaks(flash[:notice]), id: "studio-auth-notice", class: "u-text-small", role: "status")
+          tag.p(with_line_breaks(flash[:notice]), id: "studio-auth-notice", class: "text-small", role: "status")
         end
       end
 

@@ -1,8 +1,8 @@
 <% content_for :page_title, t("studio_auth.email_address_changes.new.title") %>
 
 <hgroup>
-  <h1 id="studio-auth-email-change-title" class="u-text-page-title"><%= t("studio_auth.email_address_changes.new.title") %></h1>
-  <p id="studio-auth-email-change-current" class="u-text-small"><%= t("studio_auth.email_address_changes.new.current", email_address: current_user.email_address) %></p>
+  <h1 id="studio-auth-email-change-title" class="text-page-title"><%= t("studio_auth.email_address_changes.new.title") %></h1>
+  <p id="studio-auth-email-change-current" class="text-small"><%= t("studio_auth.email_address_changes.new.current", email_address: current_user.email_address) %></p>
 </hgroup>
 
 <%# novalidate: browsers reject addresses typed with Arabic or Thai digits or invisible marks and block the submit silently; the server normalizes them. %>

@@ -11,7 +11,7 @@
     <header>
       <%= link_to config.app_name, main_app.root_path, class: "u-wordmark u-wordmark-lg u-wordmark-#{config.wordmark_style}" %>
       <% if I18n.exists?("studio_auth.blurb") %>
-        <p class="u-text-section-title"><%= t("studio_auth.blurb") %></p>
+        <p class="text-section-title font-headline"><%= t("studio_auth.blurb") %></p>
       <% end %>
     </header>
 

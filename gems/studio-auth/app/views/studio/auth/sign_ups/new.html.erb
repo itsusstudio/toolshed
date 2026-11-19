@@ -1,9 +1,9 @@
 <% content_for :page_title, t("studio_auth.sign_ups.new.title", app_name: Studio::Auth.config.app_name) %>
 
 <hgroup>
-  <h1 id="studio-auth-sign-up-title" class="u-text-page-title"><%= t("studio_auth.sign_ups.new.heading") %></h1>
+  <h1 id="studio-auth-sign-up-title" class="text-page-title"><%= t("studio_auth.sign_ups.new.heading") %></h1>
   <% if @no_account_email_address %>
-    <p id="studio-auth-sign-up-no-account" class="u-text-small"><%= t("studio_auth.sign_ups.new.no_account", email_address: @no_account_email_address) %></p>
+    <p id="studio-auth-sign-up-no-account" class="text-small"><%= t("studio_auth.sign_ups.new.no_account", email_address: @no_account_email_address) %></p>
   <% end %>
   <%= page_message %>
 </hgroup>
@@ -27,4 +27,4 @@
   <%= form.button t("studio_auth.sign_ups.new.submit"), id: "studio-auth-sign-up-submit", class: "u-btn u-btn-primary" %>
 <% end %>
 
-<p id="studio-auth-sign-in" class="u-text-small"><%= sign_in_prompt %></p>
+<p id="studio-auth-sign-in" class="text-small"><%= sign_in_prompt %></p>

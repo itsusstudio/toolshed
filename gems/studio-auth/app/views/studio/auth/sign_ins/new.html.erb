@@ -1,7 +1,7 @@
 <% content_for :page_title, t("studio_auth.sign_ins.new.title", app_name: Studio::Auth.config.app_name) %>
 
 <hgroup>
-  <h1 id="studio-auth-sign-in-title" class="u-text-page-title"><%= t("studio_auth.sign_ins.new.heading") %></h1>
+  <h1 id="studio-auth-sign-in-title" class="text-page-title"><%= t("studio_auth.sign_ins.new.heading") %></h1>
   <%= page_message %>
 </hgroup>
 
@@ -17,4 +17,4 @@
   <%= form.button t("studio_auth.sign_ins.new.submit"), id: "studio-auth-sign-in-submit", class: "u-btn u-btn-primary" %>
 <% end %>
 
-<p id="studio-auth-sign-up" class="u-text-small"><%= sign_up_prompt %></p>
+<p id="studio-auth-sign-up" class="text-small"><%= sign_up_prompt %></p>

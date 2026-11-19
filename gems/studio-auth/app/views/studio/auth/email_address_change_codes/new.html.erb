@@ -2,9 +2,9 @@
 <% content_for :page_title, t("#{scope}.title") %>
 
 <hgroup>
-  <h1 id="studio-auth-email-change-code-title" class="u-text-page-title"><%= t("#{scope}.title") %></h1>
-  <p id="studio-auth-email-change-code-sent-to" class="u-text-small">
-    <%= t("#{scope}.sent_to_html", email_address: tag.strong(@change.code_sent_to(current_user), class: "u-text-strong")) %>
+  <h1 id="studio-auth-email-change-code-title" class="text-page-title"><%= t("#{scope}.title") %></h1>
+  <p id="studio-auth-email-change-code-sent-to" class="text-small">
+    <%= t("#{scope}.sent_to_html", email_address: tag.strong(@change.code_sent_to(current_user), class: "font-medium")) %>
   </p>
 </hgroup>
 
@@ -19,11 +19,11 @@
   <%= form.button t("#{scope}.submit"), id: "studio-auth-email-change-code-submit", class: "u-btn u-btn-primary" %>
 <% end %>
 
-<%= form_with url: main_app.resend_email_address_change_code_path, id: "studio-auth-email-change-resend-form", class: "u-text-small" do |form| %>
+<%= form_with url: main_app.resend_email_address_change_code_path, id: "studio-auth-email-change-resend-form", class: "text-small" do |form| %>
   <%= t("studio_auth.codes.new.resend_prompt") %>
   <%= form.button t("studio_auth.codes.new.resend"), class: "u-link-btn" %>
 <% end %>
 
 <% if @change.dev_code %>
-  <p id="studio-auth-dev-code" class="u-text-small"><%= t("studio_auth.codes.new.dev_code", code: @change.dev_code) %></p>
+  <p id="studio-auth-dev-code" class="text-small"><%= t("studio_auth.codes.new.dev_code", code: @change.dev_code) %></p>
 <% end %>

@@ -1,9 +1,9 @@
 <% content_for :page_title, t("studio_auth.codes.new.title") %>
 
 <hgroup>
-  <h1 id="studio-auth-code-title" class="u-text-page-title"><%= t("studio_auth.codes.new.title") %></h1>
-  <p id="studio-auth-code-sent-to" class="u-text-small">
-    <%= t("studio_auth.codes.new.sent_to_html", email_address: tag.strong(@pending.email_address, class: "u-text-strong")) %>
+  <h1 id="studio-auth-code-title" class="text-page-title"><%= t("studio_auth.codes.new.title") %></h1>
+  <p id="studio-auth-code-sent-to" class="text-small">
+    <%= t("studio_auth.codes.new.sent_to_html", email_address: tag.strong(@pending.email_address, class: "font-medium")) %>
   </p>
 </hgroup>
 
@@ -18,7 +18,7 @@
   <%= form.button t("studio_auth.codes.new.sign_in"), id: "studio-auth-code-submit", class: "u-btn u-btn-primary" %>
 <% end %>
 
-<%= form_with url: main_app.login_path, id: "studio-auth-resend-form", class: "u-text-small" do |form| %>
+<%= form_with url: main_app.login_path, id: "studio-auth-resend-form", class: "text-small" do |form| %>
   <%= hidden_field_tag :email_address, @pending.email_address %>
   <%= hidden_field_tag :resend, "1" %>
   <%= t("studio_auth.codes.new.resend_prompt") %>
@@ -26,7 +26,7 @@
 <% end %>
 
 <% if @pending.dev_code %>
-  <p id="studio-auth-dev-code" class="u-text-small">
+  <p id="studio-auth-dev-code" class="text-small">
     <%= t("studio_auth.codes.new.dev_code", code: @pending.dev_code) %>
     <u-copy><button type="button" class="u-link-btn" data-copy="<%= @pending.dev_code %>" data-copied="<%= t("uniform.copy.copied") %>" data-copy-failed="<%= t("uniform.copy.failed") %>" hidden><%= t("studio_auth.codes.new.copy") %></button></u-copy>
   </p>
