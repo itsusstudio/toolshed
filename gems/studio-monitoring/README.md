@@ -105,7 +105,7 @@ With no code, the gem logs `http_request` per request and `job_performed` per jo
 
 ## AppSignal request sampling
 
-AppSignal bills per request, so the gem keeps a quarter of ordinary requests. It always keeps server errors, requests with a handled error and requests over 0.5s, and always drops 404s and `appsignal_ignored_paths`. Tell AppSignal to drop the rest:
+AppSignal bills per request, and counts every background job as one, so the gem keeps a quarter of ordinary requests and jobs. It always keeps server errors, requests with a handled error and requests over 0.5s, and always drops 404s and `appsignal_ignored_paths`. It always keeps jobs that raise, report a handled error or run 2s or longer. A job run with `perform_now` inside a request is left alone, since it shares the request's transaction. Tell AppSignal to drop the rest:
 
 ```ruby
 # config/appsignal.rb

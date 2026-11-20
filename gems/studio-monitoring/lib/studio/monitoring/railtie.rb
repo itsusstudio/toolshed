@@ -14,6 +14,7 @@ module Studio
         end
         ActiveSupport.on_load(:active_job) do
           before_perform { Current.job_id = job_id }
+          around_perform { |job, block| JobSampling.around(job, &block) }
         end
       end
 
