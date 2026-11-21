@@ -59,7 +59,8 @@ end
   are sent to the app's root with an alert.
 - Staff sign in again once their session is older than
   `read_sign_in_max_age` to view, or `write_sign_in_max_age` to change
-  anything, and come back to the page.
+  anything, and come back to the page. The rest of the app stays signed in
+  meanwhile.
 - Every change through the app's admin pages and Mission Control emits
   `admin.action`, the audit trail; refused visits emit `admin.access_denied`.
 

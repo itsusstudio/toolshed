@@ -17,9 +17,21 @@ class Studio::Admin::ForAdminControllerTest < ActionDispatch::IntegrationTest
       get "/admin/users"
 
       assert_redirected_to login_path
-      assert_equal 0, Session.count
       sign_in_again("boss@itsusstudio.com")
       assert_redirected_to "/admin/users"
+      assert_equal 1, Session.count
+    end
+  end
+
+  test "staff asked to sign in again stay signed in to the app" do
+    sign_in_as(staff)
+
+    travel Studio::Admin::Configuration::WRITE_SIGN_IN_MAX_AGE_LIMIT + 1.minute do
+      get "/admin/users"
+      assert_redirected_to login_path
+
+      get "/"
+      assert_response :success
     end
   end
 

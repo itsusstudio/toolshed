@@ -17,10 +17,7 @@ module Studio
         end
 
         if !current_session.signed_in_within?(Admin.config.sign_in_max_age(write: admin_write?))
-          return_to = admin_return_path
-          terminate_session
-          store_return_path(return_to) if return_to
-          return redirect_to(main_app.login_path, notice: "Sign in again to open the admin area.")
+          return request_reauthentication(return_to: admin_return_path, notice: "Sign in again to open the admin area.")
         end
 
         response.set_header("X-Robots-Tag", "noindex, nofollow")
