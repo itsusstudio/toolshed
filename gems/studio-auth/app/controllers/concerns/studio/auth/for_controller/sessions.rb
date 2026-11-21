@@ -54,9 +54,7 @@ module Studio
         end
 
         def disconnect_cable(sessions)
-          return if !defined?(::ActionCable)
-
-          sessions.each { ::ActionCable.server.remote_connections.where(current_session: it).disconnect }
+          Cable.disconnect(sessions)
         end
 
         def forget_session

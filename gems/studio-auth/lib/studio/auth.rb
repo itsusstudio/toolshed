@@ -29,4 +29,5 @@ module Studio
   end
 end
 
+require_relative "auth/cable"
 require_relative "auth/engine"

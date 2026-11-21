@@ -12,6 +12,7 @@ expiring database sessions, the staff flag, and lockout mail.
 | Limits | 5 code requests an hour per address (a known device has its own 5), 30 an hour per IP (per /64 for IPv6), also counted in the database |
 | Unknown address | No mail. The signup page opens with the address filled in and a line saying there's no account for it yet, so a typo shows. Sign-up codes come only from the signup page |
 | Mail | The code and the lockout notice only, text and HTML, no links but support and legal. Sent on `less_than_five_seconds` |
+| Live updates | A socket opens only with a live session. Every subscription asks the channel's `authorized?` first, and a channel without one refuses and raises. Every 5 minutes the session and `authorized?` are checked again, and a socket that fails either closes. Turbo's own unchecked channel refuses everyone |
 
 ## Install
 
@@ -68,6 +69,60 @@ module ApplicationCable
   end
 end
 ```
+
+## Live updates
+
+Every channel includes `Studio::Auth::ForCableChannel` and says who may
+subscribe in `authorized?`. The concern refuses a subscription it doesn't
+authorize, and every 5 minutes rechecks both the session and `authorized?`, so
+someone signed out, archived or removed from a team stops hearing updates. It
+gives the channel `current_user`. To drop someone right away, like when they
+leave a team, collect their sessions before ending them and pass them to
+`Studio::Auth::Cable.disconnect(sessions)` afterwards. A channel that leaves out
+`authorized?` refuses everyone and raises, so the gap shows the first time the
+page opens.
+
+```ruby
+module ApplicationCable
+  class Channel < ActionCable::Channel::Base
+    include Studio::Auth::ForCableChannel
+  end
+end
+
+class PresenceChannel < ApplicationCable::Channel
+  private
+
+  def authorized?
+    current_user.workspace_ids.include?(params[:workspace_id].to_i)
+  end
+end
+```
+
+`turbo_stream_from` subscribes through the app's `StreamsChannel`, not
+`Turbo::StreamsChannel`, which trusts any signed stream name forever and now
+refuses everyone. `streamables` gives the records and names the stream was
+built from.
+
+```ruby
+class StreamsChannel < Turbo::StreamsChannel
+  include Studio::Auth::ForCableChannel
+
+  private
+
+  def authorized?
+    streamables.all? { !it.respond_to?(:workspace_id) || it.workspace_id == current_user.workspace_id }
+  end
+end
+```
+
+Broadcast `refresh` by default (`broadcast_refresh_later_to`): it carries no
+data, so the page fetches what changed through its own controller and its
+checks. Send rendered HTML only to streams whose `authorized?` is as strict as
+the page that shows it.
+
+`Studio::Auth::SecurityTests` fails for any channel under `app/` without its
+own `authorized?`, and for an app that uses `turbo_stream_from` without a
+`StreamsChannel`.
 
 ## Upgrading
 

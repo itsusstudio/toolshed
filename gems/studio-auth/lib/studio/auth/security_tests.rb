@@ -146,6 +146,21 @@ module Studio
           assert_response :success
         end
 
+        test "studio-auth: every cable channel says who may subscribe" do
+          ::Rails.application.eager_load!
+          assert_empty Cable.unchecked_channels(::Rails.root.join("app")),
+            "include Studio::Auth::ForCableChannel and define authorized? in each of these channels"
+        end
+
+        test "studio-auth: Turbo streams go through the app's StreamsChannel" do
+          views = ::Rails.root.glob("app/views/**/*.erb")
+          return pass if views.none? { File.read(it).include?("turbo_stream_from") }
+
+          ::Rails.application.eager_load!
+          assert defined?(::StreamsChannel) && ::StreamsChannel < ::Turbo::StreamsChannel,
+            "define StreamsChannel < Turbo::StreamsChannel, including Studio::Auth::ForCableChannel"
+        end
+
         private
 
         def request_authentication_code(email_address)

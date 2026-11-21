@@ -11,6 +11,10 @@ module Studio
         end
       end
 
+      config.to_prepare do
+        Cable.install
+      end
+
       initializer "studio_auth.routes" do
         ActionDispatch::Routing::Mapper.include Routes
       end
