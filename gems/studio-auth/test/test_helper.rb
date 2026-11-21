@@ -83,6 +83,7 @@ DummyApp.routes.draw do
   studio_auth
   root to: "pages#show"
   get "/private", to: "pages#private"
+  get "/reauthenticate", to: "pages#reauthenticate"
   post "/start_sign_in", to: "starts#create"
   get "/setup", to: "setups#show", as: :setup
   post "/setup", to: "setups#create"
@@ -107,6 +108,10 @@ class PagesController < ApplicationController
 
   def private
     render plain: "private"
+  end
+
+  def reauthenticate
+    request_reauthentication(return_to: "/private")
   end
 end
 

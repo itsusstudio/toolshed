@@ -135,6 +135,9 @@ locale files (`studio_auth.codes.new.title`, ...) only where a locale needs it.
   (`after_authentication_path` by default).
 - `start_sign_in_for(user)` mails a code to an existing user.
 - `store_return_path(path)` returns a visitor to `path` after sign-in.
+- `request_reauthentication(return_to: path, **flash)` sends a signed-in user to
+  the sign-in page with their address filled in, then to `path`. The session
+  stays, so leaving the page leaves them signed in.
 - Override `after_sign_in(user)`, `after_authentication_path` (root by default)
   or `terminate_all_sessions` (call `super`).
 - Override `can_sign_in?` on the user to shut out deleted or suspended accounts.

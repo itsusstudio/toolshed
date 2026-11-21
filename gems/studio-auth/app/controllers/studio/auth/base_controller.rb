@@ -29,7 +29,7 @@ module Studio
       end
 
       def redirect_signed_in
-        redirect_to main_app.root_path if authenticated?
+        redirect_to main_app.root_path if authenticated? && !reauthentication_requested?
       end
 
       def device_cookie

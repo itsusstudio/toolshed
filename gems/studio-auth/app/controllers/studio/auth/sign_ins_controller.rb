@@ -12,7 +12,8 @@ module Studio
 
       def new
         @email_address = flash[:studio_auth_email_address] ||
-          PendingLoginCode.from_rails_session(session)&.email_address
+          PendingLoginCode.from_rails_session(session)&.email_address ||
+          (current_user.email_address if reauthentication_requested?)
       end
 
       def create

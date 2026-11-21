@@ -173,6 +173,42 @@ class Studio::Auth::ForControllerTest < ActionDispatch::IntegrationTest
     assert_select "#studio-auth-sign-up-no-account"
   end
 
+  test "#request_reauthentication shows the sign-in page with the address filled in and keeps the session" do
+    User.create!(email_address: "cook@studio.com")
+    post verify_path, params: {code: request_authentication_code("cook@studio.com")}
+
+    get "/reauthenticate"
+    assert_redirected_to login_path
+
+    get login_path
+    assert_response :success
+    assert_select "input[name=email_address][value=?]", "cook@studio.com"
+
+    get root_path
+    assert_equal "in in", response.body
+  end
+
+  test "#request_reauthentication returns to the requested page after the new sign-in" do
+    User.create!(email_address: "cook@studio.com")
+    post verify_path, params: {code: request_authentication_code("cook@studio.com")}
+    get "/reauthenticate"
+
+    code = request_authentication_code("cook@studio.com")
+    post verify_path, params: {code: code}
+
+    assert_redirected_to "/private"
+    assert_equal 1, Session.count
+  end
+
+  test "a signed-in visit to the sign-in page without a request goes home" do
+    User.create!(email_address: "cook@studio.com")
+    post verify_path, params: {code: request_authentication_code("cook@studio.com")}
+
+    get login_path
+
+    assert_redirected_to root_path
+  end
+
   test "going back to change the address prefills it without putting it in the URL" do
     User.create!(email_address: "cook@studio.com")
     post login_path, params: {email_address: "cook@studio.com"}
