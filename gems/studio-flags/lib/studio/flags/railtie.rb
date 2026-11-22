@@ -13,6 +13,7 @@ module Studio
           ui.feature_creation_enabled = false
           ui.feature_removal_enabled = false
           ui.descriptions_source = ->(_keys) { Flags.descriptions }
+          ui.actor_names_source = ->(flipper_ids) { Flags.actor_names(flipper_ids) }
           ui.banner_text = ::Rails.env.titleize
           ui.banner_class = ::Rails.env.local? ? "success" : "danger"
         end

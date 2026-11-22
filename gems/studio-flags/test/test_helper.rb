@@ -1,6 +1,8 @@
 ENV["RAILS_ENV"] = "test"
+ENV["DATABASE_URL"] = "sqlite3::memory:"
 
 require "rails"
+require "active_record/railtie"
 require "studio/flags"
 require "studio/flags/test_helper"
 require "minitest/autorun"
@@ -29,3 +31,20 @@ DummyApp.initialize!
 DummyApp.load_tasks
 
 Flipper.configure { |config| config.adapter { Flipper::Adapters::Memory.new } }
+
+ActiveRecord::Schema.verbose = false
+ActiveRecord::Schema.define do
+  create_table(:people) { |t| t.string :name }
+  create_table(:shops) { |t| t.string :name }
+end
+
+class ApplicationRecord < ActiveRecord::Base
+  self.abstract_class = true
+end
+
+class Person < ApplicationRecord
+  def flipper_actor_name = "#{name} (person)"
+end
+
+class Shop < ApplicationRecord
+end

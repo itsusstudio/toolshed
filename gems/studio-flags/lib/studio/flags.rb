@@ -21,6 +21,22 @@ module Studio
         registry.keys
       end
 
+      # Turns Flipper actor ids ("User;12") into names for the Flipper UI,
+      # from each record's flipper_actor_name, else its name.
+      def actor_names(flipper_ids)
+        return {} if !defined?(ActiveRecord::Base)
+
+        flipper_ids.group_by { it.split(";", 2).first }.flat_map do |class_name, ids|
+          model = class_name.safe_constantize
+          next [] if !(model.is_a?(Class) && model < ActiveRecord::Base)
+
+          model.where(id: ids.map { it.split(";", 2).last }).filter_map do |record|
+            name = record.try(:flipper_actor_name) || record.try(:name)
+            [record.flipper_id, name] if name.present?
+          end
+        end.to_h
+      end
+
       # Safe to run from several instances booting at once: on Postgres, all
       # but one skip.
       def sync!

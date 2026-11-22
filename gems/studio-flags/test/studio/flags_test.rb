@@ -38,12 +38,23 @@ class Studio::FlagsTest < ActiveSupport::TestCase
     assert_empty Studio::Flags.names
   end
 
+  test ".actor_names names records by flipper_actor_name, else name, and skips unknown ids" do
+    person = Person.create!(name: "Ada")
+    shop = Shop.create!(name: "Studio")
+    nameless = Shop.create!
+
+    names = Studio::Flags.actor_names([person.flipper_id, shop.flipper_id, nameless.flipper_id, "Shop;0", "Nope;1", "guest"])
+
+    assert_equal({person.flipper_id => "Ada (person)", shop.flipper_id => "Studio"}, names)
+  end
+
   test "the Flipper UI shows descriptions and can't create or remove flags" do
     ui = Flipper::UI.configuration
 
     refute ui.feature_creation_enabled
     refute ui.feature_removal_enabled
     assert_equal Studio::Flags.descriptions, ui.descriptions_source.call([])
+    assert_equal({}, ui.actor_names_source.call([]))
     assert_equal "Test", ui.banner_text
   end
 

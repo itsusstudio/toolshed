@@ -27,6 +27,7 @@ Add `gem "studio-flags"` to the toolshed block in the Gemfile, next to `flipper`
 
 - `flipper:sync` runs from `bin/studio release` when `STUDIO_FLIPPER` is set, and should run in `bin/setup`. On Postgres an advisory lock lets instances booting together skip it.
 - The Flipper UI shows each flag's description, can't create or remove flags, and has an environment banner. Mount it yourself.
+- The Flipper UI shows actors by name, from the record's `flipper_actor_name`, or `name` when it has none. Define `flipper_actor_name` on a model with no `name` column, like a user with `full_name`.
 
 ```ruby
 # test/test_helper.rb
