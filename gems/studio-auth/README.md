@@ -148,6 +148,7 @@ uses Uniform's layout and blocks. The gem ships no CSS, JavaScript or logo.
 Every studio app shows the same pages and mail. The app supplies only:
 
 - its name, set as a Uniform wordmark in the voice `c.wordmark_style` names
+  (mail always sets it in the sans voice)
 - a blurb under the name, as `studio_auth.blurb` in its own locale files
   (optional)
 - a Uniform document layout at `app/views/layouts/uniform.html.erb`, the
