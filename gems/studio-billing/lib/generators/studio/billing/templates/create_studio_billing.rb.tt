@@ -1,0 +1,46 @@
+class CreateStudioBilling < ActiveRecord::Migration[<%= ActiveRecord::Migration.current_version %>]
+  def change
+    create_table :billing_subscriptions do |t|
+      t.references :owner, polymorphic: true, null: false
+      t.string :stripe_subscription_id, null: false, index: {unique: true}
+      t.string :stripe_customer_id, null: false, index: true
+      t.string :stripe_price_id, null: false
+      t.string :lookup_key
+      t.string :plan_code
+      t.string :status, null: false
+      t.datetime :current_period_end, null: false
+      t.datetime :cancel_at
+      t.datetime :synced_at, null: false
+      t.timestamps
+    end
+
+    create_table :billing_grants do |t|
+      t.references :owner, polymorphic: true, null: false
+      t.references :granted_by, polymorphic: true
+      t.string :reason, null: false
+      t.string :plan_code
+      t.string :limit_name
+      t.integer :quantity
+      t.datetime :starts_at
+      t.datetime :expires_at
+      t.datetime :revoked_at
+      t.text :note
+      t.timestamps
+    end
+
+    create_table :billing_sync_cursors do |t|
+      t.string :name, null: false, index: {unique: true}
+      t.string :last_event_id
+      t.datetime :checked_at, null: false
+      t.timestamps
+    end
+
+    create_table :billing_webhook_events do |t|
+      t.string :stripe_event_id, null: false, index: {unique: true}
+      t.string :event_type, null: false
+      t.references :owner, polymorphic: true
+      t.datetime :processed_at
+      t.datetime :created_at, null: false
+    end
+  end
+end

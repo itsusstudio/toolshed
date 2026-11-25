@@ -1,0 +1,9 @@
+<% migration_version = ActiveRecord::Migration.current_version -%>
+class AddStripeCustomerIdTo<%= owner_table_name.camelize %> < ActiveRecord::Migration[<%= migration_version %>]
+  disable_ddl_transaction!
+
+  def change
+    add_column :<%= owner_table_name %>, :stripe_customer_id, :string
+    add_index :<%= owner_table_name %>, :stripe_customer_id, unique: true, algorithm: :concurrently
+  end
+end

@@ -1,0 +1,11 @@
+# What this app sells. Every key: toolshed/gems/studio-billing/README.md
+default_plan: free
+
+branding:
+  display_name: ""
+  background_color: "#ffffff"
+  button_color: "#000000"
+
+plans:
+  - code: free
+    name: Free

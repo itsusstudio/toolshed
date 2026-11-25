@@ -1,0 +1,24 @@
+Studio::Billing.configure do |c|
+  # A restricted key (rk_) from credentials.
+  c.api_key = Rails.application.credentials.dig(:stripe, :api_key)
+  # Pinned; the webhook endpoint is created on it too. "2026-09-30.endive"
+  c.api_version = ""
+  # Prefixes every Stripe Product. "Workbench"
+  c.product_name = ""
+  # Where Stripe sends events. "https://app.useworkbench.co/billing/webhooks"
+  c.webhook_url = nil
+  # Signing secret for that endpoint, from credentials, after the first sync.
+  c.webhook_secret = Rails.application.credentials.dig(:stripe, :webhook_secret)
+  # The customer portal configuration saved once in the Stripe Dashboard
+  # (Settings, Billing, Customer portal). The sync manages its settings. "bpc_..."
+  c.portal_configuration_id = nil
+  # The models that pay. The generator's owner model.
+  c.owner_classes = ["<%= owner_model %>"]
+  # A queue the app's job workers process.
+  c.queue = :less_than_five_minutes
+
+  # One counter per limit in config/billing.yml. per: :month counts the
+  # calendar month in the app's time zone; leave it out for a standing count.
+  # c.usage(:new_jobs, per: :month) { |owner, period| owner.jobs.where(created_at: period).count }
+  # c.usage(:locations) { |owner| owner.locations.count }
+end
