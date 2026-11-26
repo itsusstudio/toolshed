@@ -46,7 +46,7 @@ module Studio
       def complete_checkout(session)
         return if session.mode != "subscription" || !session.subscription
 
-        organization = Billing.find_organization(session.client_reference_id)
+        organization = Billing.organization_for_checkout_session(session)
         organization&.record_stripe_customer(session.customer)
         SubscriptionSync.call(session.subscription)&.organization
       end
