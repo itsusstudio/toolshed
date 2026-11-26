@@ -121,7 +121,7 @@ With `posthog_browser_hosts` set, `studio_analytics_tag` renders posthog-js, ide
 <%= studio_analytics_tag(properties: {platform: "web"}) unless controller_path.start_with?("admin/") %>
 ```
 
-- Privacy: URLs lose their query and hash, and `posthog_masked_paths` are cut to the prefix. Autocapture keeps no text or attributes. Session replay masks all text and inputs except inside `[data-replay-unmask]`. Passwords, one-time codes, card, email and phone fields, and `[data-replay-mask]` stay masked even there. `mailto:` and `tel:` links are blanked.
+- Privacy: URLs lose their query and hash, and `posthog_masked_paths` are cut to the prefix. Autocapture keeps no text or attributes. Session replay shows page text except inside `[data-replay-mask]`, and masks every input except inside `[data-replay-unmask]`. Passwords, one-time codes, card, email and phone fields, and inputs inside `[data-replay-mask]` stay masked even there. `mailto:` and `tel:` links are blanked.
 - `properties` go on every browser event: low cardinality, no personal data.
 - Set `Current.actor_id` on every signed-in page. A page without one drops the browser's identity, so the next person on the device starts fresh.
 - The tag carries the request's CSP nonce. Allow the browser host in `script-src` and `connect-src`.
