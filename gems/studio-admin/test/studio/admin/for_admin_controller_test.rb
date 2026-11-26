@@ -58,12 +58,20 @@ class Studio::Admin::ForAdminControllerTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "writes allow a sign-in at most 12 hours old" do
+  test "writes allow a sign-in at most 24 hours old" do
     config = Studio::Admin::Configuration.new
     config.write_sign_in_max_age = 1.day
+    config.validate_config!
 
+    config.write_sign_in_max_age = 25.hours
     error = assert_raises(Studio::Admin::Configuration::Error) { config.validate_config! }
-    assert_match "c.write_sign_in_max_age can be at most 12 hours", error.message
+    assert_match "c.write_sign_in_max_age can be at most 24 hours", error.message
+  end
+
+  test "sign-ins default to 12 hours for reads and writes" do
+    config = Studio::Admin::Configuration.new
+
+    assert_equal [12.hours, 12.hours], [config.read_sign_in_max_age, config.write_sign_in_max_age]
   end
 
   private

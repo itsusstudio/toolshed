@@ -27,7 +27,7 @@ end
 # config/initializers/studio_admin.rb
 Studio::Admin.configure do |c|
   # How recently staff must have signed in to view the admin area, and to
-  # change anything in it. Writes allow 12.hours at most.
+  # change anything in it. Both default to 12.hours; writes allow 24.hours at most.
   c.read_sign_in_max_age = 12.hours
   c.write_sign_in_max_age = 12.hours
 end

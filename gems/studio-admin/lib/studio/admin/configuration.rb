@@ -5,13 +5,14 @@ module Studio
 
       # Sessions can last for years, so a stolen cookie must not be able to
       # change data through the admin area for that long.
-      WRITE_SIGN_IN_MAX_AGE_LIMIT = 12.hours
+      WRITE_SIGN_IN_MAX_AGE_LIMIT = 24.hours
+      DEFAULT_SIGN_IN_MAX_AGE = 12.hours
 
       attr_accessor :read_sign_in_max_age, :write_sign_in_max_age
 
       def initialize
-        @read_sign_in_max_age = WRITE_SIGN_IN_MAX_AGE_LIMIT
-        @write_sign_in_max_age = WRITE_SIGN_IN_MAX_AGE_LIMIT
+        @read_sign_in_max_age = DEFAULT_SIGN_IN_MAX_AGE
+        @write_sign_in_max_age = DEFAULT_SIGN_IN_MAX_AGE
       end
 
       def sign_in_max_age(write:)
