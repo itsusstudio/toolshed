@@ -1,43 +1,37 @@
 require "test_helper"
 
-class ShopWithoutEmailAddress < ApplicationRecord
-  self.table_name = "organizations"
-  include Studio::Billing::ForOwner
-end
-
 class Studio::Billing::CheckoutTest < StudioBillingTestCase
   setup do
     Studio::Billing::Prices.stubs(:id_for).with("team_yearly", client: client).returns("price_ty")
   end
 
-  test "#session_params for a first purchase sends the email address, owner and branding" do
-    params = checkout.session_params(owner: organization, lookup_key: "team_yearly", return_url: return_url)
+  test "#session_params for a first purchase sends the owner's email address, organization and branding" do
+    params = checkout.session_params(organization: organization, lookup_key: "team_yearly", return_url: return_url)
 
     assert_equal "subscription", params[:mode]
     assert_equal [{price: "price_ty", quantity: 1}], params[:line_items]
     assert_equal "owner@example.test", params[:customer_email]
     assert_nil params[:customer]
-    assert_equal organization.billing_global_id, params[:client_reference_id]
-    assert_equal organization.billing_global_id,
-      params.dig(:subscription_data, :metadata, Studio::Billing::OWNER_METADATA_KEY)
+    assert_equal organization.id.to_s, params[:client_reference_id]
+    assert_equal organization.id.to_s,
+      params.dig(:subscription_data, :metadata, Studio::Billing::ORGANIZATION_METADATA_KEY)
     assert_equal "Workbench", params.dig(:branding_settings, :display_name)
     assert_equal return_url, params[:return_url]
     assert_equal({enabled: false}, params[:automatic_tax])
     refute params.key?(:payment_method_types), "Checkout picks payment methods from the Dashboard"
   end
 
-  test "#session_params raises when the owner model doesn't define billing_email_address" do
+  test "ForOrganization#billing_email_address raises until Organization defines it" do
     error = assert_raises(NotImplementedError) do
-      checkout.session_params(owner: ShopWithoutEmailAddress.create!, lookup_key: "team_yearly",
-        return_url: return_url)
+      Studio::Billing::ForOrganization.instance_method(:billing_email_address).bind_call(organization)
     end
     assert_match "billing_email_address", error.message
   end
 
-  test "#session_params reuses the owner's Stripe customer and leaves out the email address" do
+  test "#session_params reuses the organization's Stripe customer and leaves out the email address" do
     organization.update!(stripe_customer_id: "cus_known")
 
-    params = checkout.session_params(owner: organization, lookup_key: "team_yearly", return_url: return_url)
+    params = checkout.session_params(organization: organization, lookup_key: "team_yearly", return_url: return_url)
 
     assert_equal "cus_known", params[:customer]
     assert_nil params[:customer_email]
@@ -47,7 +41,7 @@ class Studio::Billing::CheckoutTest < StudioBillingTestCase
     organization.update!(stripe_customer_id: "cus_known")
     Studio::Billing.config.automatic_tax = true
 
-    params = checkout.session_params(owner: organization, lookup_key: "team_yearly", return_url: return_url)
+    params = checkout.session_params(organization: organization, lookup_key: "team_yearly", return_url: return_url)
 
     assert_equal({address: "auto", name: "auto"}, params[:customer_update])
     assert_equal({enabled: true}, params[:automatic_tax])
@@ -56,39 +50,36 @@ class Studio::Billing::CheckoutTest < StudioBillingTestCase
   test "#session_params passes the integration identifier when set" do
     Studio::Billing.config.integration_identifier = "workbench_signup_qhzkdmwp"
 
-    params = checkout.session_params(owner: organization, lookup_key: "team_yearly", return_url: return_url)
+    params = checkout.session_params(organization: organization, lookup_key: "team_yearly", return_url: return_url)
 
     assert_equal "workbench_signup_qhzkdmwp", params[:integration_identifier]
   end
 
   test "#session_params refuses a legacy plan's price" do
     assert_raises(Studio::Billing::Checkout::NotForSaleError) do
-      checkout.session_params(owner: organization, lookup_key: "simple_yearly", return_url: return_url)
+      checkout.session_params(organization: organization, lookup_key: "simple_yearly", return_url: return_url)
     end
   end
 
   test "#session_params refuses a lookup key that isn't in the catalog" do
     assert_raises(Studio::Billing::Checkout::NotForSaleError) do
-      checkout.session_params(owner: organization, lookup_key: "pro_yearly", return_url: return_url)
+      checkout.session_params(organization: organization, lookup_key: "pro_yearly", return_url: return_url)
     end
   end
 
-  test "#session_params refuses an owner who already has a subscription that counts" do
+  test "#session_params refuses an organization that already has a subscription that counts" do
     subscribe(organization)
 
     assert_raises(Studio::Billing::Checkout::AlreadySubscribedError) do
-      checkout.session_params(owner: organization, lookup_key: "team_yearly", return_url: return_url)
+      checkout.session_params(organization: organization, lookup_key: "team_yearly", return_url: return_url)
     end
   end
 
   test "#complete records the customer and the subscription" do
-    client.v1.checkout.sessions.stubs(:retrieve).with("cs_1").returns(stripe_object(
-      id: "cs_1", object: "checkout.session", status: "complete", customer: "cus_new", subscription: "sub_1",
-      client_reference_id: organization.billing_global_id
-    ))
+    client.v1.checkout.sessions.stubs(:retrieve).with("cs_1").returns(checkout_session)
     client.v1.subscriptions.stubs(:retrieve).with("sub_1").returns(stripe_subscription(customer: "cus_new"))
 
-    completion = checkout.complete(session_id: "cs_1")
+    completion = checkout.complete(session_id: "cs_1", organization: organization)
 
     assert_predicate completion, :complete?
     assert_equal "sub_1", completion.subscription.stripe_subscription_id
@@ -96,19 +87,46 @@ class Studio::Billing::CheckoutTest < StudioBillingTestCase
   end
 
   test "#complete for an open session syncs nothing" do
-    client.v1.checkout.sessions.stubs(:retrieve).returns(stripe_object(id: "cs_1", status: "open"))
+    client.v1.checkout.sessions.stubs(:retrieve).returns(checkout_session(status: "open"))
     client.v1.subscriptions.expects(:retrieve).never
 
-    completion = checkout.complete(session_id: "cs_1")
+    completion = checkout.complete(session_id: "cs_1", organization: organization)
 
     refute_predicate completion, :complete?
     assert_nil completion.subscription
+  end
+
+  test "#complete refuses another organization's session" do
+    other = Organization.create!(name: "Other", owner: User.create!(email_address: "other@example.test"))
+    client.v1.checkout.sessions.stubs(:retrieve).returns(checkout_session(organization: other))
+    client.v1.subscriptions.expects(:retrieve).never
+
+    assert_raises(Studio::Billing::CheckoutSessionMismatchError) do
+      checkout.complete(session_id: "cs_1", organization: organization)
+    end
+    assert_nil organization.reload.stripe_customer_id
+  end
+
+  test "#complete refuses a session the gem didn't create" do
+    client.v1.checkout.sessions.stubs(:retrieve).returns(checkout_session(metadata: {}))
+
+    assert_raises(Studio::Billing::CheckoutSessionMismatchError) do
+      checkout.complete(session_id: "cs_1", organization: organization)
+    end
   end
 
   private
 
   def checkout
     Studio::Billing::Checkout.new(client: client)
+  end
+
+  def checkout_session(status: "complete", organization: self.organization, metadata: nil)
+    stripe_object(
+      id: "cs_1", object: "checkout.session", status: status, customer: "cus_new", subscription: "sub_1",
+      client_reference_id: organization.id.to_s,
+      metadata: metadata || {Studio::Billing::ORGANIZATION_METADATA_KEY => organization.id.to_s}
+    )
   end
 
   def return_url

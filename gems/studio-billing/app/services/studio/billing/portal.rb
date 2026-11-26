@@ -9,10 +9,10 @@ module Studio
         @client = client
       end
 
-      def create_session(owner:, return_url:, flow: nil, after_completion_url: nil)
-        stripe_customer_id = owner.stripe_customer_id
+      def create_session(organization:, return_url:, flow: nil, after_completion_url: nil)
+        stripe_customer_id = organization.stripe_customer_id
         if !stripe_customer_id
-          raise NoCustomerError, "studio-billing: #{owner.billing_global_id} has never paid through Stripe"
+          raise NoCustomerError, "studio-billing: #{organization.id} has never paid through Stripe"
         end
 
         Billing.config.validate_portal_config!
@@ -21,7 +21,7 @@ module Studio
           configuration: Billing.config.portal_configuration_id,
           return_url: return_url
         }
-        params[:flow_data] = flow_data(owner, flow.to_s, after_completion_url) if flow
+        params[:flow_data] = flow_data(organization, flow.to_s, after_completion_url) if flow
         client.v1.billing_portal.sessions.create(params)
       end
 
@@ -29,12 +29,12 @@ module Studio
 
       attr_reader :client
 
-      def flow_data(owner, flow, after_completion_url)
+      def flow_data(organization, flow, after_completion_url)
         raise ArgumentError, "studio-billing: portal flow is one of #{FLOWS.join(", ")}" if !FLOWS.include?(flow)
 
         data = {type: flow}
         if flow != "payment_method_update"
-          subscription = owner.entitlements.subscription
+          subscription = organization.entitlements.subscription
           raise ArgumentError, "studio-billing: the #{flow} flow needs a subscription that counts" if !subscription
 
           data[flow.to_sym] = {subscription: subscription.stripe_subscription_id}

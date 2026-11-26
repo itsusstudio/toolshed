@@ -5,12 +5,12 @@ module Studio
         @client = client
       end
 
-      def call(owner, at_period_end: false)
-        subscriptions = owner.billing_subscriptions.not_ended.map do |subscription|
+      def call(organization, at_period_end: false)
+        subscriptions = organization.billing_subscriptions.not_ended.map do |subscription|
           stripe_subscription = at_period_end ? stop_renewing(subscription) : cancel_now(subscription)
           SubscriptionSync.new(client: client).call(stripe_subscription)
         end
-        owner.billing_grants.active.find_each(&:revoke!) if !at_period_end
+        organization.billing_grants.active.find_each(&:revoke!) if !at_period_end
         subscriptions
       end
 

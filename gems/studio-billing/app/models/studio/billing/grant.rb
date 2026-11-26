@@ -3,8 +3,8 @@ module Studio
     class Grant < ActiveRecord::Base # standard:disable Rails/ApplicationRecord -- a gem has no ApplicationRecord
       self.table_name = "billing_grants"
 
-      belongs_to :owner, polymorphic: true
-      belongs_to :granted_by, polymorphic: true, optional: true
+      belongs_to :organization
+      belongs_to :granted_by, class_name: "User", optional: true
 
       validates :reason, presence: true
       validates :quantity, numericality: {only_integer: true, greater_than: 0}, if: :limit_name?

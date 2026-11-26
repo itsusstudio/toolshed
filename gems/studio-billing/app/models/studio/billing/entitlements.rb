@@ -3,10 +3,10 @@ module Studio
     class Entitlements
       class UnknownNameError < StandardError; end
 
-      attr_reader :owner, :now
+      attr_reader :organization, :now
 
-      def initialize(owner, now: Time.current, catalog: Billing.catalog, config: Billing.config)
-        @owner = owner
+      def initialize(organization, now: Time.current, catalog: Billing.catalog, config: Billing.config)
+        @organization = organization
         @now = now
         @catalog = catalog
         @config = config
@@ -17,7 +17,7 @@ module Studio
       end
 
       def subscription
-        @subscription ||= owner.billing_subscriptions.counting(now: now).order(current_period_end: :desc).first
+        @subscription ||= organization.billing_subscriptions.counting(now: now).order(current_period_end: :desc).first
       end
 
       def allows?(feature)
@@ -47,7 +47,7 @@ module Studio
       def used(name)
         name = known_limit!(name)
         @used ||= {}
-        @used[name] ||= config.usage_counters.fetch(name).count(owner, now: now)
+        @used[name] ||= config.usage_counters.fetch(name).count(organization, now: now)
       end
 
       def over?(name)
@@ -60,8 +60,8 @@ module Studio
       attr_reader :catalog, :config
 
       def candidate_plans
-        codes = owner.billing_subscriptions.counting(now: now).pluck(:plan_code) +
-          owner.billing_grants.active(now: now).of_plans.pluck(:plan_code) +
+        codes = organization.billing_subscriptions.counting(now: now).pluck(:plan_code) +
+          organization.billing_grants.active(now: now).of_plans.pluck(:plan_code) +
           [catalog.default_plan_code]
         codes.compact.uniq.filter_map { catalog.find_plan(it) }
       end
@@ -71,7 +71,7 @@ module Studio
       end
 
       def limit_grants
-        @limit_grants ||= owner.billing_grants.active(now: now).of_limits.to_a
+        @limit_grants ||= organization.billing_grants.active(now: now).of_limits.to_a
       end
 
       def known_limit!(name)

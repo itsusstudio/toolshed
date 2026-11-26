@@ -11,25 +11,25 @@ class Studio::Billing::InstallGeneratorTest < Rails::Generators::TestCase
     FileUtils.mkdir_p(File.join(destination_root, "config"))
     File.write(File.join(destination_root, "config/routes.rb"), "Rails.application.routes.draw do\nend\n")
     FileUtils.mkdir_p(File.join(destination_root, "app/models"))
-    File.write(File.join(destination_root, "app/models/repair_shop.rb"), "class RepairShop < ApplicationRecord\nend\n")
+    File.write(File.join(destination_root, "app/models/organization.rb"),
+      "class Organization < ApplicationRecord\nend\n")
   end
 
-  test "puts the Stripe customer on the owner model's table and includes the concern" do
-    run_generator ["RepairShop"]
+  test "puts the Stripe customer on organizations, built concurrently, and includes the concern" do
+    run_generator
 
-    assert_migration "db/migrate/add_stripe_customer_id_to_repair_shops.rb" do |content|
-      assert_match "add_column :repair_shops, :stripe_customer_id", content
+    assert_migration "db/migrate/add_stripe_customer_id_to_organizations.rb" do |content|
+      assert_match "add_column :organizations, :stripe_customer_id", content
       assert_match "algorithm: :concurrently", content
       assert_match "disable_ddl_transaction!", content
     end
-    assert_file "config/initializers/studio_billing.rb", /c.owner_classes = \["RepairShop"\]/
-    assert_file "app/models/repair_shop.rb", /include Studio::Billing::ForOwner/
+    assert_file "app/models/organization.rb", /include Studio::Billing::ForOrganization/
   end
 
-  test "defaults the owner to Organization" do
-    run_generator
+  test "refuses to run without an Organization model" do
+    FileUtils.rm(File.join(destination_root, "app/models/organization.rb"))
 
-    assert_migration "db/migrate/add_stripe_customer_id_to_organizations.rb", /add_column :organizations/
+    assert_raises(Thor::Error) { run_generator([], debug: true) }
   end
 
   test "writes the migration, initializer, catalog, route and hourly reconcile" do

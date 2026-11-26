@@ -3,7 +3,7 @@ module Studio
     class WebhookEvent < ActiveRecord::Base # standard:disable Rails/ApplicationRecord -- a gem has no ApplicationRecord
       self.table_name = "billing_webhook_events"
 
-      belongs_to :owner, polymorphic: true, optional: true
+      belongs_to :organization, optional: true
 
       validates :stripe_event_id, presence: true
       validates :stripe_event_id, uniqueness: true, on: :update
@@ -18,8 +18,8 @@ module Studio
         end
       end
 
-      def processed!(owner)
-        update!(owner: owner, processed_at: Time.current)
+      def processed!(organization)
+        update!(organization: organization, processed_at: Time.current)
       end
     end
   end

@@ -14,28 +14,28 @@ module Studio
         @config = config
       end
 
-      def create_session(owner:, lookup_key:, return_url:)
-        client.v1.checkout.sessions.create(session_params(owner:, lookup_key:, return_url:))
+      def create_session(organization:, lookup_key:, return_url:)
+        client.v1.checkout.sessions.create(session_params(organization:, lookup_key:, return_url:))
       end
 
-      def session_params(owner:, lookup_key:, return_url:)
+      def session_params(organization:, lookup_key:, return_url:)
         price = sellable_price!(lookup_key)
-        if owner.entitlements.subscription
+        if organization.entitlements.subscription
           raise AlreadySubscribedError,
-            "studio-billing: #{owner.billing_global_id} already has a subscription that counts"
+            "studio-billing: #{organization.id} already has a subscription that counts"
         end
 
-        stripe_customer_id = owner.stripe_customer_id
-        metadata = {OWNER_METADATA_KEY => owner.billing_global_id}
+        stripe_customer_id = organization.stripe_customer_id
+        metadata = {ORGANIZATION_METADATA_KEY => organization.id.to_s}
 
         {
           mode: "subscription",
           ui_mode: config.ui_mode,
           line_items: [{price: Prices.id_for(price.lookup_key, client: client), quantity: 1}],
           customer: stripe_customer_id,
-          customer_email: (owner.billing_email_address if !stripe_customer_id),
+          customer_email: (organization.billing_email_address if !stripe_customer_id),
           customer_update: ({address: "auto", name: "auto"} if stripe_customer_id && config.automatic_tax),
-          client_reference_id: owner.billing_global_id,
+          client_reference_id: organization.id.to_s,
           metadata: metadata,
           subscription_data: {billing_mode: {type: "flexible"}, metadata: metadata},
           automatic_tax: {enabled: config.automatic_tax},
@@ -45,14 +45,15 @@ module Studio
         }.compact
       end
 
-      def complete(session_id:)
+      def complete(session_id:, organization:)
         session = client.v1.checkout.sessions.retrieve(session_id)
+        if Billing.organization_for_checkout_session(session) != organization
+          raise CheckoutSessionMismatchError,
+            "studio-billing: Checkout Session #{session.id} isn't organization #{organization.id}'s"
+        end
         return Completion.new(status: session.status, subscription: nil) if session.status != "complete"
 
-        owner = Billing.locate_owner(session.client_reference_id)
-        raise OwnerNotFoundError, "studio-billing: no owner for Checkout Session #{session.id}" if !owner
-
-        owner.record_stripe_customer(session.customer)
+        organization.record_stripe_customer(session.customer)
         subscription = SubscriptionSync.new(client: client)
           .call(client.v1.subscriptions.retrieve(session.subscription))
         Completion.new(status: session.status, subscription: subscription)

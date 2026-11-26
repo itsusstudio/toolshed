@@ -10,20 +10,19 @@ gem "studio-billing"
 ```
 
 ```sh
-bin/rails generate studio:billing:install              # the owner is Organization, the studio standard
-bin/rails generate studio:billing:install RepairShop   # or name the model that pays
+bin/rails generate studio:billing:install
 bin/rails db:migrate
 ```
 
-The owner is the model that pays: the tenant, never the user. The generator adds `stripe_customer_id` (unique, built concurrently in its own migration) to its table, includes `Studio::Billing::ForOwner` in it, and writes the migration for the gem's tables, `config/initializers/studio_billing.rb`, a starter `config/billing.yml`, the `studio_billing` route (`POST /billing/webhooks`) and three jobs in `config/recurring.yml`: `ReconcileSubscriptionsJob` hourly, `CheckStripeJob` every Monday and `PurgeWebhookEventsJob` daily. Then define the owner's email address:
+studio-billing bills an `Organization` (table `organizations`) and records grants as given by a `User` (table `users`). Those names are fixed, as in studio-tenancy; an app with other tenant names renames its models first. The generator stops if `app/models/organization.rb` doesn't exist. It adds `stripe_customer_id` (unique, built concurrently in its own migration) to `organizations`, includes `Studio::Billing::ForOrganization` in `Organization`, and writes the migration for the gem's tables, `config/initializers/studio_billing.rb`, a starter `config/billing.yml`, the `studio_billing` route (`POST /billing/webhooks`) and three jobs in `config/recurring.yml`: `ReconcileSubscriptionsJob` hourly, `CheckStripeJob` every Monday and `PurgeWebhookEventsJob` daily.
+
+`Organization` must define `billing_email_address`, the address Stripe sends receipts and invoices to. Without it, Checkout raises `NotImplementedError`:
 
 ```ruby
-class RepairShop < ApplicationRecord
-  include Studio::Billing::ForOwner
+class Organization < ApplicationRecord
+  include Studio::Billing::ForOrganization
 
-  # Required. Where Stripe sends receipts and invoices; Checkout prefills it on
-  # a first purchase. Raises NotImplementedError when left out.
-  def billing_email_address = owner_email_address
+  def billing_email_address = owner.email_address
 end
 ```
 
@@ -79,9 +78,6 @@ Studio::Billing.configure do |c|
   # matches the studio queues in config/queue.yml.
   c.queue = :less_than_five_minutes   # default
 
-  # The models that pay. Owners in Stripe metadata only resolve to these.
-  c.owner_classes = ["Organization"]  # default; Workbench: ["RepairShop"]
-
   # Required for the portal and the sync: the customer portal configuration
   # saved once in the Stripe Dashboard (Settings, Billing, Customer portal).
   # The sync manages its settings from then on.
@@ -93,13 +89,14 @@ Studio::Billing.configure do |c|
   # Required: one counter per limit in billing.yml, or boot fails. per: :month
   # counts the calendar month in the app's time zone and gets that range;
   # leave per: out for a standing count.
-  c.usage(:new_jobs, per: :month) { |shop, month| shop.job_tickets.where(created_at: month).count }
-  c.usage(:texts, per: :month) { |shop, month| shop.text_messages.where(sent_at: month).count }
-  c.usage(:locations) { |shop| shop.locations.count }
+  c.usage(:new_jobs, per: :month) { |organization, month| organization.job_tickets.where(created_at: month).count }
+  c.usage(:texts, per: :month) { |organization, month| organization.text_messages.where(sent_at: month).count }
+  c.usage(:locations) { |organization| organization.workspaces.count }
 
-  # Optional. Finds the owner of a subscription made before the gem, from its
-  # Stripe metadata, when neither the gem's metadata nor a known customer does.
-  c.owner_from_metadata = ->(metadata) { RepairShop.find_by(id: metadata["repair_shop_id"]) }
+  # Optional. Finds the organization of a subscription made before the gem,
+  # from its Stripe metadata, when neither the gem's metadata nor a known
+  # customer does.
+  c.organization_from_metadata = ->(metadata) { Organization.find_by(id: metadata["repair_shop_id"]) }
 end
 ```
 
@@ -110,8 +107,8 @@ Use a restricted key (`rk_`). The app needs write on Checkout Sessions, Customer
 Every key `config/billing.yml` takes, using Workbench's plans as the example.
 
 ```yaml
-# Plan an owner falls back to with no subscription or grant. Must be a plan
-# below. Without it, an owner with nothing gets no features and 0 of everything.
+# Plan an organization falls back to with no subscription or grant. Must be a plan
+# below. Without it, an organization with nothing gets no features and 0 of everything.
 default_plan: free
 
 # Optional. behavior: inclusive (default, the price shown is the price paid)
@@ -153,7 +150,7 @@ portal:
       schedule_at_period_end:
         conditions: [{type: decreasing_item_amount}]
 
-# Required. In rank order, lowest first: when an owner has several plans,
+# Required. In rank order, lowest first: when an organization has several plans,
 # the one listed last wins.
 plans:
   # No prices: free, never sent to Stripe.
@@ -233,18 +230,18 @@ bin/rails studio_billing:sync    # makes Stripe match config/billing.yml
 - A price the YAML no longer lists is left alone, so removing a plan can't archive what existing customers pay.
 - The sync creates the webhook endpoint with the events the gem handles, on the app's API version. Its signing secret is shown once, and only in an interactive terminal. Add it to credentials as `stripe.webhook_secret`.
 
-## What an owner may do
+## What an organization may do
 
 Product code asks entitlements, never a plan code.
 
 ```ruby
-shop.entitlements.plan                  # => the Catalog::Plan in effect
-shop.entitlements.allows?(:texts)       # => true
-shop.entitlements.limit(:new_jobs)      # => 200, or nil when unlimited
-shop.entitlements.unlimited?(:locations)
-shop.entitlements.used(:new_jobs)       # => 143, from the c.usage counter
-shop.entitlements.over?(:new_jobs)      # => false; never true when unlimited
-shop.entitlements.subscription          # => the Studio::Billing::Subscription that counts, or nil
+current_organization.entitlements.plan                  # => the Catalog::Plan in effect
+current_organization.entitlements.allows?(:texts)       # => true
+current_organization.entitlements.limit(:new_jobs)      # => 200, or nil when unlimited
+current_organization.entitlements.unlimited?(:locations)
+current_organization.entitlements.used(:new_jobs)       # => 143, from the c.usage counter
+current_organization.entitlements.over?(:new_jobs)      # => false; never true when unlimited
+current_organization.entitlements.subscription          # => the Studio::Billing::Subscription that counts, or nil
 ```
 
 - The plan in effect is the one listed last in `billing.yml` among: subscriptions that count (trialing, active or past due, with the period ended less than `c.grace_period` ago), active plan grants, and `default_plan`.
@@ -256,9 +253,9 @@ shop.entitlements.subscription          # => the Studio::Billing::Subscription t
 Access nobody pays Stripe for: trials, staff, partners, demos, students, comps, packs.
 
 ```ruby
-shop.billing_grants.create!(reason: "trial", plan_code: "team", expires_at: 14.days.from_now)
-shop.billing_grants.create!(reason: "student", plan_code: "team", expires_at: Date.new(2027, 6, 30))
-shop.billing_grants.create!(reason: "text_pack", limit_name: "texts", quantity: 500, granted_by: current_user)
+organization.billing_grants.create!(reason: "trial", plan_code: "team", expires_at: 14.days.from_now)
+organization.billing_grants.create!(reason: "student", plan_code: "team", expires_at: Date.new(2027, 6, 30))
+organization.billing_grants.create!(reason: "text_pack", limit_name: "texts", quantity: 500, granted_by: current_user)
 grant.revoke!
 ```
 
@@ -270,22 +267,24 @@ grant.revoke!
 
 ```ruby
 session = Studio::Billing::Checkout.new.create_session(
-  owner: shop, lookup_key: "team_yearly",
+  organization: current_organization, lookup_key: "team_yearly",
   return_url: billing_return_url(session_id: "{CHECKOUT_SESSION_ID}")
 )
 # embedded_page: hand session.client_secret to Stripe.js. hosted_page: redirect to session.url.
 
-completion = Studio::Billing::Checkout.new.complete(session_id: params[:session_id])
+completion = Studio::Billing::Checkout.new.complete(session_id: params[:session_id], organization: current_organization)
 completion.complete?        # the subscription and customer are recorded
 
-Studio::Billing::Portal.new.create_session(owner: shop, return_url: billing_url).url
-Studio::Billing::Portal.new.create_session(owner: shop, return_url: billing_url,
+Studio::Billing::Portal.new.create_session(organization: current_organization, return_url: billing_url).url
+Studio::Billing::Portal.new.create_session(organization: current_organization, return_url: billing_url,
   flow: :subscription_cancel, after_completion_url: billing_url).url
 ```
 
-- Checkout reuses the owner's Stripe customer, puts the owner in the session and subscription metadata, sends the catalog's branding, and never sets payment methods (the Dashboard does).
-- It raises `Checkout::NotForSaleError` for a legacy or unknown price and `Checkout::AlreadySubscribedError` for an owner with a subscription that counts.
-- Portal flows: `payment_method_update`, `subscription_cancel`, `subscription_update`. It raises `Portal::NoCustomerError` for an owner who has never paid.
+- Checkout reuses the organization's Stripe customer, puts the organization in the session and subscription metadata, sends the catalog's branding, and never sets payment methods (the Dashboard does).
+- It raises `Checkout::NotForSaleError` for a legacy or unknown price and `Checkout::AlreadySubscribedError` for an organization with a subscription that counts.
+- `complete` raises `CheckoutSessionMismatchError` unless the session was created by the gem for that organization (its `client_reference_id` and metadata both name it).
+- An organization's `stripe_customer_id`, once set, is never replaced: a session or subscription naming a different customer raises `StripeCustomerMismatchError` (the webhook job and sync report it and leave the id alone).
+- Portal flows: `payment_method_update`, `subscription_cancel`, `subscription_update`. It raises `Portal::NoCustomerError` for an organization that has never paid.
 - Access follows the recorded subscription, never the return page alone.
 
 ## Keeping the Stripe customer current
@@ -293,7 +292,7 @@ Studio::Billing::Portal.new.create_session(owner: shop, return_url: billing_url,
 The owner's email address goes to Stripe on the first purchase only. When it changes, call:
 
 ```ruby
-shop.update_stripe_email_address   # sends billing_email_address to the Stripe customer; no-op before the first purchase
+organization.update_stripe_email_address   # sends billing_email_address to the Stripe customer; no-op before the first purchase
 ```
 
 Call it from the app's email address change flow, not a callback.
@@ -303,14 +302,14 @@ Call it from the app's email address change flow, not a callback.
 Stripe keeps charging until the subscription is cancelled, and it never hears that an account was deleted. Call `cancel_billing!` in the app's account closure flow, where the person asks to close, not at the final purge:
 
 ```ruby
-shop.cancel_billing!                       # cancel now, no refund, revoke grants
-shop.cancel_billing!(at_period_end: true)  # stop renewing; access until the paid period ends
+organization.cancel_billing!                       # cancel now, no refund, revoke grants
+organization.cancel_billing!(at_period_end: true)  # stop renewing; access until the paid period ends
 ```
 
 - It cancels every subscription that hasn't ended and records Stripe's answer. A subscription Stripe already cancelled isn't an error, so calling it twice is safe.
 - Refunds are a person's decision in the Stripe Dashboard, never the gem's.
-- Deleting an owner whose subscription would charge again (not ended, no `cancel_at`) raises `Studio::Billing::BillingStillActiveError` and deletes nothing. A flow that forgets `cancel_billing!` fails loudly in development and tests.
-- When Stripe later ends a cancelled subscription for an owner that's gone, the event is skipped quietly.
+- Deleting an organization whose subscription would charge again (not ended, no `cancel_at`) raises `Studio::Billing::BillingStillActiveError` and deletes nothing. A flow that forgets `cancel_billing!` fails loudly in development and tests.
+- When Stripe later ends a cancelled subscription for an organization that's gone, the event is skipped quietly.
 
 ## Staying in sync with Stripe
 
@@ -325,22 +324,22 @@ Every path re-fetches the subscription from Stripe and upserts one row per Strip
 
 - Disputes, refunds and early fraud warnings don't change a subscription in Stripe. The job reports them to `Rails.error` as warnings and publishes `studio_billing.payment_problem`.
 - The hourly job raises `Reconciler::CursorExpiredError` if its last run is older than Stripe's 30 days of events. Run `reconcile_all` to recover.
-- A subscription whose owner can't be found is reported and skipped.
+- A subscription whose organization can't be found is reported and skipped.
 - Every Monday `CheckStripeJob` runs the same comparison as `studio_billing:check` against the live account and reports any drift to `Rails.error` as a warning, listing each difference.
 - `check` and `sync` also note active prices on the gem's products with no lookup key in `billing.yml`, like an old price left active by an interrupted change. They're noted, not archived: archive one in the Dashboard once no subscription uses it.
 - Every day `PurgeWebhookEventsJob` deletes processed webhook event IDs older than `c.webhook_event_retention`.
 
-The owner is found from the gem's metadata, then a Stripe customer the gem has seen, then `c.owner_from_metadata`.
+The organization is found from the gem's metadata, then a Stripe customer the gem has seen, then `c.organization_from_metadata`.
 
 ### Reacting in the app
 
 ```ruby
 ActiveSupport::Notifications.subscribe("studio_billing.subscription_changed") do |event|
-  event.payload => {owner:, subscription:, plan_before:, plan_after:}
+  event.payload => {organization:, subscription:, plan_before:, plan_after:}
 end
 
 ActiveSupport::Notifications.subscribe("studio_billing.payment_problem") do |event|
-  event.payload => {owner:, event_type:, stripe_object_id:, stripe_charge_id:}
+  event.payload => {organization:, event_type:, stripe_object_id:, stripe_charge_id:}
 end
 ```
 
@@ -352,11 +351,11 @@ The webhook job receives only the Stripe event ID and fetches the event from Str
 
 | Table | Holds |
 | --- | --- |
-| owner's `stripe_customer_id` | The owner's Stripe customer, on the owner's own table |
+| `organizations.stripe_customer_id` | The organization's Stripe customer |
 | `billing_subscriptions` | One row per Stripe subscription: status, price, lookup key, plan, period end, `cancel_at` |
 | `billing_grants` | Plan and limit grants |
 | `billing_sync_cursors` | The hourly job's last event |
-| `billing_webhook_events` | Processed event IDs and their owner, kept 90 days |
+| `billing_webhook_events` | Processed event IDs and their organization, kept 90 days |
 
 ## By hand, once per account
 

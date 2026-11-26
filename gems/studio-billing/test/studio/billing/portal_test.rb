@@ -1,9 +1,9 @@
 require "test_helper"
 
 class Studio::Billing::PortalTest < StudioBillingTestCase
-  test "#create_session raises for an owner who has never paid" do
+  test "#create_session raises for an organization that has never paid" do
     assert_raises(Studio::Billing::Portal::NoCustomerError) do
-      portal.create_session(owner: organization, return_url: "https://app.example.test/billing")
+      portal.create_session(organization: organization, return_url: "https://app.example.test/billing")
     end
   end
 
@@ -16,7 +16,7 @@ class Studio::Billing::PortalTest < StudioBillingTestCase
         params.dig(:flow_data, :after_completion, :redirect, :return_url) == "https://app.example.test/done"
     end
 
-    portal.create_session(owner: organization, return_url: "https://app.example.test/billing",
+    portal.create_session(organization: organization, return_url: "https://app.example.test/billing",
       flow: :subscription_cancel, after_completion_url: "https://app.example.test/done")
   end
 
@@ -25,7 +25,7 @@ class Studio::Billing::PortalTest < StudioBillingTestCase
     Studio::Billing.config.portal_configuration_id = nil
 
     assert_raises(Studio::Billing::Configuration::Error) do
-      portal.create_session(owner: organization, return_url: "https://app.example.test/billing")
+      portal.create_session(organization: organization, return_url: "https://app.example.test/billing")
     end
   end
 
@@ -33,7 +33,7 @@ class Studio::Billing::PortalTest < StudioBillingTestCase
     subscribe(organization)
 
     assert_raises(ArgumentError) do
-      portal.create_session(owner: organization, return_url: "https://app.example.test/billing", flow: :refund)
+      portal.create_session(organization: organization, return_url: "https://app.example.test/billing", flow: :refund)
     end
   end
 

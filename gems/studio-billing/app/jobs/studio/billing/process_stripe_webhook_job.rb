@@ -13,7 +13,7 @@ module Studio
       queue_as { Billing.config.queue }
 
       retry_on StandardError, wait: :polynomially_longer, attempts: 10
-      discard_on OwnerNotFoundError do |_job, error|
+      discard_on OrganizationNotFoundError, StripeCustomerMismatchError do |_job, error|
         Rails.error.report(error, handled: true)
       end
 
@@ -29,7 +29,7 @@ module Studio
 
       def process(event_type, object)
         case event_type
-        when *SUBSCRIPTION_EVENTS then SubscriptionSync.call(object.id)&.owner
+        when *SUBSCRIPTION_EVENTS then SubscriptionSync.call(object.id)&.organization
         when *INVOICE_EVENTS then sync_invoice(object)
         when "checkout.session.completed" then complete_checkout(object)
         when *PROBLEM_EVENTS then report_problem(event_type, object)
@@ -40,31 +40,31 @@ module Studio
         stripe_subscription_id = invoice.to_hash.dig(:parent, :subscription_details, :subscription)
         return if !stripe_subscription_id
 
-        SubscriptionSync.call(stripe_subscription_id)&.owner
+        SubscriptionSync.call(stripe_subscription_id)&.organization
       end
 
       def complete_checkout(session)
         return if session.mode != "subscription" || !session.subscription
 
-        owner = Billing.locate_owner(session.client_reference_id)
-        owner&.record_stripe_customer(session.customer)
-        SubscriptionSync.call(session.subscription)&.owner
+        organization = Billing.find_organization(session.client_reference_id)
+        organization&.record_stripe_customer(session.customer)
+        SubscriptionSync.call(session.subscription)&.organization
       end
 
       def report_problem(event_type, object)
         charge_id = (event_type == "charge.refunded") ? object.id : object.charge
         charge = Billing.client.v1.charges.retrieve(charge_id)
-        owner = Billing.owner_for_stripe_customer(charge.customer)
+        organization = Billing.organization_for_stripe_customer(charge.customer)
 
         ActiveSupport::Notifications.instrument(PAYMENT_PROBLEM_EVENT,
-          owner: owner, event_type: event_type, stripe_object_id: object.id, stripe_charge_id: charge_id)
+          organization: organization, event_type: event_type, stripe_object_id: object.id, stripe_charge_id: charge_id)
         Rails.error.report(
           PaymentProblemError.new("studio-billing: #{event_type} on charge #{charge_id}"),
           handled: true,
           severity: :warning,
-          context: {event_type: event_type, stripe_charge_id: charge_id, owner: owner&.to_global_id&.to_s}
+          context: {event_type: event_type, stripe_charge_id: charge_id, organization_id: organization&.id}
         )
-        owner
+        organization
       end
     end
   end

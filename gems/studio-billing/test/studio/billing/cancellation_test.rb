@@ -70,7 +70,7 @@ class Studio::Billing::CancellationTest < StudioBillingTestCase
     end
   end
 
-  test "#destroy refuses an owner Stripe will charge again and keeps its billing rows" do
+  test "#destroy refuses an organization Stripe will charge again and keeps its billing rows" do
     travel_to NOW do
       subscribe(organization)
 
@@ -90,17 +90,17 @@ class Studio::Billing::CancellationTest < StudioBillingTestCase
     end
   end
 
-  test "#destroy goes ahead for an owner who never paid" do
+  test "#destroy goes ahead for an organization that never paid" do
     organization.destroy
 
     assert_predicate organization, :destroyed?
   end
 
-  test "a canceled subscription whose owner is gone is skipped without a report" do
+  test "a canceled subscription whose organization is gone is skipped without a report" do
     Rails.error.expects(:report).never
 
     result = Studio::Billing::SubscriptionSync.new(client: client)
-      .call(stripe_subscription(status: "canceled", owner: nil, customer: "cus_gone"))
+      .call(stripe_subscription(status: "canceled", organization: nil, customer: "cus_gone"))
 
     assert_nil result
   end

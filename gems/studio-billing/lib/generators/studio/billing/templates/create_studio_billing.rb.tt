@@ -1,7 +1,7 @@
 class CreateStudioBilling < ActiveRecord::Migration[<%= ActiveRecord::Migration.current_version %>]
   def change
     create_table :billing_subscriptions do |t|
-      t.references :owner, polymorphic: true, null: false
+      t.references :organization, null: false, foreign_key: true
       t.string :stripe_subscription_id, null: false, index: {unique: true}
       t.string :stripe_customer_id, null: false, index: true
       t.string :stripe_price_id, null: false
@@ -15,8 +15,8 @@ class CreateStudioBilling < ActiveRecord::Migration[<%= ActiveRecord::Migration.
     end
 
     create_table :billing_grants do |t|
-      t.references :owner, polymorphic: true, null: false
-      t.references :granted_by, polymorphic: true
+      t.references :organization, null: false, foreign_key: true
+      t.references :granted_by, foreign_key: {to_table: :users, on_delete: :nullify}
       t.string :reason, null: false
       t.string :plan_code
       t.string :limit_name
@@ -38,7 +38,7 @@ class CreateStudioBilling < ActiveRecord::Migration[<%= ActiveRecord::Migration.
     create_table :billing_webhook_events do |t|
       t.string :stripe_event_id, null: false, index: {unique: true}
       t.string :event_type, null: false
-      t.references :owner, polymorphic: true
+      t.references :organization, foreign_key: {on_delete: :nullify}
       t.datetime :processed_at
       t.datetime :created_at, null: false
     end

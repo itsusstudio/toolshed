@@ -4,7 +4,6 @@ require "active_support/core_ext"
 require "active_record"
 require "active_job"
 require "action_controller"
-require "global_id"
 require "bigdecimal"
 require "money"
 require "stripe"
@@ -15,15 +14,17 @@ require_relative "billing/prices"
 require_relative "billing/sync"
 require_relative "billing/webhook"
 require_relative "billing/routes"
-require_relative "billing/for_owner"
+require_relative "billing/for_organization"
 
 module Studio
   module Billing
-    class OwnerNotFoundError < StandardError; end
+    class OrganizationNotFoundError < StandardError; end
     class UnknownPriceError < StandardError; end
     class BillingStillActiveError < StandardError; end
+    class CheckoutSessionMismatchError < StandardError; end
+    class StripeCustomerMismatchError < StandardError; end
 
-    OWNER_METADATA_KEY = "studio_billing_owner"
+    ORGANIZATION_METADATA_KEY = "studio_billing_organization_id"
 
     class << self
       def configure
@@ -46,22 +47,20 @@ module Studio
         @catalog ||= Catalog.load(config.catalog_path)
       end
 
-      def locate_owner(global_id)
-        return if global_id.blank?
-
-        GlobalID::Locator.locate(global_id, only: owner_classes)
-      rescue ActiveRecord::RecordNotFound
-        nil
+      def find_organization(id)
+        ::Organization.find_by(id: id) if id.present?
       end
 
-      def owner_for_stripe_customer(stripe_customer_id)
-        return if stripe_customer_id.blank?
+      def organization_for_checkout_session(session)
+        organization_id = session.client_reference_id.to_s
+        metadata = session.metadata.to_h.transform_keys(&:to_s)
+        return if organization_id.blank? || metadata[ORGANIZATION_METADATA_KEY] != organization_id
 
-        owner_classes.lazy.filter_map { it.find_by(stripe_customer_id: stripe_customer_id) }.first
+        find_organization(organization_id)
       end
 
-      def owner_classes
-        config.owner_classes.map(&:constantize)
+      def organization_for_stripe_customer(stripe_customer_id)
+        ::Organization.find_by(stripe_customer_id: stripe_customer_id) if stripe_customer_id.present?
       end
 
       def reset!

@@ -9,21 +9,22 @@ module Studio
 
         source_root File.expand_path("templates", __dir__)
 
-        argument :owner_model, type: :string, default: "Organization",
-          desc: "The model that pays, which gets stripe_customer_id and Studio::Billing::ForOwner"
-
         def create_migration_files
           migration_template "create_studio_billing.rb.tt", "db/migrate/create_studio_billing.rb"
-          migration_template "add_stripe_customer_id_to_owner.rb.tt",
-            "db/migrate/add_stripe_customer_id_to_#{owner_table_name}.rb"
+          migration_template "add_stripe_customer_id_to_organizations.rb.tt",
+            "db/migrate/add_stripe_customer_id_to_organizations.rb"
         end
 
-        def include_owner_concern
-          path = File.join("app/models", "#{owner_model.underscore}.rb")
-          return if !File.exist?(File.join(destination_root, path))
-          return if File.read(File.join(destination_root, path)).include?("Studio::Billing::ForOwner")
+        def include_organization_concern
+          path = "app/models/organization.rb"
+          full_path = File.join(destination_root, path)
+          if !File.exist?(full_path)
+            raise Thor::Error, "studio-billing bills an Organization model (app/models/organization.rb, " \
+              "table organizations), and this app has none."
+          end
+          return if File.read(full_path).include?("Studio::Billing::ForOrganization")
 
-          inject_into_class path, owner_model.demodulize, "  include Studio::Billing::ForOwner\n"
+          inject_into_class path, "Organization", "  include Studio::Billing::ForOrganization\n"
         end
 
         def create_initializer
@@ -45,10 +46,6 @@ module Studio
         end
 
         private
-
-        def owner_table_name
-          owner_model.tableize.tr("/", "_")
-        end
 
         def schedule(key, job_class, every)
           entry = "#{key}:\n  class: #{job_class}\n  schedule: #{every}\n"

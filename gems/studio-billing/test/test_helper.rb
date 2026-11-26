@@ -65,11 +65,10 @@ module StudioBillingFixtures
         c.webhook_url = WEBHOOK_URL
         c.webhook_secret = WEBHOOK_SECRET
         c.portal_configuration_id = "bpc_test"
-        c.owner_classes = ["Organization"]
         c.catalog_path = File.join(DUMMY_ROOT, "config/billing.yml")
-        c.usage(:new_jobs, per: :month) { |owner, period| owner.jobs.where(created_at: period).count }
-        c.usage(:texts, per: :month) { |_owner, _period| 0 }
-        c.usage(:locations) { |owner| owner.locations_count }
+        c.usage(:new_jobs, per: :month) { |organization, month| organization.jobs.where(created_at: month).count }
+        c.usage(:texts, per: :month) { |_organization, _month| 0 }
+        c.usage(:locations) { |organization| organization.locations_count }
       end
     end
   end
@@ -97,7 +96,13 @@ end
 ActiveRecord::Schema.verbose = false
 ActiveRecord::Migration.verbose = false
 ActiveRecord::Schema.define do
+  create_table :users do |t|
+    t.string :email_address
+    t.timestamps
+  end
+
   create_table :organizations do |t|
+    t.references :owner, foreign_key: {to_table: :users}
     t.string :name
     t.integer :locations_count, default: 1, null: false
     t.string :stripe_customer_id, index: {unique: true}
@@ -120,12 +125,16 @@ class ApplicationRecord < ActiveRecord::Base
   self.abstract_class = true
 end
 
-class Organization < ApplicationRecord
-  include Studio::Billing::ForOwner
+class User < ApplicationRecord
+end
 
+class Organization < ApplicationRecord
+  include Studio::Billing::ForOrganization
+
+  belongs_to :owner, class_name: "User", optional: true
   has_many :jobs
 
-  def billing_email_address = "owner@example.test"
+  def billing_email_address = owner&.email_address
 end
 
 class Job < ApplicationRecord
@@ -144,7 +153,7 @@ class StudioBillingTestCase < ActiveSupport::TestCase
 
   teardown do
     [Studio::Billing::WebhookEvent, Studio::Billing::SyncCursor, Studio::Billing::Grant,
-      Studio::Billing::Subscription, Job, Organization].each(&:delete_all)
+      Studio::Billing::Subscription, Job, Organization, User].each(&:delete_all)
     Studio::Billing.reset!
     StudioBillingFixtures.configure!
   end
@@ -172,15 +181,16 @@ class StudioBillingTestCase < ActiveSupport::TestCase
   end
 
   def organization
-    @organization ||= Organization.create!(name: "Fort Richmond Jewellers")
+    @organization ||= Organization.create!(name: "Fort Richmond Jewellers",
+      owner: User.create!(email_address: "owner@example.test"))
   end
 
   def stripe_subscription(id: "sub_1", status: "active", lookup_key: "team_yearly", period_end: 30.days.from_now,
-    customer: "cus_1", owner: organization, cancel_at: nil)
+    customer: "cus_1", organization: self.organization, cancel_at: nil)
     stripe_object(
       id: id, object: "subscription", customer: customer, status: status,
       cancel_at: cancel_at&.to_i,
-      metadata: owner ? {Studio::Billing::OWNER_METADATA_KEY => owner.billing_global_id} : {},
+      metadata: organization ? {Studio::Billing::ORGANIZATION_METADATA_KEY => organization.id.to_s} : {},
       items: {object: "list", data: [{
         id: "si_1", object: "subscription_item", current_period_end: period_end.to_i,
         price: {id: "price_#{lookup_key}", object: "price", lookup_key: lookup_key}
@@ -191,7 +201,7 @@ class StudioBillingTestCase < ActiveSupport::TestCase
   def subscribe(organization, lookup_key: "team_yearly", status: "active", period_end: 30.days.from_now)
     subscription = Studio::Billing::SubscriptionSync.new(client: client)
       .call(stripe_subscription(id: "sub_#{SecureRandom.hex(4)}", lookup_key:, status:, period_end:,
-        owner: organization, customer: "cus_#{organization.id}"))
+        organization: organization, customer: "cus_#{organization.id}"))
     organization.reload
     subscription
   end

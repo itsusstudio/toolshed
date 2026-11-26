@@ -19,16 +19,15 @@ module Studio
       USAGE_PERIODS = [:month].freeze
 
       UsageCounter = Data.define(:name, :per, :counter) do
-        def count(owner, now: Time.current)
-          (per == :month) ? counter.call(owner, now.all_month) : counter.call(owner)
+        def count(organization, now: Time.current)
+          (per == :month) ? counter.call(organization, now.all_month) : counter.call(organization)
         end
       end
 
       attr_accessor :api_key, :api_version, :product_name, :webhook_secret, :webhook_url, :integration_identifier,
-        :owner_from_metadata, :portal_configuration_id
+        :organization_from_metadata, :portal_configuration_id
       attr_writer :catalog_path, :webhook_events, :automatic_tax, :ui_mode,
-        :open_timeout, :read_timeout, :write_timeout, :grace_period, :queue, :webhook_event_retention,
-        :owner_classes
+        :open_timeout, :read_timeout, :write_timeout, :grace_period, :queue, :webhook_event_retention
       attr_reader :usage_counters
 
       def initialize
@@ -44,7 +43,6 @@ module Studio
       def write_timeout = @write_timeout || 10
       def grace_period = @grace_period || 3.days
       def queue = @queue || :less_than_five_minutes
-      def owner_classes = @owner_classes || ["Organization"]
       def webhook_event_retention = @webhook_event_retention || 90.days
 
       def usage(name, per: nil, &counter)

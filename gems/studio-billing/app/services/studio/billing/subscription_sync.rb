@@ -14,18 +14,19 @@ module Studio
       end
 
       def call(stripe_subscription)
-        owner = owner_of(stripe_subscription)
-        return if !owner && Subscription::ENDED_STATUSES.include?(stripe_subscription.status)
+        organization = organization_of(stripe_subscription)
+        return if !organization && Subscription::ENDED_STATUSES.include?(stripe_subscription.status)
 
-        if !owner
-          raise OwnerNotFoundError, "studio-billing: no owner for Stripe subscription #{stripe_subscription.id} " \
+        if !organization
+          raise OrganizationNotFoundError,
+            "studio-billing: no organization for Stripe subscription #{stripe_subscription.id} " \
             "(customer #{stripe_subscription.customer})"
         end
 
-        plan_before = owner.entitlements.plan&.code
-        attributes = {owner: owner, **Subscription.attributes_from(stripe_subscription)}
+        plan_before = organization.entitlements.plan&.code
+        attributes = {organization: organization, **Subscription.attributes_from(stripe_subscription)}
         subscription = ActiveRecord::Base.transaction do
-          owner.record_stripe_customer(stripe_subscription.customer)
+          record_stripe_customer(organization, stripe_subscription.customer)
           Subscription.create_or_find_by!(stripe_subscription_id: stripe_subscription.id) do |record|
             record.assign_attributes(attributes)
           end.tap { it.update!(attributes) }
@@ -33,10 +34,10 @@ module Studio
         report_unknown_price(subscription) if subscription.plan_code.nil?
 
         ActiveSupport::Notifications.instrument(CHANGED_EVENT,
-          owner: owner,
+          organization: organization,
           subscription: subscription,
           plan_before: plan_before,
-          plan_after: owner.entitlements.plan&.code)
+          plan_after: organization.entitlements.plan&.code)
         subscription
       end
 
@@ -44,12 +45,18 @@ module Studio
 
       attr_reader :client
 
-      def owner_of(stripe_subscription)
+      def record_stripe_customer(organization, stripe_customer_id)
+        organization.record_stripe_customer(stripe_customer_id)
+      rescue StripeCustomerMismatchError => error
+        Rails.error.report(error, handled: true, severity: :warning)
+      end
+
+      def organization_of(stripe_subscription)
         metadata = stripe_subscription.metadata.to_h.transform_keys(&:to_s)
 
-        Billing.locate_owner(metadata[OWNER_METADATA_KEY]) ||
-          Billing.owner_for_stripe_customer(stripe_subscription.customer) ||
-          Billing.config.owner_from_metadata&.call(metadata)
+        Billing.find_organization(metadata[ORGANIZATION_METADATA_KEY]) ||
+          Billing.organization_for_stripe_customer(stripe_subscription.customer) ||
+          Billing.config.organization_from_metadata&.call(metadata)
       end
 
       def report_unknown_price(subscription)

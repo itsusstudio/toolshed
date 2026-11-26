@@ -51,12 +51,12 @@ class Studio::Billing::ReconcilerTest < StudioBillingTestCase
     end
   end
 
-  test "#reconcile_all reports a subscription without an owner and carries on" do
+  test "#reconcile_all reports a subscription without an organization and carries on" do
     client.v1.subscriptions.stubs(:list).returns(stripe_list(
-      stripe_subscription(id: "sub_orphan", owner: nil, customer: "cus_unknown"),
+      stripe_subscription(id: "sub_orphan", organization: nil, customer: "cus_unknown"),
       stripe_subscription(id: "sub_2")
     ))
-    Rails.error.expects(:report).with(instance_of(Studio::Billing::OwnerNotFoundError), has_entry(handled: true))
+    Rails.error.expects(:report).with(instance_of(Studio::Billing::OrganizationNotFoundError), has_entry(handled: true))
 
     reconciler.reconcile_all
 

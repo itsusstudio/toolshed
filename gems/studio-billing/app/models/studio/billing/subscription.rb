@@ -9,7 +9,7 @@ module Studio
       COUNTING_STATUSES = ["trialing", "active", "past_due"].freeze
       ENDED_STATUSES = ["canceled", "incomplete_expired"].freeze
 
-      belongs_to :owner, polymorphic: true
+      belongs_to :organization
 
       validates :stripe_subscription_id, presence: true
       validates :stripe_subscription_id, uniqueness: true, on: :update
