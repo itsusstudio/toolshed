@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+# Summary: Give this git worktree its own databases and copy the credential keys
+# Usage: bin/studio worktree-setup [name]   (name defaults to the worktree folder)
+#
+# A person runs this, not an agent: it copies the credential keys.
+# Needs the app's config/boot.rb to read /.worktree into WORKTREE, and
+# config/database.yml to add _$WORKTREE to the development and test names.
+set -euo pipefail
+
+GIT_DIR="$(cd "$(git rev-parse --git-dir)" && pwd)"
+COMMON_DIR="$(cd "$(git rev-parse --git-common-dir)" && pwd)"
+if [[ $GIT_DIR == "$COMMON_DIR" ]]; then
+  echo "This is the main checkout. Run this from a git worktree." >&2
+  exit 1
+fi
+ROOT="$(git rev-parse --show-toplevel)"
+APP="$(pwd)"
+MAIN_APP="$(dirname "$COMMON_DIR")/${APP#"$ROOT"}"
+PG_USER="${POSTGRES_USER:-postgres}"
+
+in_db() {
+  docker compose exec -T db "$@"
+}
+
+database_names() {
+  WORKTREE="$1" bin/rails runner \
+    'puts ActiveRecord::Base.configurations.configs_for(env_name: "development").map(&:database)'
+}
+
+database_exists() {
+  [[ -n $(in_db psql -U "$PG_USER" -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname = '$1'" < /dev/null) ]]
+}
+
+name="${1:-$(basename "$ROOT")}"
+name="$(echo "$name" | tr -c 'a-zA-Z0-9\n' '_')"
+# Postgres cuts names past 63 characters; <app>_development_<name>_queue must fit.
+longest=$(( 63 - ${#STUDIO_APP} - 19 ))
+if (( ${#name} > longest )); then
+  echo "Worktree name '$name' is too long for database names. Pass one of $longest characters or fewer." >&2
+  exit 1
+fi
+echo "$name" > "$ROOT/.worktree"
+echo "Worktree name: $name"
+
+# Copy key files by path only; never print them.
+for key in "$MAIN_APP"/config/credentials/*.key "$MAIN_APP"/config/master.key; do
+  [[ -f $key ]] || continue
+  target="${key#"$MAIN_APP"/}"
+  if [[ -f $target ]]; then
+    echo "Kept $target"
+  else
+    cp "$key" "$target"
+    chmod 600 "$target"
+    echo "Copied $target"
+  fi
+done
+
+mapfile -t sources < <(database_names "")
+mapfile -t targets < <(database_names "$name")
+if [[ ${sources[0]} == "${targets[0]}" ]]; then
+  echo "config/database.yml doesn't use WORKTREE yet, so the worktree would share the main databases." >&2
+  exit 1
+fi
+
+for i in "${!sources[@]}"; do
+  source="${sources[$i]}"
+  target="${targets[$i]}"
+  if database_exists "$target"; then
+    echo "Kept $target"
+    continue
+  fi
+
+  in_db createdb -U "$PG_USER" "$target" < /dev/null
+  # pg_dump works while the main app is running; createdb -T needs no one connected to the source.
+  in_db pg_dump -U "$PG_USER" --no-owner --no-privileges "$source" < /dev/null | in_db psql -q -U "$PG_USER" -d "$target" > /dev/null
+  echo "Copied $source to $target"
+done
+
+bin/rails db:prepare
+bin/rails db:test:prepare
+
+echo
+echo "Done. Restart the dev server in this worktree so it uses its own databases."

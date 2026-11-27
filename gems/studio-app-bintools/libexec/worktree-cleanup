@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# Summary: Delete every git worktree's databases, keeping the main checkout's
+#
+# Runs from any checkout. Lists what it will delete and asks first.
+set -euo pipefail
+
+PG_USER="${POSTGRES_USER:-postgres}"
+
+in_db() {
+  docker compose exec -T db "$@"
+}
+
+mapfile -t main_databases < <(WORKTREE="" bin/rails runner '
+  configs = ActiveRecord::Base.configurations
+  puts configs.configs_for(env_name: "development").map(&:database)
+  puts configs.configs_for(env_name: "test").map(&:database)
+')
+development="${main_databases[0]}"
+test="${main_databases[-1]}"
+
+doomed=()
+while read -r name; do
+  [[ -z $name ]] && continue
+  [[ " ${main_databases[*]} " == *" $name "* ]] && continue
+  # Parallel test runs add _0, _1, ... to the main test database.
+  [[ $name =~ ^${test}_[0-9]+$ ]] && continue
+  doomed+=("$name")
+done < <(in_db psql -U "$PG_USER" -d postgres -tAc "
+  SELECT datname FROM pg_database
+  WHERE datname LIKE '${development}\_%' OR datname LIKE '${test}\_%'
+  ORDER BY datname" < /dev/null)
+
+if (( ${#doomed[@]} == 0 )); then
+  echo "No worktree databases to delete."
+  exit 0
+fi
+
+echo "These worktree databases will be deleted:"
+printf '  %s\n' "${doomed[@]}"
+read -r -p "Delete them? [y/N] " answer
+if [[ $answer != "y" ]]; then
+  echo "Nothing deleted."
+  exit 0
+fi
+
+for name in "${doomed[@]}"; do
+  in_db dropdb -U "$PG_USER" --force "$name" < /dev/null
+  echo "Deleted $name"
+done
